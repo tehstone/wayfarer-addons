@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Wayfarer RH
-// @version      0.2.1
+// @name         Wayfarer Review History
+// @version      0.1.1
 // @description  Add local review history storage to Wayfarer
-// @namespace    https://github.com/tehstone/wayfarer-addons/
-// @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js
-// @homepageURL  https://github.com/tehstone/wayfarer-addons/
+// @namespace    https://github.com/tehstone/wayfarer-rh
+// @downloadURL  https://github.com/tehstone/wayfarer-rh/raw/main/wayfarer-rh.user.js
+// @homepageURL  https://github.com/tehstone/wayfarer-rh
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
@@ -186,7 +186,7 @@ function init() {
     key = selection + userId;
     localStorage[key] = [];
   }
-    
+
 
   function parseReview(data) {
     try {
@@ -207,7 +207,7 @@ function init() {
 
       if (type === null) {
         return;
-      } 
+      }
       if (type == "EDIT") {
         edit = true;
       }
@@ -299,24 +299,24 @@ function init() {
     if (candidate.type == 'EDIT') {
       edit = true;
       const {id, title, description, descriptionEdits, titleEdits, locationEdits} = candidate;
-      saveData = { 
+      saveData = {
         id,
         title,
-        description, 
-        descriptionEdits, 
-        titleEdits, 
+        description,
+        descriptionEdits,
+        titleEdits,
         locationEdits
-      }      
+      }
     }
 
     if (candidate.type == 'PHOTO') {
       photo = true;
       const {id, title, description, lat, lng, newPhotos} = candidate;
-      saveData = { 
+      saveData = {
         id,
         title,
         description,
-        lat, 
+        lat,
         lng,
         newPhotos
       }
@@ -329,7 +329,7 @@ function init() {
     if (!isSameReview) {
       reviewHistory.push(saveData);
     }
-    
+
     saveUserHistory(reviewHistory, edit, photo);
   }
 

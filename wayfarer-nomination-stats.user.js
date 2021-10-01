@@ -45,7 +45,7 @@ function init() {
 
 			nominations = json.result;
 			if (!nominations) {
-				alert('Wayfarer\'s response didn\'t include a candidate.');
+				alert('Wayfarer\'s response didn\'t include nominations.');
 				return;
 			}
 			addNominationDetails();

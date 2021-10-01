@@ -57,6 +57,10 @@ function init() {
 	}
 
 	function addStreetView() {
+		if (typeof(google) === 'undefined') {
+            setTimeout(addStreetView, 100);
+            return;
+        }
 		const ref = document.querySelector('wf-page-header');
 
 		if (!ref) {
@@ -65,7 +69,7 @@ function init() {
 					.insertAdjacentHTML('afterBegin', '<div class="alert alert-danger"><strong><span class="glyphicon glyphicon-remove"></span> Wayfarer Clippy Copy initialization failed, refresh page</strong></div>');
 				return;
 			}
-			setTimeout(addSettings, 1000);
+			setTimeout(addStreetView, 1000);
 			tryNumber--;
 			return;
 		}
