@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.1.0
+// @version      0.1.1
 // @description  Add Streetview to selected nomination
-// @namespace    https://github.com/tehstone/zwayfarer-nomination-stats
-// @downloadURL  https://github.com/tehstone/zwayfarer-nomination-stats/raw/main/wayfarer-ns.user.js
-// @homepageURL  https://github.com/tehstone/zwayfarer-nomination-stats
+// @namespace    https://github.com/tehstone/wayfarer-addons/
+// @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
+// @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
