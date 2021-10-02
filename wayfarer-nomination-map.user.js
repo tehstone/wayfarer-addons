@@ -112,14 +112,13 @@ function init() {
                 }
             });
 
-            // marker.addListener('click', () => {
-            //     window.wft.nominationsApp.listController.selectNominationId(nomination.id);
-            //     selectNomination();
-            //     const nominationTitle = document.querySelector('.nomination-title');
-            //     if (nominationTitle) {
-            //         nominationTitle.scrollIntoView();
-            //     }
-            // });
+            marker.addListener('click', () => {
+            	let inputs = document.querySelectorAll('input[type=text]');
+            	let input = inputs[0];
+            	input.value = nomination.title;
+            	input.dispatchEvent(new Event('input'));
+            	setTimeout(clickFirst, 500);
+            });
             bounds.extend(latLng);
             return marker;
         });
