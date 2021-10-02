@@ -72,6 +72,10 @@ function init() {
       return;
     }
 
+    tryNumber = 10;
+    ratingElements = [];
+    revPosition = 0;
+
     const ratingElementParts = document.getElementsByClassName("wf-review-card");
     if (ratingElementParts.length < 1) {
       setTimeout(initKeyboardCtrl, 200);
@@ -94,11 +98,31 @@ function init() {
         updateRevPosition(-1, true);
     } else if (e.keyCode === 39) { //Right arrow key
         updateRevPosition(1, true);
-    } 
-    else if (e.keyCode >= 97 && e.keyCode <= 101) { // 1-5 Num pad
+    // } else if (e.keyCode === 97 || e.keyCode === 49) {
+    //     setRating(e.keyCode - 49);
+    //     modifyRejectionPanel();
+    } else if (e.keyCode >= 97 && e.keyCode <= 101) { // 1-5 Num pad
         setRating(e.keyCode - 97);
     } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
         setRating(e.keyCode - 49);
+    } else if (e.keyCode === 32) {
+      modifyRejectionPanel();
+    }
+  }
+
+  function modifyRejectionPanel() {
+    const ref = document.querySelector("app-review-rejection-abuse-modal");
+
+    if (!ref) {
+      setTimeout(modifyRejectionPanel, 250);
+      return;
+    }
+    
+    var els = document.getElementsByClassName("mat-expansion-panel");
+    if (els.length > 0) {
+      var first = els[0];
+      // first.children[1].children[0].children[0].children
+      var a = 1;
     }
   }
 
