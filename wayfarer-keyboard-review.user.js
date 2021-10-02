@@ -82,7 +82,10 @@ function init() {
       }
       ratingElements.push(ratingElementParts[i]);
     }
-    let test = ratingElements[0];
+    
+    ratingElements[0].setAttribute("style", "border-color: #" + colCode + ";");
+    ratingElements[0].focus();
+    ratingElements[0].scrollIntoView(false);
     document.addEventListener('keydown', keyDownEvent);
   }
 
