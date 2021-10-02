@@ -2,9 +2,9 @@
 // @name         Wayfarer Review History
 // @version      0.1.1
 // @description  Add local review history storage to Wayfarer
-// @namespace    https://github.com/tehstone/wayfarer-rh
-// @downloadURL  https://github.com/tehstone/wayfarer-rh/raw/main/wayfarer-rh.user.js
-// @homepageURL  https://github.com/tehstone/wayfarer-rh
+// @namespace    https://github.com/tehstone/wayfarer-addons
+// @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js
+// @homepageURL  https://github.com/tehstone/wayfarer-addons
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
