@@ -35,6 +35,7 @@ function init() {
 
   function checkResponse(e) {
     try {
+      tryNumber = 10;
       const response = this.response;
       const json = JSON.parse(response);
       if (!json) {
@@ -72,7 +73,6 @@ function init() {
       return;
     }
 
-    tryNumber = 10;
     ratingElements = [];
     revPosition = 0;
 
