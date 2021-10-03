@@ -17,6 +17,11 @@ function init() {
   let revPosition = 0;
   let maxRevPosition = 5;
   let colCode = "20B8E3";
+  let rejectDepth = 0;
+  let rejectOuterIdx = 0;
+  let menuPosition = {};
+  let isReject = false;
+  let isDuplicate = false;
   //let colCode = "DF471C";
 
   /**
@@ -35,7 +40,6 @@ function init() {
 
   function checkResponse(e) {
     try {
-      tryNumber = 10;
       const response = this.response;
       const json = JSON.parse(response);
       if (!json) {
@@ -73,8 +77,7 @@ function init() {
       return;
     }
 
-    ratingElements = [];
-    revPosition = 0;
+    resetState();
 
     const ratingElementParts = document.getElementsByClassName("wf-review-card");
     if (ratingElementParts.length < 1) {
@@ -94,20 +97,48 @@ function init() {
   }
 
   function keyDownEvent(e) {
-    if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
+    if (isReject) {
+      if (e.keyCode >= 97 && e.keyCode <= 101) { // 1-5 Num pad
+        handleRejectEntry(e, e.keyCode - 97);
+      } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
+        handleRejectEntry(e, e.keyCode - 49);
+      }
+    } else {
+      if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
         updateRevPosition(-1, true);
-    } else if (e.keyCode === 39) { //Right arrow key
+      } else if (e.keyCode === 39) { //Right arrow key
         updateRevPosition(1, true);
-    // } else if (e.keyCode === 97 || e.keyCode === 49) {
-    //     setRating(e.keyCode - 49);
-    //     modifyRejectionPanel();
-    } else if (e.keyCode >= 97 && e.keyCode <= 101) { // 1-5 Num pad
-        setRating(e.keyCode - 97);
-    } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
-        setRating(e.keyCode - 49);
-    } else if (e.keyCode === 32) {
-      modifyRejectionPanel();
+      } else if (e.keyCode === 97 || e.keyCode === 49) {
+        setRating(0, false);
+        isReject = true;
+        modifyRejectionPanel();
+      } else if (e.keyCode >= 97 && e.keyCode <= 101) { // 1-5 Num pad
+        setRating(e.keyCode - 97, true);
+      } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
+        setRating(e.keyCode - 49, true);
+      } else if (e.keyCode === 13) { // Enter
+        trySubmit(false);
+      }
     }
+  }
+
+  function setRating(rate, advance){
+    starButtons = ratingElements[revPosition].getElementsByClassName("wf-rate__star");
+    starButtons[rate].click();
+    if (advance) {
+      updateRevPosition(1, false);
+    }
+  }
+
+  function resetState() {
+    tryNumber = 10;
+    ratingElements = [];
+    revPosition = 0;
+    rejectDepth = 0;
+    rejectOuterIdx = 0;
+    menuPosition = {};
+    isReject = false;
+    isDuplicate = false;
   }
 
   function modifyRejectionPanel() {
@@ -118,18 +149,54 @@ function init() {
       return;
     }
     
-    var els = document.getElementsByClassName("mat-expansion-panel");
+    const els = document.getElementsByClassName("mat-expansion-panel");
     if (els.length > 0) {
-      var first = els[0];
-      // first.children[1].children[0].children[0].children
+      const first = els[0];
+      const categories = first.children[1].children[0].children[0].children;
+      for (let i = 0; i < categories.length; i++) {
+        menuPosition[i] = {"children": {}};
+        const text = categories[i].getElementsByTagName("mat-panel-title")[0].innerText;
+        if (isNaN(text[0])) {
+          const newText = i + 1 + ". " + text;
+          categories[i].getElementsByTagName("mat-panel-title")[0].innerText = newText;
+        }
+        menuPosition[i]["element"] = categories[i];
+
+        const childSelections = categories[i].getElementsByTagName("mat-list-option");
+        for (let j = 0; j < childSelections.length; j++) {
+          const text = childSelections[j].getElementsByClassName("mat-list-text")[0].innerText;
+          if (isNaN(text[0])) {
+            const newText = j + 1 + ". " + text;
+            childSelections[j].getElementsByClassName("mat-list-text")[0].innerText = newText;
+          }
+          menuPosition[i]["children"][j] = {};
+          menuPosition[i]["children"][j]["element"] = childSelections[j];
+        }
+      }
       var a = 1;
+      // "mat-expansion-panel-header"
+      // "mat-list-option"
     }
   }
 
-  function setRating(rate){
-    starButtons = ratingElements[revPosition].getElementsByClassName("wf-rate__star");
-    starButtons[rate].click();
-    updateRevPosition(1, false);
+  function handleRejectEntry(e, idx) {
+    e.preventDefault();
+    if (rejectDepth === 0) {
+      if (idx > Object.keys(menuPosition).length) {
+        return;
+      }
+      menuPosition[idx]["element"].children[0].click();
+      rejectDepth = 1;
+      rejectOuterIdx = idx;
+    } else {
+      if (idx > Object.keys(menuPosition[rejectOuterIdx]["children"]).length) {
+        return;
+      }
+      menuPosition[rejectOuterIdx]["children"][idx]["element"].children[0].click();
+      const ref = document.querySelector("app-review-rejection-abuse-modal");
+      const textWrapper = ref.getElementsByClassName("mat-form-field-infix");
+      textWrapper[0].getElementsByTagName("textArea")[0].focus();
+    }
   }
 
   function updateRevPosition(diff, manual) {
@@ -145,6 +212,21 @@ function init() {
     ratingElements[revPosition].setAttribute("style", "border-color: #" + colCode + ";");
     ratingElements[revPosition].focus();
     ratingElements[revPosition].scrollIntoView(false);
+  }
+
+  function trySubmit(finish) {
+    const smartButton = document.querySelector('[aria-label="Smart Submit"]');
+    if (smartButton === null || smartButton === undefined) {
+      const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
+      const buttonParts = submitWrapper[0].getElementsByTagName("button");
+      if (finish) {
+        buttonParts[1].click();
+      } else {
+        buttonParts[0].click();
+      }
+    } else {
+      smartButton.firstElementChild.click();
+    }
   }
 
   function addCss() {
