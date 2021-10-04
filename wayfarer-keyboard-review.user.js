@@ -125,7 +125,7 @@ function init() {
       if (e.keyCode === 27) { // escape
         cancelDuplicate();
       } else if (e.keyCode === 13) { // 13
-        submitDuplicate();
+        submitDuplicate(e);
       }
     } else if (isReject) {
       if (e.keyCode >= 97 && e.keyCode <= 105) { // 1-5 Num pad
@@ -234,11 +234,17 @@ function init() {
     }
   }
 
-  function submitDuplicate() {    
-    const btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+  function submitDuplicate(e) {
+    let btn = null;
+    if (e.ctrlKey) {      
+      btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
+    } else {
+      btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+    }
     if (btn !== null) {
       isDuplicate = false;
       btn.click();
+      setTimeout(submitToMenu, 250);
     }
   }
 
@@ -332,10 +338,23 @@ function init() {
     if (e.shiftKey) {
       return;
     }
-    const btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+    let btn = null;
+    if (e.ctrlKey) {      
+      btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
+    } else {
+      btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+    }
     if (btn !== null) {
       isReject = false;
-      btn.click()
+      btn.click();
+      setTimeout(submitToMenu, 250);
+    }
+  }
+
+  function submitToMenu() {
+    const btn = document.querySelector('button[role="menuitem"]');
+    if (btn !== null) {
+      btn.click();
     }
   }
 
