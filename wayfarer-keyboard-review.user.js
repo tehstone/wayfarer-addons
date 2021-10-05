@@ -114,6 +114,8 @@ function init() {
           suppress = handleCustomWhatIf(card, e.keyCode - 97);
         } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
           suppress = handleCustomWhatIf(card, e.keyCode - 49);
+        } else if (e.keyCode === 13) { // Enter
+          trySubmit(false);
         }
       } else if (isReject && e.keyCode === 27) { // escape
         cancelReject();
