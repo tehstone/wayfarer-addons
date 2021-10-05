@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.1.1
+// @version      0.2.0
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
