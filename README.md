@@ -13,6 +13,8 @@ This plugin enables nearly full control of the review page via the keyboard.
 - Left & Right arrows to navigate between categories
 - Numbers within Rejection Dialog to navigate the reject reason menu
 - Backspace within Rejection Dialog to navigate back a level in the reject reason menu
+- When the text box in the Rejection Dialog is focused, Shift+Enter will add a newline, Enter will submit the nomination
+- Whenever the submit button is active, Ctrl+Enter will select the "Submit and finish reviewing" option
 - "D" to mark the selected nomination as a duplicate
 - "Q" to open the main photo
 - "E" to open the supporting photo
