@@ -32,6 +32,7 @@ function init() {
 	addCss();
 
 	function parseSelected(e) {
+		tryNumber = 10;
 		try {
 			const response = this.response;
 			const json = JSON.parse(response);
@@ -48,6 +49,8 @@ function init() {
 				alert('Wayfarer\'s response didn\'t include a candidate.');
 				return;
 			}
+			
+			addCoordinates();
 			addStreetView();
 
 		} catch (e)	{
@@ -56,12 +59,32 @@ function init() {
 
 	}
 
+	function addCoordinates() {
+		const lat = selected["lat"];
+        const lng = selected["lng"];
+        const city = selected["city"];
+        const state = selected["state"];
+
+        let panel = null;
+        panel = document.querySelector("body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-nominations > div.nominations.ng-star-inserted > app-details-pane > div > div > div > p");
+        if (panel !== null) {
+	    	const coordinates = lat + "," + lng;
+	    	const newText = city + " " + state + " " + " (" + coordinates + ")";
+	    	panel.innerText = newText;
+
+	    	panel.onclick = function() {
+				navigator.clipboard.writeText(coordinates);
+			}
+		}
+	}
+
 	function addStreetView() {
 		if (typeof(google) === 'undefined') {
             setTimeout(addStreetView, 100);
             return;
         }
-		const ref = document.querySelector('wf-page-header');
+
+        const ref = document.querySelector('wf-page-header');
 
 		if (!ref) {
 			if (tryNumber === 0) {
