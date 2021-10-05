@@ -70,6 +70,7 @@ function init() {
       if (tryNumber === 0) {
         document.querySelector('body')
           .insertAdjacentHTML('afterBegin', '<div class="alert alert-danger"><strong><span class="glyphicon glyphicon-remove"></span> Wayfarer Review History initialization failed, refresh page</strong></div>');
+        tryNumber = 10;
         return;
       }
       setTimeout(initKeyboardCtrl, 1000);
@@ -138,7 +139,19 @@ function init() {
         backReject();
       }
     } else {
-      if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
+      if (revPosition === 6) { // what is it? menu
+        if (e.keyCode >= 97 && e.keyCode <= 99) { // 1-5 Num pad
+          suppress = setRating(e.keyCode - 97, true);
+          document.activeElement.blur();
+        } else if (e.keyCode >= 49 && e.keyCode <= 51) { // 1-5 normal
+          suppress = setRating(e.keyCode - 49, true);
+          document.activeElement.blur();
+        } else if (e.keyCode === 100 || e.keyCode === 52) {
+          suppress = setRating(3, false);
+        } else if (e.keyCode === 13) { // Enter
+          trySubmit(false);
+        }
+      } else if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
         suppress = updateRevPosition(-1, true);
       } else if (e.keyCode === 39) { //Right arrow key
         suppress = updateRevPosition(1, true);
@@ -180,6 +193,7 @@ function init() {
       const wfinput = ratingElements[revPosition].querySelector('wf-select input');
       if (wfinput !== null) {
         wfinput.focus();
+        wfinput.setActive();
       }
       return true;
     }
