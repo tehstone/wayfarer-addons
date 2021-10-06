@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.3.3
+// @version      0.4.0
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -29,7 +29,7 @@
 /* eslint-env es6 */
 /* eslint no-var: "error" */
 
-function init() {
+(function() {
   let tryNumber = 10;
   let ratingElements = [];
   let revPosition = 0;
@@ -40,6 +40,7 @@ function init() {
   let menuPosition = {};
   let isReject = false;
   let isDuplicate = false;
+  let reviewType = 'NEW';
   //let colCode = "DF471C";
 
   /**
@@ -65,10 +66,9 @@ function init() {
         return;
       }
       // ignore if it's related to captchas
-      if (json.captcha)
-        return;
+      if (json.captcha) return;
 
-      candidate = json.result;
+      const candidate = json.result;
       if (!candidate) {
         alert('Wayfarer\'s response didn\'t include a candidate.');
         return;
@@ -82,7 +82,10 @@ function init() {
   }
 
   function initKeyboardCtrl() {
-    const ref = document.querySelector('app-should-be-wayspot');
+    const ref =
+          document.querySelector('app-should-be-wayspot') ||
+          document.querySelector('app-review-edit') ||
+          document.querySelector('app-review-photo');
 
     if (!ref) {
       if (tryNumber === 0) {
@@ -102,13 +105,30 @@ function init() {
     if (ratingElementParts.length < 1) {
       setTimeout(initKeyboardCtrl, 200);
     }
-    for (i = 0; i < ratingElementParts.length; i++) {
-      if (i == 2 || i == 3 || i > 8) {
-        continue;
-      }
-      ratingElements.push(ratingElementParts[i]);
+
+    switch (ref.tagName) {
+      case 'APP-SHOULD-BE-WAYSPOT':
+        for (let i = 0; i < ratingElementParts.length; i++) {
+          if (i == 2 || i == 3 || i > 8) continue;
+          ratingElements.push(ratingElementParts[i]);
+        }
+        reviewType = 'NEW';
+        break;
+
+      case 'APP-REVIEW-EDIT':
+        for (let i = 0; i < ratingElementParts.length; i++) {
+          if (ratingElementParts[i].parentNode.tagName == 'app-review-comments') break;
+          ratingElements.push(ratingElementParts[i]);
+        }
+        reviewType = 'EDIT';
+        break;
+
+      case 'APP-REVIEW-PHOTO':
+        reviewType = 'PHOTO';
+        document.addEventListener('keydown', keyDownEvent);
+        return;
     }
-    
+
     ratingElements[0].setAttribute("style", "border-color: #" + colCode + ";");
     ratingElements[0].focus();
     ratingElements[0].scrollIntoView(false);
@@ -139,8 +159,26 @@ function init() {
         cancelReject();
       } else if (isReject && e.keyCode === 13) { // 13
         submitReject(e);
-      } else if (e.keyCode === 8) { // backspace
-        backReject();
+      }
+    } else if (reviewType == 'EDIT') {
+      if (e.keyCode >= 97 && e.keyCode <= 105) { // 1-9 Num pad
+        suppress = setEditOption(e.keyCode - 97);
+      } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
+        suppress = setEditOption(e.keyCode - 49);
+      } else if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
+        suppress = setLocationOption(e.keyCode - 65);
+      } else if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
+        suppress = updateRevPosition(-1, true);
+      } else if (e.keyCode === 39) { //Right arrow key
+        suppress = updateRevPosition(1, true);
+      }
+    } else if (reviewType == 'PHOTO') {
+      if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
+        suppress = selectPhoto(e.keyCode - 65);
+      } else if (e.keyCode == 9) { // Tab
+        suppress = selectAllPhotosOK();
+      } else if (e.keyCode === 13) { // Enter
+        trySubmit(false);
       }
     } else if (isDuplicate) {
       if (e.keyCode === 27) { // escape
@@ -189,10 +227,16 @@ function init() {
         fullSizePhoto('app-should-be-wayspot');
       } else if (e.keyCode == 69) { // E
         fullSizePhoto('app-supporting-info');
+      } else if (e.keyCode == 65) {
+        showFullSupportingInfo();
       } else if (e.keyCode == 82) { // R
         zoomInOnMaps();
       } else if (e.keyCode == 70) { // F
         zoomOutOnMaps();
+      } else if (e.keyCode == 87) { // W
+        scrollCardBody(-50);
+      } else if (e.keyCode == 83) { // S
+        scrollCardBody(50);
       } else if (e.keyCode == 68) { // Duplicate
         markDuplicate();
       }
@@ -201,8 +245,8 @@ function init() {
   }
 
   function setRating(rate, advance){
-    starButtons = ratingElements[revPosition].getElementsByClassName("wf-rate__star");
-    whatIsButtons = ratingElements[revPosition].querySelectorAll('.review-categorization > button');
+    const starButtons = ratingElements[revPosition].getElementsByClassName("wf-rate__star");
+    const whatIsButtons = ratingElements[revPosition].querySelectorAll('.review-categorization > button');
     if (starButtons.length) {
       // Star rating
       starButtons[rate].click();
@@ -211,13 +255,36 @@ function init() {
       // What is it? (Required)
       whatIsButtons[rate].click();
       const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-      if (wfinput !== null) {
-        wfinput.focus();
-        wfinput.setActive();
-      }
+      if (wfinput) wfinput.focus();
       return true;
     }
     return false;
+  }
+
+  function setEditOption(option) {
+    const opt = ratingElements[revPosition].querySelectorAll('mat-radio-button label')[option];
+    if (opt) opt.click();
+    document.activeElement.blur();
+    return updateRevPosition(1, false);
+  }
+
+  function setLocationOption(option) {
+    const opt = ratingElements[revPosition].querySelectorAll('agm-map div[role="button"]')[option];
+    if (opt) opt.click();
+    document.activeElement.blur();
+    return updateRevPosition(1, false);
+  }
+
+  function selectPhoto(option) {
+    const photo = document.querySelectorAll('app-review-photo app-photo-card .photo-card')[option];
+    if (photo) photo.click();
+    return true;
+  }
+
+  function selectAllPhotosOK() {
+    const photo = document.querySelector('app-review-photo app-accept-all-photos-card .photo-card');
+    if (photo) photo.click();
+    return true;
   }
 
   function resetState() {
@@ -242,6 +309,12 @@ function init() {
     }
   }
 
+  function showFullSupportingInfo() {
+    if (document.getElementsByTagName('mat-dialog-container').length) return;
+    const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200 .cursor-pointer');
+    if (supportingText) supportingText.click();
+  }
+
   function zoomInOnMaps() {
     const btns = document.querySelectorAll('button[title="Zoom in"]');
     btns.forEach(e => e.click());
@@ -250,6 +323,10 @@ function init() {
   function zoomOutOnMaps() {
     const btns = document.querySelectorAll('button[title="Zoom out"]');
     btns.forEach(e => e.click());
+  }
+
+  function scrollCardBody(amount) {
+    ratingElements[revPosition].querySelector('.wf-review-card__body div').scrollTop += amount;
   }
 
   function markDuplicate() {
@@ -270,7 +347,7 @@ function init() {
 
   function submitDuplicate(e) {
     let btn = null;
-    if (e.ctrlKey) {      
+    if (e.ctrlKey) {
       btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
     } else {
       btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
@@ -450,25 +527,45 @@ function init() {
 
   function addCss() {
     const whatIsSelector = 'div.review-categorization__option > div > div:nth-child(1)::before'
+    const whatIsOptions = [...Array(10).keys()].map(e => (`div:nth-child(${e}) > ${whatIsSelector} { content: '[${e}] '; }`)).join('\n');
+    const whatIsButtons = [...Array(5).keys()].map(e => (`div.review-categorization > button:nth-child(${e})::before { content: '${e}. '; }`)).join('\n');
+    const editOptions = [...Array(10).keys()].map(e => (`app-review-edit mat-radio-button:nth-child(${e}) .mat-radio-label-content::before { content: '[${e}]'; }`)).join('\n');
+    const photoOptions = [...Array(27).keys()].map(e => {
+      const letter = String.fromCharCode(64 + e);
+      return `app-photo-card:nth-child(${e}) .photo-card__actions::before { content: '${letter}'; }`;
+    }).join('\n');
+    const locationOptions = [...Array(27).keys()].map(e => {
+      const letter = String.fromCharCode(64 + e);
+      return `app-select-location-edit agm-map div[role="button"]:nth-child(${e})::before { content: '${letter}'; }`;
+    }).join('\n');
+
     const css = `
       ${whatIsSelector} { font-family: monospace; color: white; }
-      div:nth-child(1) > ${whatIsSelector} { content: '[1] '; }
-      div:nth-child(2) > ${whatIsSelector} { content: '[2] '; }
-      div:nth-child(3) > ${whatIsSelector} { content: '[3] '; }
-      div:nth-child(4) > ${whatIsSelector} { content: '[4] '; }
-      div:nth-child(5) > ${whatIsSelector} { content: '[5] '; }
-      div:nth-child(6) > ${whatIsSelector} { content: '[6] '; }
-      div:nth-child(7) > ${whatIsSelector} { content: '[7] '; }
-      div:nth-child(8) > ${whatIsSelector} { content: '[8] '; }
-      div:nth-child(9) > ${whatIsSelector} { content: '[9] '; }
+      ${whatIsOptions}
 
       div.review-categorization > button::before { color: white; margin-right: 5px; }
-      div.review-categorization > button:nth-child(1)::before { content: '1. '; }
-      div.review-categorization > button:nth-child(2)::before { content: '2. '; }
-      div.review-categorization > button:nth-child(3)::before { content: '3. '; }
-      div.review-categorization > button:nth-child(4)::before { content: '4. '; }
-      div.review-categorization > button:nth-child(5)::before { content: '5. '; }
+      ${whatIsButtons}
       div.review-categorization > button:last-child::before { margin-left: -14px; }
+
+      app-review-edit mat-radio-button .mat-radio-label-content::before { color: #FF6D38; font-family: monospace; }
+      ${editOptions}
+
+      app-supporting-info .wf-review-card__body .bg-gray-200 .cursor-pointer::before {
+        content: '[Click here or press A for full supporting info] ';
+        color: #FF6D38;
+        display: block;
+      }
+
+      app-select-location-edit agm-map div[role="button"]::before { margin-left: 8px; color: black; auto; font-size: 25px; }
+      ${locationOptions}
+
+      app-photo-card .photo-card__actions::before { font-size: 24px; margin-right: 20px; }
+      app-accept-all-photos-card .photo-card__overlay span::after {
+        content: '[Press Tab to accept all photos] ';
+        color: #FF6D38;
+        display: block;
+      }
+      ${photoOptions}
       `;
     const style = document.createElement('style');
     style.type = 'text/css';
@@ -476,7 +573,4 @@ function init() {
     document.querySelector('head').appendChild(style);
   }
 
-}
-
-init();
-
+})();
