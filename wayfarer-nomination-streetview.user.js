@@ -1,12 +1,30 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.2.0
+// @version      0.2.1
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
+
+// Copyright 2021 tehstone
+// This file is part of the Wayfarer Addons collection.
+
+// This script is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This script is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You can find a copy of the GNU General Public License in the root
+// directory of this script's GitHub repository: 
+// <https://github.com/tehstone/wayfarer-addons/blob/main/LICENSE>
+// If not, see <https://www.gnu.org/licenses/>.
 
 /* eslint-env es6 */
 /* eslint no-var: "error" */
