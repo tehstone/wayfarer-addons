@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.4.0
+// @version      0.5.0
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -125,6 +125,7 @@
 
       case 'APP-REVIEW-PHOTO':
         reviewType = 'PHOTO';
+        ref.querySelectorAll('.photo-card').forEach(card => card.setAttribute("style", "border-color: #" + colCode + ";"));
         document.addEventListener('keydown', keyDownEvent);
         return;
     }
@@ -167,6 +168,8 @@
         suppress = setEditOption(e.keyCode - 49);
       } else if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
         suppress = setLocationOption(e.keyCode - 65);
+      } else if (e.keyCode == 9) { // Tab
+        suppress = setLocationOption(-1);
       } else if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
         suppress = updateRevPosition(-1, true);
       } else if (e.keyCode === 39) { //Right arrow key
@@ -233,6 +236,8 @@
         zoomInOnMaps();
       } else if (e.keyCode == 70) { // F
         zoomOutOnMaps();
+      } else if (e.keyCode == 27) {
+        exitStreetView();
       } else if (e.keyCode == 87) { // W
         scrollCardBody(-50);
       } else if (e.keyCode == 83) { // S
@@ -255,7 +260,7 @@
       // What is it? (Required)
       whatIsButtons[rate].click();
       const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-      if (wfinput) wfinput.focus();
+      if (wfinput) focusWhatIsInput(wfinput);
       return true;
     }
     return false;
@@ -269,8 +274,13 @@
   }
 
   function setLocationOption(option) {
-    const opt = ratingElements[revPosition].querySelectorAll('agm-map div[role="button"]')[option];
-    if (opt) opt.click();
+    if (option >= 0) {
+      const opt = ratingElements[revPosition].querySelectorAll('agm-map div[role="button"]')[option];
+      if (opt) opt.click();
+    } else {
+      const checkbox = ratingElements[revPosition].querySelector('mat-checkbox label');
+      if (checkbox) checkbox.click();
+    }
     document.activeElement.blur();
     return updateRevPosition(1, false);
   }
@@ -323,6 +333,14 @@
   function zoomOutOnMaps() {
     const btns = document.querySelectorAll('button[title="Zoom out"]');
     btns.forEach(e => e.click());
+  }
+
+  function exitStreetView() {
+    const button = ratingElements[revPosition].querySelector('agm-map .gm-iv-close');
+    if (button) {
+      const box = button.closest('div[class="gm-style"]');
+      if (box.style.display !== 'none') button.click();
+    }
   }
 
   function scrollCardBody(amount) {
@@ -502,12 +520,20 @@
 
     if (ratingElements[revPosition].id == 'categorization-card') {
       const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-      if (wfinput !== null) {
-        wfinput.focus();
-      }
+      if (wfinput) focusWhatIsInput(wfinput);
       return true;
     }
     return false;
+  }
+
+  function focusWhatIsInput(wfinput) {
+    wfinput.focus();
+    wfinput.addEventListener('keydown', e => {
+      if (e.keyCode == 13) {
+        e.stopPropagation();
+        keyDownEvent(e);
+      }
+    });
   }
 
   function trySubmit(finish) {
@@ -557,6 +583,7 @@
       }
 
       app-select-location-edit agm-map div[role="button"]::before { margin-left: 8px; color: black; auto; font-size: 25px; }
+      app-select-location-edit mat-checkbox .mat-checkbox-label::before { content: '[Tab]'; color: #FF6D38; font-family: monospace; }
       ${locationOptions}
 
       app-photo-card .photo-card__actions::before { font-size: 24px; margin-right: 20px; }
