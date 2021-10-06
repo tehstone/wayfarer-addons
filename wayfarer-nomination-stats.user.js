@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.2.2
+// @version      0.3.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -67,6 +67,7 @@ function init() {
 				return;
 			}
 			addNominationDetails();
+			addExportButtons();
 
 		} catch (e)	{
 			console.log(e); // eslint-disable-line no-console
@@ -170,43 +171,91 @@ function init() {
         container.appendChild(statsContainer);
 	}
 
-	function insertAfter(newNode, referenceNode) {
-	    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-	}
-
-	function getStatsParent() {
-		var els = document.getElementsByClassName("profile-stats__section-title");
-		for (var i = 0; i < els.length; i++) {
-       		const element = els[i];
-       		if (element.innerHTML === "Agreements") {
-       			return element;
-       		}
-       	}
-       	console.log("element not found");
-       	return null;
-	}
-
-
-	function getUserId() {
-	    var els = document.getElementsByTagName("image");
-	    for (var i = 0; i < els.length; i++) {
-	       const element = els[i];
-	       const attribute = element.getAttribute("href");
-	       let fields = attribute.split('/');
-	       let userId = fields[fields.length-1];
-	       fields = userId.split('=');
-	       userId = fields[0];
-	       return userId;
+	function addExportButtons() {
+	    if (document.getElementById("wayfarernsexport") !== null) {
+	        return;
 	    }
-	    return "temporary_default_userid";
-	  }
+		const ref = document.querySelector('wf-logo');
+		const div = document.createElement('div');
+
+		let exportButton = document.createElement('button');
+		    exportButton.innerHTML = "Export JSON";
+		    exportButton.onclick = function() {
+		      exportNominationsJson();
+	    }
+	    exportButton.classList.add('wayfarerns__button');
+	    exportButton.id = "wayfarernsexport";
+		div.appendChild(exportButton);
+
+		let exportCsvButton = document.createElement('button');
+		    exportCsvButton.innerHTML = "Export CSV";
+		    exportCsvButton.onclick = function() {
+		      exportNominationsCsv();
+	    }
+	    exportCsvButton.classList.add('wayfarerns__button');
+	    exportCsvButton.id = "wayfarernsexport";
+		div.appendChild(exportCsvButton);
+
+		const container = ref.parentNode.parentNode;
+	    container.appendChild(div);
+
+	    RHButtons = div;
+	    RHButtons.classList.add('wayfarerns__visible');
+	}
+
+	function exportNominationsJson() {
+		const dataStr = JSON.stringify(nominations);
+
+		if (typeof window.saveFile != 'undefined') {
+			window.saveFile(dataStr, 'nominations.json', 'application/json');
+			return;
+		}
+	}
+
+	function exportNominationsCsv() {
+		const csv = convertToCSV(nominations);
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+
+		let link = document.createElement("a");
+        if (link.download !== undefined) {
+			link.setAttribute("href", url);
+	        link.setAttribute("download", 'nominations.csv');
+	        link.style.visibility = 'hidden';
+	        document.body.appendChild(link);
+	        link.click();
+	        document.body.removeChild(link);
+        }
+
+	}
+
+	function convertToCSV(objArray) {
+	    let array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+	    let str = 'id,title,description,lat,lng,city,state,day,order,imageUrl,nextUpgrade,upgraded,status\r\n';
+
+	    for (let i = 0; i < array.length; i++) {
+	        let line = '';
+	        for (let index in array[i]) {
+	        	if (index === 'title' || index === 'description') {
+	        		array[i][index] = `"${array[i][index]}"`;
+	        	}
+	            if (line != '') line += ','
+
+	            line += array[i][index];
+	        }
+
+	        str += line + '\r\n';
+	    }
+
+	    return str;
+	}
 
 	function addCss() {
 		const css = `
 			.wayfarernd {
 				color: #333;
-				margin: 5px 50px;
-				padding: 5px 20px;
+				margin: 20px 50px;
+				padding: 20px 20px;
 				text-align: left;
 				font-size: 16px;
 				background-color: #e5e5e5;
@@ -217,7 +266,7 @@ function init() {
 				height: 25%
 			}
 
-			.wayfarercc__visible {
+			.wayfarerns__visible {
 				display: block;
 			}
 
@@ -225,12 +274,12 @@ function init() {
 				color: #000000;
 			}
 
-			.wayfarercc__button {
+			.wayfarerns__button {
 				background-color: #e5e5e5;
 				border: none;
 				color: #ff4713;
-				padding: 4px 10px;
-				margin: 1px;
+				padding: 10px 10px;
+				margin: 10px;
 				text-align: center;
 				text-decoration: none;
 				display: inline-block;
@@ -324,6 +373,27 @@ function init() {
 		style.innerHTML = css;
 		document.querySelector('head').appendChild(style);
 	}
+
+	function saveAs (data,filename,dataType) {
+	  if (!(data instanceof Array)) { data = [data]; }
+	  var file = new Blob(data, {type: dataType});
+	  var objectURL = URL.createObjectURL(file);
+
+	  var link = document.createElement('a');
+	  link.href = objectURL;
+	  link.download = filename;
+	  link.style.display = 'none';
+	  document.body.appendChild(link);
+	  link.click();
+	  link.remove();
+
+	  URL.revokeObjectURL(objectURL);
+	}
+
+	window.saveFile = typeof android === 'undefined' || !android.saveFile
+  		? saveAs : function (data,filename,dataType) {
+      android.saveFile(filename || '', dataType || '*/*', data);
+    };
 }
 
 init();
