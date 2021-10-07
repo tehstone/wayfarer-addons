@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.3.0
+// @version      0.3.5
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
@@ -32,6 +32,7 @@
 (function() {
 	let tryNumber = 10;
     const nomCache = {};
+    let intelLink = null;
 
 	/**
 	 * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -70,7 +71,7 @@
         if (item) {
             const nom = nomCache[item.querySelector('img').src];
             tryNumber = 10;
-            console.log(nom);
+            
             addCoordinates(nom);
             addStreetView(nom);
         }
@@ -78,18 +79,40 @@
 
 	function addCoordinates(selected) {
         const { lat, lng, city, state } = selected;
-        const panel = document.querySelector("app-nominations app-details-pane h4 + p");
-        if (panel) {
+        const locationP = document.querySelector("app-nominations app-details-pane p");
+        if (locationP) {
 	    	const coordinates = `${lat},${lng}`;
 	    	const newText = `${city} ${state} (${coordinates})`;
-	    	panel.innerText = newText;
-            panel.style.cursor = 'pointer';
-            panel.title = 'Copy coordinates to clipboard';
-	    	panel.onclick = function() {
+	    	locationP.innerText = newText;
+            locationP.style.cursor = 'pointer';
+            locationP.title = 'Copy coordinates to clipboard';
+	    	locationP.onclick = function() {
 				navigator.clipboard.writeText(coordinates);
 			}
 		}
+
+        const titleP = document.querySelector("app-nominations app-details-pane h4");
+        if (titleP) {
+            if (intelLink === null) {
+                intelLink = document.createElement('a');
+                intelLink.id = 'intelLink';
+                intelLink.className = 'anchor-link';
+                intelLink.target = "_blank";
+                intelLink.title = 'Open in Intel';
+                intelLink.style['font-size'] = "1.25rem";
+            }
+
+            intelLink.href = `https://intel.ingress.com/?ll=${lat},${lng}&z=16`;
+            intelLink.innerText = titleP.innerText;
+            
+            insertAfter(intelLink, titleP);
+            titleP.style.display = "none";
+        }        
 	}
+
+    function insertAfter(newNode, referenceNode) {
+        referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    }
 
 	function addStreetView(selected) {
 		if (typeof(google) === 'undefined') {
