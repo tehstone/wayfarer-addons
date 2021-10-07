@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.5.0
+// @version      0.5.1
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -201,10 +201,10 @@
       }
     } else {
       if (revPosition === 6) { // what is it? menu
-        if (e.keyCode >= 97 && e.keyCode <= 99) { // 1-5 Num pad
+        if (e.keyCode >= 97 && e.keyCode <= 99) { // 1-3 Num pad
           suppress = setRating(e.keyCode - 97, true);
           document.activeElement.blur();
-        } else if (e.keyCode >= 49 && e.keyCode <= 51) { // 1-5 normal
+        } else if (e.keyCode >= 49 && e.keyCode <= 51) { // 1-3 normal
           suppress = setRating(e.keyCode - 49, true);
           document.activeElement.blur();
         } else if (e.keyCode === 100 || e.keyCode === 52) {
@@ -216,7 +216,7 @@
         suppress = updateRevPosition(-1, true);
       } else if (e.keyCode === 39) { //Right arrow key
         suppress = updateRevPosition(1, true);
-      } else if (e.keyCode === 97 || e.keyCode === 49) {
+      } else if ((revPosition == 0) && e.keyCode === 97 || e.keyCode === 49) {
         suppress = setRating(0, false);
         isReject = true;
         modifyRejectionPanel();
