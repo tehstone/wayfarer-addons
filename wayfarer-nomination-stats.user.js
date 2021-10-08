@@ -286,6 +286,11 @@ function init() {
 				font-size: 16px;
 			}
 
+			.dark .wayfarerns__button {
+				background-color: #404040;
+				color: #20B8E3;
+			}
+
 			.wrap-collabsible {
 				margin-bottom: 1.2rem;
 			}
