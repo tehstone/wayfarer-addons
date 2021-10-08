@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Upgrade Percentage
-// @version      0.1.0
+// @version      0.1.1
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-upgrade-percentage.user.js

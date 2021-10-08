@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.5.3
+// @version      0.5.4
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -159,6 +159,8 @@
         cancelReject();
       } else if (isReject && e.keyCode === 13) { // 13
         submitReject(e);
+      } else if (e.shiftKey && e.keyCode === 8) {
+        backReject();
       }
     } else if (reviewType == 'EDIT') {
       if (e.keyCode >= 97 && e.keyCode <= 105) { // 1-9 Num pad
@@ -570,7 +572,8 @@
       ${whatIsSelector} { font-family: monospace; color: white; }
       ${whatIsOptions}
 
-      div.review-categorization > button::before { color: white; margin-right: 5px; }
+      div.review-categorization > button::before { margin-right: 5px; }
+      .dark div.review-categorization > button::before { color: white; }
       ${whatIsButtons}
       div.review-categorization > button:last-child::before { margin-left: -14px; }
 
