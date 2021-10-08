@@ -22,7 +22,7 @@
 // GNU General Public License for more details.
 
 // You can find a copy of the GNU General Public License in the root
-// directory of this script's GitHub repository: 
+// directory of this script's GitHub repository:
 // <https://github.com/tehstone/wayfarer-addons/blob/main/LICENSE>
 // If not, see <https://www.gnu.org/licenses/>.
 
@@ -385,6 +385,12 @@ function init() {
       .wayfarerrh__hiddendl {
         display: none;
       }
+
+      .dark .wayfarerrh select,
+      .dark .wayfarerrh option {
+        background: #000;
+      }
+
       `;
     const style = document.createElement('style');
     style.type = 'text/css';
