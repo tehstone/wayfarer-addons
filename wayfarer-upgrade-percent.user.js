@@ -105,7 +105,9 @@ function init() {
     let container = document.createElement("div");
     container.classList.add("flex");
     container.classList.add("flex-row");
-    percentTextDiv = document.createElement("div");
+    if (percentTextDiv === null) {
+      percentTextDiv = document.createElement("div");
+    }
     percentTextDiv.style.margin = "auto";
     percentTextDiv.innerText = `${properties['rewardProgress']}%`;
 
