@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.5.1
+// @version      0.5.2
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
