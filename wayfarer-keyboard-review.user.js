@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.5.2
+// @version      0.5.3
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -210,6 +210,8 @@
           suppress = setRating(3, false);
         } else if (e.keyCode === 13) { // Enter
           trySubmit(false);
+        } else if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
+          suppress = updateRevPosition(-1, true);
         }
       } else if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
         suppress = updateRevPosition(-1, true);
