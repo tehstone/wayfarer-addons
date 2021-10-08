@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.1.0
+// @version      0.1.1
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -109,7 +109,7 @@
 
           .wayfarerrtmr p:nth-child(2) {
               font-size: 20px;
-              color: #FF4713;
+              color: #20B8E3;
           }
         `;
         const style = document.createElement('style');

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.1.0
+// @version      0.1.1
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -90,7 +90,7 @@
 
           .wayfarerrctr p:nth-child(2) {
               font-size: 20px;
-              color: #FF4713;
+              color: #20B8E3;
           }
         `;
         const style = document.createElement('style');

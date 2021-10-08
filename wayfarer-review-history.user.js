@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History
-// @version      0.1.3
+// @version      0.1.4
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js
@@ -389,6 +389,11 @@ function init() {
       .dark .wayfarerrh select,
       .dark .wayfarerrh option {
         background: #000;
+      }
+
+      .dark .wayfarerrh__button {
+        background-color: #404040;
+        color: #20B8E3;
       }
 
       `;
