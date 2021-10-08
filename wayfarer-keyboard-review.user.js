@@ -22,26 +22,25 @@
 // GNU General Public License for more details.
 
 // You can find a copy of the GNU General Public License in the root
-// directory of this script's GitHub repository: 
+// directory of this script's GitHub repository:
 // <https://github.com/tehstone/wayfarer-addons/blob/main/LICENSE>
 // If not, see <https://www.gnu.org/licenses/>.
 
 /* eslint-env es6 */
 /* eslint no-var: "error" */
+/* eslint indent: ['error', 2] */
 
 (function() {
   let tryNumber = 10;
   let ratingElements = [];
   let revPosition = 0;
   let maxRevPosition = 6;
-  let colCode = "20B8E3";
   let rejectDepth = 0;
   let rejectOuterIdx = 0;
   let menuPosition = {};
   let isReject = false;
   let isDuplicate = false;
   let reviewType = 'NEW';
-  //let colCode = "DF471C";
 
   /**
    * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -125,12 +124,12 @@
 
       case 'APP-REVIEW-PHOTO':
         reviewType = 'PHOTO';
-        ref.querySelectorAll('.photo-card').forEach(card => card.setAttribute("style", "border-color: #" + colCode + ";"));
+        ref.querySelectorAll('.photo-card').forEach(card => card.classList.add('kbdActiveElement'));
         document.addEventListener('keydown', keyDownEvent);
         return;
     }
 
-    ratingElements[0].setAttribute("style", "border-color: #" + colCode + ";");
+    ratingElements[0].classList.add('kbdActiveElement');
     ratingElements[0].focus();
     ratingElements[0].scrollIntoView(false);
     document.addEventListener('keydown', keyDownEvent);
@@ -468,7 +467,7 @@
       return;
     }
     let btn = null;
-    if (e.ctrlKey) {      
+    if (e.ctrlKey) {
       btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
     } else {
       btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
@@ -487,7 +486,7 @@
     }
   }
 
-  function cancelReject() {  
+  function cancelReject() {
     const btn = document.querySelector('button[class="wf-button"]');
     if (btn !== null) {
       isReject = false;
@@ -505,7 +504,7 @@
   }
 
   function updateRevPosition(diff, manual) {
-    ratingElements[revPosition].setAttribute("style", "");
+    ratingElements[revPosition].classList.remove('kbdActiveElement');
     revPosition += diff;
     if (revPosition < 0) {
       revPosition = 0;
@@ -514,7 +513,7 @@
       revPosition = maxRevPosition;
     }
 
-    ratingElements[revPosition].setAttribute("style", "border-color: #" + colCode + ";");
+    ratingElements[revPosition].classList.add('kbdActiveElement');
     ratingElements[revPosition].focus();
     ratingElements[revPosition].scrollIntoView(false);
 
@@ -593,6 +592,16 @@
         display: block;
       }
       ${photoOptions}
+
+	  .card.kbdActiveElement {
+		  border-width: 1px;
+	  }
+	  .kbdActiveElement {
+		  border-color: #df471c;
+	  }
+	  .dark .kbdActiveElement {
+		  border-color: #20B8E3;
+	  }
       `;
     const style = document.createElement('style');
     style.type = 'text/css';
