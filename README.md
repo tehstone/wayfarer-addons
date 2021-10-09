@@ -48,6 +48,30 @@ Adds a Streetview panel to the selected nomination, also makes the Nomination Ti
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js)
 Basic stats about nominations. Export in JSON or CSV for all nominations.
 
+# Open In
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js)
+Adds direct links to external map providers wherever maps are displayed in Wayfarer. The following providers are supported globally:
+
+- Google Maps
+- OpenStreetMap
+- Ingress Intel
+- Bing Maps
+- Yandex.Maps
+
+Depending on the location of the wayspot, you may also see some of these map providers, many of which offer very high quality aerial imagery, but only in certain regions:
+
+- Admin.ch (🇨🇭)
+- Find vej (🇩🇰)
+- Gule Sider (🇳🇴 🇸🇪 🇩🇰)
+- Kakao (🇰🇷 🇰🇵)
+- Kommunekart (🇳🇴)
+- Mappy (🇫🇷 🇵🇲 🇧🇱 🇸🇽 🇲🇫 🇬🇵 🇲🇶 🇬🇫 🇾🇹 🇷🇪 🇼🇫)
+- Mapy.cz (🇨🇿 🇸🇰)
+- Naver (🇰🇷 🇰🇵)
+- UT.no (🇳🇴)
+
+These are automatically made available to you in each respective region.
+
 # Review Counter
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
 Adds a counter to the top of the page which increments for each review completed during the current session.
