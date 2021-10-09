@@ -7,6 +7,7 @@ Each plugin will work independtly or along side the rest so users can customize 
 
 # Keyboard Review
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js)
+
 This plugin enables nearly full control of the review page via the keyboard.
 
 - Numbers 1-5 to select a rating for the selected category
@@ -38,18 +39,22 @@ This plugin enables nearly full control of the review page via the keyboard.
 
 # Nomination Map 
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js)
+
 Places a map of all player nominations at the top of the Nominations Page
 
 # Nomination Streetview
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js)
+
 Adds a Streetview panel to the selected nomination, also makes the Nomination Title a link to intel and adds click-to-copy GPS coordinates to the location.
 
 # Nomination Stats
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js)
+
 Basic stats about nominations. Export in JSON or CSV for all nominations.
 
 # Open In
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js)
+
 Adds direct links to external map providers wherever maps are displayed in Wayfarer. The following providers are supported globally:
 
 - Google Maps
@@ -74,14 +79,17 @@ These are automatically made available to you in each respective region.
 
 # Review Counter
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
+
 Adds a counter to the top of the page which increments for each review completed during the current session.
 
 # Review Timer
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js)
+
 Adds a timer to the top of the page indicating the time remaining to review the current nomination.
 
 # Upgrade Percentage
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-upgrade-percent.user.js)
+
 Adds a percentage next to the user icon for current upgrade progress. Click on the number to refresh it (use with care, this creates abnormal requests to the Wayfarer site that may appear suspicious to Niantic).
 
 # Legal Stuff
