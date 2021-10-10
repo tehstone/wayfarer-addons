@@ -65,15 +65,25 @@ Adds direct links to external map providers wherever maps are displayed in Wayfa
 
 Depending on the location of the wayspot, you may also see some of these map providers, many of which offer very high quality aerial imagery, but only in certain regions:
 
-- Admin.ch (🇨🇭)
-- Find vej (🇩🇰)
-- Gule Sider (🇳🇴 🇸🇪 🇩🇰)
-- Kakao (🇰🇷 🇰🇵)
-- Kommunekart (🇳🇴)
-- Mappy (🇫🇷 🇵🇲 🇧🇱 🇸🇽 🇲🇫 🇬🇵 🇲🇶 🇬🇫 🇾🇹 🇷🇪 🇼🇫)
-- Mapy.cz (🇨🇿 🇸🇰)
-- Naver (🇰🇷 🇰🇵)
-- UT.no (🇳🇴)
+- 🇧🇱 **Saint Barthélemy:** Mappy
+- 🇨🇭 **Switzerland:** Admin.ch
+- 🇨🇿 **Czech Republic:** Mapy.cz
+- 🇩🇰 **Denmark:** Find vej, Gule Sider
+- 🇫🇷 **France:** Mappy
+- 🇬🇫 **French Guiana:** Mappy
+- 🇬🇵 **Guadeloupe:** Mappy
+- 🇰🇵 **North Korea:** Kakao, Naver
+- 🇰🇷 **South Korea:** Kakao, Naver
+- 🇲🇫 **Saint Martin:** Mappy
+- 🇲🇶 **Martinique:** Mappy
+- 🇳🇴 **Norway:** Gule Sider, Kommunekart, Norge i bilder, Norgeskart, UT.no
+- 🇵🇲 **Saint Pierre and Miquelon:** Mappy
+- 🇷🇪 **Réunion:** Mappy
+- 🇸🇪 **Sweden:** Gule Sider
+- 🇸🇰 **Slovakia:** Mapy.cz
+- 🇸🇽 **Sint Maarten:** Mappy
+- 🇼🇫 **Wallis and Futuna:** Mappy
+- 🇾🇹 **Mayotte:** Mappy
 
 These are automatically made available to you in each respective region.
 
