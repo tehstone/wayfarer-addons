@@ -6,6 +6,7 @@
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
 // @match        https://wayfarer.nianticlabs.com/*
+// @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.min.js
 // ==/UserScript==
 
 // Copyright 2021 tehstone
@@ -102,6 +103,20 @@
         },
         {
             // Norway
+            label: 'Norgeskart',
+            url: 'https://www.norgeskart.no/#!?project=norgeskart&layers=1003&zoom=17&lat=%lat%&lon=%lng%&markerLat=%lat%&markerLon=%lng%',
+            projection: 'EPSG:5973',
+            regions: ['NO']
+        },
+        {
+            // Norway
+            label: 'Norge i bilder',
+            url: 'https://www.norgeibilder.no/?x=%lng%&y=%lat%&level=17&utm=32',
+            projection: 'EPSG:5972',
+            regions: ['NO']
+        },
+        {
+            // Norway
             label: 'UT.no',
             url: 'https://ut.no/kart#17/%lat%/%lng%',
             regions: ['NO']
@@ -121,7 +136,8 @@
         {
             // Switzerland
             label: 'Admin.ch',
-            url: 'https://map.geo.admin.ch/?lang=en&topic=ech&bgLayer=ch.swisstopo.swissimage&layers=ch.swisstopo.zeitreihen,ch.bfs.gebaeude_wohnungs_register,ch.bav.haltestellen-oev,ch.swisstopo.swisstlm3d-wanderwege,ch.astra.wanderland-sperrungen_umleitungen&layers_opacity=1,1,1,0.8,0.8&layers_visibility=false,false,false,false,false&layers_timestamp=18641231,,,,&lat=%lat%&lng=%lng%&zoom=5.094477143558609',
+            url: 'https://map.geo.admin.ch/?lang=en&topic=ech&bgLayer=ch.swisstopo.swissimage&layers=ch.swisstopo.zeitreihen,ch.bfs.gebaeude_wohnungs_register,ch.bav.haltestellen-oev,ch.swisstopo.swisstlm3d-wanderwege,ch.astra.wanderland-sperrungen_umleitungen&layers_opacity=1,1,1,0.8,0.8&layers_visibility=false,false,false,false,false&layers_timestamp=18641231,,,,&E=%lng%&N=%lat%&zoom=17',
+            projection: 'EPSG:2056',
             regions: ['CH']
         },
         {
@@ -149,6 +165,13 @@
             regions: ['CZ', 'SK']
         }
     ];
+
+    (() => {
+        // Define projections
+        proj4.defs("EPSG:2056","+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs");
+        proj4.defs("EPSG:5972","+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +vunits=m +no_defs");
+        proj4.defs("EPSG:5973","+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +vunits=m +no_defs");
+    })();
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -284,7 +307,11 @@
             const linkSpan = document.createElement('span');
             linkSpan.classList.add('wayfareropenin__linkspan');
             const link = document.createElement('a');
-            link.href = e.url.split('%lat%').join(lat).split('%lng%').join(lng).split('%title%').join(title);
+            let nLat = lat, nLng = lng;
+            if (e.projection) {
+                [ nLng, nLat ] = proj4(e.projection, [ nLng, nLat ]);
+            }
+            link.href = e.url.split('%lat%').join(nLat).split('%lng%').join(nLng).split('%title%').join(title);
             link.target = 'wayfareropenin';
             link.textContent = e.label;
             linkSpan.appendChild(link);
