@@ -77,6 +77,7 @@ Depending on the location of the wayspot, you may also see some of these map pro
 - 🇲🇫 **Saint Martin:** Mappy
 - 🇲🇶 **Martinique:** Mappy
 - 🇳🇴 **Norway:** Gule Sider, Kommunekart, Norge i bilder, Norgeskart, UT.no
+- 🇵🇱 **Poland:** Geoportal
 - 🇵🇲 **Saint Pierre and Miquelon:** Mappy
 - 🇷🇪 **Réunion:** Mappy
 - 🇸🇪 **Sweden:** Gule Sider
