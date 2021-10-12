@@ -65,28 +65,41 @@ Adds direct links to external map providers wherever maps are displayed in Wayfa
 - Bing Maps
 - Yandex.Maps
 
-Depending on the location of the wayspot, you may also see some of these map providers, many of which offer very high quality aerial imagery, but only in certain regions:
+In addition to these providers, the plugin adds support for 29 regional map providers across 28 countries. Depending on the location of the wayspot, you may also see some of these map providers, many of which offer very high quality features such as high-resolution aerial imagery, property boundaries or street view:
 
+<details>
+    <summary>List of regional map providers</summary>
+
+- 🇦🇺 **Australia:** NSW Imagery (NSW only)
+- 🇦🇽 **Åland Islands:** Maanmittauslaitos, Paikkatietoikkuna
+- 🇧🇪 **Belgium:** NGI/IGN
 - 🇧🇱 **Saint Barthélemy:** Mappy
 - 🇨🇭 **Switzerland:** Admin.ch
 - 🇨🇿 **Czech Republic:** Mapy.cz
-- 🇩🇰 **Denmark:** Find vej, Gule Sider
+- 🇩🇰 **Denmark:** Find vej, Krak, SDFE Skråfoto
+- 🇫🇮 **Finland:** Maanmittauslaitos, Paikkatietoikkuna
+- 🇫🇴 **Faroe Islands:** Flogmyndir, Føroyakort
 - 🇫🇷 **France:** Mappy
 - 🇬🇫 **French Guiana:** Mappy
 - 🇬🇵 **Guadeloupe:** Mappy
+- 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
 - 🇰🇵 **North Korea:** Kakao, Naver
 - 🇰🇷 **South Korea:** Kakao, Naver
 - 🇲🇫 **Saint Martin:** Mappy
 - 🇲🇶 **Martinique:** Mappy
+- 🇳🇱 **Netherlands:** Kaarten van Nederland, Map5 NLTopo
 - 🇳🇴 **Norway:** Gule Sider, Kommunekart, Norge i bilder, Norgeskart, UT.no
 - 🇵🇱 **Poland:** Geoportal
 - 🇵🇲 **Saint Pierre and Miquelon:** Mappy
 - 🇷🇪 **Réunion:** Mappy
-- 🇸🇪 **Sweden:** Gule Sider
+- 🇸🇪 **Sweden:** Eniro, Lantmäteriet
+- 🇸🇯 **Svalbard and Jan Mayen:** TopoSvalbard (Svalbard only)
 - 🇸🇰 **Slovakia:** Mapy.cz
 - 🇸🇽 **Sint Maarten:** Mappy
 - 🇼🇫 **Wallis and Futuna:** Mappy
 - 🇾🇹 **Mayotte:** Mappy
+
+</details>
 
 These are automatically made available to you in each respective region.
 
