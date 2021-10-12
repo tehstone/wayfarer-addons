@@ -1,7 +1,9 @@
 # wayfarer-addons
 
 This is a collection of plugins with the Wayfarer Review website which augment the experience in various ways. 
-Each plugin will work independtly or along side the rest so users can customize their Wayfarer experience.
+Each plugin will work independently or along side the rest so users can customize their Wayfarer experience.
+
+For feedback, help, or any other conversation about these scripts please join the [Wayfarer Discussion Discord](https://discord.gg/DvDCRXcvxG) -> #tools-chat channel. 
 
 [Tampermonkey](https://tampermonkey.net/) is required in order to install these plugins, then each can be installed via the link below.
 
