@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.3.0
+// @version      0.3.2
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -104,6 +104,7 @@
         timer = setInterval(() => {
             if (!counter.closest('html')) {
                 clearInterval(timer);
+                console.log('clearing timer interval');
                 return;
             } else {
                 updateTime(counter, expiry);
@@ -273,7 +274,7 @@
                 smartSubmitButton.classList.add("wf-button");
                 smartSubmitButton.classList.add("wf-button--disabled");
                 smartSubmitButton.disabled = true;
-                smartSubmitButton.style.margin = "6px 12px 6px 24px;"
+                smartSubmitButton.style.marginLeft = "1.5rem";
                 smartSubmitButton.id = `wayfarerrtssbutton_${i}`;
                 smartSubmitButton.innerHTML = "Smart Submit";
                 smartSubmitButton.onclick = function() {
@@ -288,9 +289,12 @@
                                         }, true);
 
         const ratingElementParts = document.getElementsByClassName("wf-review-card");
-        ratingElementParts[0].getElementsByClassName("wf-rate__star")[0].onclick = function() {
-            setTimeout(addButtonToRejectDialog, 500);
-        };
+        const rejectStar = ratingElementParts[0].getElementsByClassName("wf-rate__star")[0];
+        if (rejectStar !== null && rejectStar !== undefined) {
+            rejectStar.onclick = function() {
+                setTimeout(addButtonToRejectDialog, 500);
+            };
+        }
 
         checkTimer = setInterval(() => {
             const buttonWrapper = document.getElementsByTagName("wf-split-button");
@@ -322,7 +326,7 @@
                 smartButton = document.createElement("button");
                 smartButton.classList.add("wf-button");
                 smartButton.classList.add("wf-button--primary");
-                smartButton.style.margin = "6px 12px 6px 24px;"
+                smartButton.style.marginLeft = "1.5rem";
                 smartButton.id = `wayfarerrtssbutton_d`;
                 smartButton.innerHTML = "Smart Submit";
                 smartButton.onclick = function() {
@@ -345,7 +349,7 @@
             smartSubmitButton.classList.add("wf-button");
             smartSubmitButton.classList.add("wf-button--disabled");
             smartSubmitButton.disabled = true;
-            smartSubmitButton.style.margin = "6px 12px 6px 24px;"
+            smartSubmitButton.style.marginLeft = "1.5rem";
             smartSubmitButton.id = `wayfarerrtssbutton_r`;
             smartSubmitButton.innerHTML = "Smart Submit";
             smartSubmitButton.onclick = function() {
@@ -387,7 +391,7 @@
         }
 
         let delay = randomIntFromInterval(parseInt(minDelay), parseInt(maxDelay));
-        console.log(`minDelay of ${minDelay}, maxDelay of ${maxDelay}, diff of ${diff}, delay of ${delay}`);
+        //console.log(`minDelay of ${minDelay}, maxDelay of ${maxDelay}, diff of ${diff}, delay of ${delay}`);
         if (diff + delay > 1200) {
             updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)} seconds`, `${Math.abs(1200 - delay - diff)}`);
         }
@@ -401,7 +405,6 @@
             btn.click();
         } else {
             updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)} seconds`, `${Math.abs(1200 - delay - diff)}`);
-            console.log("too soon");
             setTimeout(function() {
                 waitToSubmit(delay);
             }, 1000);
