@@ -94,7 +94,6 @@ In addition to these providers, the plugin adds support for 29 regional map prov
 - 🇬🇫 **French Guiana:** Mappy
 - 🇬🇵 **Guadeloupe:** Mappy
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
-- 🇰🇵 **North Korea:** Kakao, Naver
 - 🇰🇷 **South Korea:** Kakao, Naver
 - 🇲🇫 **Saint Martin:** Mappy
 - 🇲🇶 **Martinique:** Mappy
