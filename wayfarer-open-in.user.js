@@ -520,7 +520,7 @@
             linkSpan.appendChild(link);
             if (e.regions) {
                 Object.keys(membership).forEach(region => {
-                    if (e.regions.includes(region)) {
+                    if (membership[region] && e.regions.includes(region)) {
                         regionBoxes[getFlag(region)].appendChild(linkSpan);
                     }
                 });
