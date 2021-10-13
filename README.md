@@ -23,6 +23,7 @@ This plugin enables nearly full control of the review page via the keyboard.
 - "Q" to open the main photo
 - "E" to open the supporting photo
 - "R" & "F" to zoom in and out of the map
+- If the Location Accuracy rating is focused, "Escape" will exit street view
 - Number keys to select Edit options
 - Letter keys to select photo options
 
