@@ -30,7 +30,9 @@ This plugin enables nearly full control of the review page via the keyboard.
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js)
 
 Adds a timer to the top of the page indicating the time remaining to review the current nomination.
+
 Adds a Smart Submit button that will wait to submit the nomination until a certain amount of time has elapsed. The minimum and maximum wait times are configurable and a random value between the min and max will be selected each time the button is pressed. The nomination will be submitted once that amount of time has elapsed on the timer.
+
 Smart Submit button can be disabled if desired, a toggle for the button as well as the min and max delays mentioned previously are all found within a new settings panel at the bottom of the review page.
 
 # Extended Stats
