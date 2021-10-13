@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.5.4
+// @version      0.6.0
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -178,7 +178,13 @@
       }
     } else if (reviewType == 'PHOTO') {
       if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
-        suppress = selectPhoto(e.keyCode - 65);
+        if (e.shiftKey) {
+          enlargePhoto(e.keyCode - 65);
+        } else if (e.altKey) {
+          flagPhoto(e.keyCode - 65);
+        } else {
+          suppress = selectPhoto(e.keyCode - 65);
+        }
       } else if (e.keyCode == 9) { // Tab
         suppress = selectAllPhotosOK();
       } else if (e.keyCode === 13) { // Enter
@@ -294,11 +300,27 @@
     return true;
   }
 
+  function enlargePhoto(option) {
+    const photo = document.querySelectorAll('app-review-photo app-photo-card .photo-card__action')[option];
+    if (photo) photo.click();
+    return true;
+  }
+
+  function flagPhoto(option) {
+    const photo = document.querySelectorAll('app-review-photo app-photo-card .mat-menu-trigger')[option];
+    if (photo) photo.click();
+    return true;
+  }
+
   function selectAllPhotosOK() {
     const photo = document.querySelector('app-review-photo app-accept-all-photos-card .photo-card');
     if (photo) photo.click();
     return true;
   }
+
+  "#mat-menu-panel-0 > div > button:nth-child(1)"
+  "#mat-menu-panel-0 > div > button:nth-child(2)"
+  "#mat-menu-panel-0 > div > button:nth-child(3)"
 
   function resetState() {
     tryNumber = 10;
@@ -373,10 +395,21 @@
     } else {
       btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
     }
-    if (btn !== null) {
-      isDuplicate = false;
-      btn.click();
-      setTimeout(submitToMenu, 250);
+    let smartButton = document.getElementById("wayfarerrtssbutton_d");
+    if (smartButton === null || smartButton === undefined) {
+      let btn = null;
+      if (e.ctrlKey) {
+        btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
+      } else {
+        btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+      }
+      if (btn !== null) {
+        isDuplicate = false;
+        btn.click();
+        setTimeout(submitToMenu, 250);
+      }
+    } else {
+      smartButton.click();
     }
   }
 
@@ -412,6 +445,8 @@
           menuPosition[i]["children"][j]["element"] = childSelections[j];
         }
       }
+      const event = new Event('rejectionDialogOpened');
+      first.dispatchEvent(event);
     }
   }
 
@@ -470,16 +505,21 @@
     if (e.shiftKey) {
       return;
     }
-    let btn = null;
-    if (e.ctrlKey) {
-      btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
+    let smartButton = document.getElementById("wayfarerrtssbutton_r");
+    if (smartButton === null || smartButton === undefined) {
+      let btn = null;
+      if (e.ctrlKey) {
+        btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
+      } else {
+        btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+      }
+      if (btn !== null) {
+        isReject = false;
+        btn.click();
+        setTimeout(submitToMenu, 250);
+      }
     } else {
-      btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
-    }
-    if (btn !== null) {
-      isReject = false;
-      btn.click();
-      setTimeout(submitToMenu, 250);
+      smartButton.click();
     }
   }
 
@@ -503,7 +543,6 @@
     const dropdown = card.querySelector('ng-dropdown-panel');
     const option = dropdown.querySelector(`#${dropdown.id}-${idx}`);
     if (option) option.click();
-    //document.activeElement.blur();
     return true;
   }
 
@@ -540,7 +579,7 @@
   }
 
   function trySubmit(finish) {
-    const smartButton = document.querySelector('[aria-label="Smart Submit"]');
+    let smartButton = document.getElementById("wayfarerrtssbutton_0");
     if (smartButton === null || smartButton === undefined) {
       const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
       const buttonParts = submitWrapper[0].getElementsByTagName("button");
@@ -550,7 +589,7 @@
         buttonParts[0].click();
       }
     } else {
-      smartButton.firstElementChild.click();
+      smartButton.click();
     }
   }
 
