@@ -14,6 +14,7 @@ This plugin enables nearly full control of the review page via the keyboard.
 
 - Numbers 1-5 to select a rating for the selected category
 - Left & Right arrows to navigate between categories
+- Enter key to submit the nomination (will select the Smart Submit option of the Review Timer script is installed).
 - Numbers within Rejection Dialog to navigate the reject reason menu
 - Backspace within Rejection Dialog to navigate back a level in the reject reason menu
 - When the text box in the Rejection Dialog is focused, Shift+Enter will add a newline, Enter will submit the nomination
@@ -24,6 +25,13 @@ This plugin enables nearly full control of the review page via the keyboard.
 - "R" & "F" to zoom in and out of the map
 - Number keys to select Edit options
 - Letter keys to select photo options
+
+# Review Timer with Smart Submit
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js)
+
+Adds a timer to the top of the page indicating the time remaining to review the current nomination.
+Adds a Smart Submit button that will wait to submit the nomination until a certain amount of time has elapsed. The minimum and maximum wait times are configurable and a random value between the min and max will be selected each time the button is pressed. The nomination will be submitted once that amount of time has elapsed on the timer.
+Smart Submit button can be disabled if desired, a toggle for the button as well as the min and max delays mentioned previously are all found within a new settings panel at the bottom of the review page.
 
 # Extended Stats
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js)
@@ -107,11 +115,6 @@ These are automatically made available to you in each respective region.
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
 
 Adds a counter to the top of the page which increments for each review completed during the current session.
-
-# Review Timer
-[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js)
-
-Adds a timer to the top of the page indicating the time remaining to review the current nomination.
 
 # Upgrade Percentage
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-upgrade-percent.user.js)
