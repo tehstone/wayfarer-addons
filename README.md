@@ -92,7 +92,7 @@ In addition to these providers, the plugin adds support for 29 regional map prov
 - 🇫🇴 **Faroe Islands:** Flogmyndir, Føroyakort
 - 🇫🇷 **France:** Mappy
 - 🇬🇫 **French Guiana:** Mappy
-- 🇩🇪 **Germany:** BayernAtlas (Bavaria only), FIS-Broker (Berlin only), GAIA-MV (Mecklenburg-Vorpommern only), ORKa.MV (Mecklenburg-Vorpommern only), GeoBasisViewer RLP (Rhineland-Palatinate only)
+- 🇩🇪 **Germany:** BayernAtlas (Bavaria only), FIS-Broker (Berlin only), GeobasisdatenViewer Niedersachsen (Lower Saxony only), GAIA-MV (Mecklenburg-Vorpommern only), ORKa.MV (Mecklenburg-Vorpommern only), GeoBasisViewer RLP (Rhineland-Palatinate only)
 - 🇬🇵 **Guadeloupe:** Mappy
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
 - 🇰🇷 **South Korea:** Kakao, Naver
