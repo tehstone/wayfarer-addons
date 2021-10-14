@@ -136,6 +136,19 @@
             regions: ['BE']
         },
         {
+            // Switzerland
+            label: 'Admin.ch',
+            url: 'https://map.geo.admin.ch/?lang=en&topic=ech&bgLayer=ch.swisstopo.swissimage&layers=ch.swisstopo.zeitreihen,ch.bfs.gebaeude_wohnungs_register,ch.bav.haltestellen-oev,ch.swisstopo.swisstlm3d-wanderwege,ch.astra.wanderland-sperrungen_umleitungen&layers_opacity=1,1,1,0.8,0.8&layers_visibility=false,false,false,false,false&layers_timestamp=18641231,,,,&E=%lng%&N=%lat%&zoom=17',
+            projection: 'EPSG:2056',
+            regions: ['CH']
+        },
+        {
+            // Czech Republic and Slovakia
+            label: 'Mapy.cz',
+            url: 'https://en.mapy.cz/zakladni?x=%lng%&y=%lat%&z=18&base=ophoto',
+            regions: ['CZ', 'SK']
+        },
+        {
             // Germany (Bavaria)
             label: 'BayernAtlas',
             url: 'https://geoportal.bayern.de/bayernatlas/?lang=de&topic=ba&bgLayer=atkis&catalogNodes=11&E=%lng%&N=%lat%&zoom=14&layers=luftbild,luftbild_parz,tk_by&layers_visibility=true,false,false&crosshair=marker',
@@ -172,6 +185,38 @@
             regions: ['DE_RLP']
         },
         {
+            // Denmark
+            label: 'SDFE Skråfoto',
+            url: 'https://skraafoto.kortforsyningen.dk/oblivisionjsoff/index.aspx?project=Denmark&lon=%lng%&lat=%lat%',
+            regions: ['DK']
+        },
+        {
+            // Denmark
+            label: 'Krak',
+            url: 'https://map.krak.dk/?c=%lat%,%lng%&z=18&l=aerial&g=%lat%,%lng%',
+            regions: ['DK']
+        },
+        {
+            // Denmark
+            label: 'Find vej',
+            url: 'https://findvej.dk/%lat%,%lng%',
+            regions: ['DK']
+        },
+        {
+            // Finland
+            label: 'Maanmittauslaitos',
+            url: 'https://asiointi.maanmittauslaitos.fi/karttapaikka/?lang=fi&share=customMarker&n=%lat%&e=%lng%&title=%title%&desc=%desc%&zoom=13&layers=%5B%7B%22id%22:4,%22opacity%22:35%7D,%7B%22id%22:3,%22opacity%22:100%7D%5D',
+            projection: 'EPSG:5048',
+            regions: ['FI', 'AX']
+        },
+        {
+            // Finland
+            label: 'Paikkatietoikkuna',
+            url: 'https://kartta.paikkatietoikkuna.fi/?zoomLevel=13&coord=%lng%_%lat%&mapLayers=24+100+default&markers=2|1|ff4712|%lng%_%lat%|%title%&noSavedState=true&showIntro=false',
+            projection: 'EPSG:5048',
+            regions: ['FI', 'AX']
+        },
+        {
             // Faroe Islands
             label: 'Føroyakort',
             url: 'https://kort.foroyakort.fo/kort/?center=%lng%,%lat%&zoom=13',
@@ -182,6 +227,51 @@
             label: 'Flogmyndir',
             url: 'https://umhvorvi.maps.arcgis.com/apps/webappviewer/index.html?id=4c79f18f83c045e181ac87858cb11641&center=%lng%,%lat%&zoom=13',
             regions: ['FO']
+        },
+        {
+            // France with overseas territories
+            label: 'Mappy',
+            url: 'https://fr.mappy.com/plan#/%lat%,%lng%',
+            regions: ['FR', 'PM', 'BL', 'SX', 'MF', 'GP', 'MQ', 'GF', 'YT', 'RE', 'WF']
+        },
+        {
+            // Iceland - street view
+            label: 'Já.is Götusýn',
+            url: 'https://ja.is/kort/?x=%lng%&y=%lat%&nz=17.00&type=aerial&ja360=1',
+            projection: 'EPSG:3057',
+            regions: ['IS']
+        },
+        {
+            // Iceland
+            label: 'Map.is',
+            url: 'https://map.is/base/@%lng%,%lat%,z10,2',
+            projection: 'EPSG:3057',
+            regions: ['IS'],
+        },
+        {
+            // Iceland
+            label: 'Landupplýsingagátt LMÍ',
+            url: 'https://kort.lmi.is/?zoomLevel=15&coord=%lng%_%lat%&mapLayers=396+100+&markers=2|1|ff4712|%lng%_%lat%|%title%&noSavedState=true&showIntro=false',
+            projection: 'EPSG:3857',
+            regions: ['IS'],
+        },
+        {
+            // Iceland
+            label: 'Samsýn',
+            url: 'https://kort.samsyn.is/gagnavefsja/?center=%lng%,%lat%&level=11',
+            regions: ['IS']
+        },
+        {
+            // South Korea
+            label: 'Kakao',
+            url: 'https://map.kakao.com/?map_type_skyview&map_hybrid=true&q=%lat%%2C%lng%',
+            regions: ['KR']
+        },
+        {
+            // South Korea
+            label: 'Naver',
+            url: 'http://map.naver.com/?menu=location&lat=%lat%&lng=%lng%&dLevel=14&title=%title%',
+            regions: ['KR']
         },
         {
             // Liechtenstein
@@ -196,6 +286,20 @@
             url: 'https://map.geoportail.lu/theme/main?version=3&zoom=19&X=%lng%&Y=%lat%&lang=fr&rotation=0&layers=&opacities=&bgLayer=streets_jpeg&crosshair=true',
             projection: 'EPSG:3857',
             regions: ['LU']
+        },
+        {
+            // Netherlands
+            label: 'Kaarten van Nederland',
+            url: 'https://www.kaartenvannederland.nl/#?geometry.x=%lng%&geometry.y=%lat%&zoomlevel=14',
+            projection: 'EPSG:28992',
+            regions: ['NL']
+        },
+        {
+            // Netherlands
+            label: 'Map5 NLTopo',
+            url: 'https://app.map5.nl/nltopo/#rd/openlufo/14/%lng%/%lat%',
+            projection: 'EPSG:28992',
+            regions: ['NL']
         },
         {
             // Norway
@@ -230,6 +334,13 @@
             regions: ['NO']
         },
         {
+            // Poland
+            label: 'Geoportal',
+            url: 'https://mapy.geoportal.gov.pl/mobile/?bbox=%lng%,%lat%,%lng%,%lat%#composition=ortofoto',
+            projection: 'EPSG:2180',
+            regions: ['PL']
+        },
+        {
             // Sweden
             label: 'Lantmäteriet',
             url: 'https://minkarta.lantmateriet.se/?e=%lng%&n=%lat%&z=14&profile=fastighetskarta&background=1&boundaries=true',
@@ -241,117 +352,6 @@
             label: 'Eniro',
             url: 'https://kartor.eniro.se/?c=%lat%,%lng%&z=18&l=aerial&g=%lat%,%lng%',
             regions: ['SE']
-        },
-        {
-            // Denmark
-            label: 'SDFE Skråfoto',
-            url: 'https://skraafoto.kortforsyningen.dk/oblivisionjsoff/index.aspx?project=Denmark&lon=%lng%&lat=%lat%',
-            regions: ['DK']
-        },
-        {
-            // Denmark
-            label: 'Krak',
-            url: 'https://map.krak.dk/?c=%lat%,%lng%&z=18&l=aerial&g=%lat%,%lng%',
-            regions: ['DK']
-        },
-        {
-            // Denmark
-            label: 'Find vej',
-            url: 'https://findvej.dk/%lat%,%lng%',
-            regions: ['DK']
-        },
-        {
-            // Finland
-            label: 'Maanmittauslaitos',
-            url: 'https://asiointi.maanmittauslaitos.fi/karttapaikka/?lang=fi&share=customMarker&n=%lat%&e=%lng%&title=%title%&desc=%desc%&zoom=13&layers=%5B%7B%22id%22:4,%22opacity%22:35%7D,%7B%22id%22:3,%22opacity%22:100%7D%5D',
-            projection: 'EPSG:5048',
-            regions: ['FI', 'AX']
-        },
-        {
-            // Finland
-            label: 'Paikkatietoikkuna',
-            url: 'https://kartta.paikkatietoikkuna.fi/?zoomLevel=13&coord=%lng%_%lat%&mapLayers=24+100+default&markers=2|1|ff4712|%lng%_%lat%|%title%&noSavedState=true&showIntro=false',
-            projection: 'EPSG:5048',
-            regions: ['FI', 'AX']
-        },
-        {
-            // Iceland - street view
-            label: 'Já.is Götusýn',
-            url: 'https://ja.is/kort/?x=%lng%&y=%lat%&nz=17.00&type=aerial&ja360=1',
-            projection: 'EPSG:3057',
-            regions: ['IS']
-        },
-        {
-            // Iceland
-            label: 'Map.is',
-            url: 'https://map.is/base/@%lng%,%lat%,z10,2',
-            projection: 'EPSG:3057',
-            regions: ['IS'],
-        },
-        {
-            // Iceland
-            label: 'Landupplýsingagátt LMÍ',
-            url: 'https://kort.lmi.is/?zoomLevel=15&coord=%lng%_%lat%&mapLayers=396+100+&markers=2|1|ff4712|%lng%_%lat%|%title%&noSavedState=true&showIntro=false',
-            projection: 'EPSG:3857',
-            regions: ['IS'],
-        },
-        {
-            // Iceland
-            label: 'Samsýn',
-            url: 'https://kort.samsyn.is/gagnavefsja/?center=%lng%,%lat%&level=11',
-            regions: ['IS']
-        },
-        {
-            // Netherlands
-            label: 'Kaarten van Nederland',
-            url: 'https://www.kaartenvannederland.nl/#?geometry.x=%lng%&geometry.y=%lat%&zoomlevel=14',
-            projection: 'EPSG:28992',
-            regions: ['NL']
-        },
-        {
-            // Netherlands
-            label: 'Map5 NLTopo',
-            url: 'https://app.map5.nl/nltopo/#rd/openlufo/14/%lng%/%lat%',
-            projection: 'EPSG:28992',
-            regions: ['NL']
-        },
-        {
-            // Switzerland
-            label: 'Admin.ch',
-            url: 'https://map.geo.admin.ch/?lang=en&topic=ech&bgLayer=ch.swisstopo.swissimage&layers=ch.swisstopo.zeitreihen,ch.bfs.gebaeude_wohnungs_register,ch.bav.haltestellen-oev,ch.swisstopo.swisstlm3d-wanderwege,ch.astra.wanderland-sperrungen_umleitungen&layers_opacity=1,1,1,0.8,0.8&layers_visibility=false,false,false,false,false&layers_timestamp=18641231,,,,&E=%lng%&N=%lat%&zoom=17',
-            projection: 'EPSG:2056',
-            regions: ['CH']
-        },
-        {
-            // Poland
-            label: 'Geoportal',
-            url: 'https://mapy.geoportal.gov.pl/mobile/?bbox=%lng%,%lat%,%lng%,%lat%#composition=ortofoto',
-            projection: 'EPSG:2180',
-            regions: ['PL']
-        },
-        {
-            // France with overseas territories
-            label: 'Mappy',
-            url: 'https://fr.mappy.com/plan#/%lat%,%lng%',
-            regions: ['FR', 'PM', 'BL', 'SX', 'MF', 'GP', 'MQ', 'GF', 'YT', 'RE', 'WF']
-        },
-        {
-            // South Korea
-            label: 'Kakao',
-            url: 'https://map.kakao.com/?map_type_skyview&map_hybrid=true&q=%lat%%2C%lng%',
-            regions: ['KR']
-        },
-        {
-            // South Korea
-            label: 'Naver',
-            url: 'http://map.naver.com/?menu=location&lat=%lat%&lng=%lng%&dLevel=14&title=%title%',
-            regions: ['KR']
-        },
-        {
-            // Czech Republic and Slovakia
-            label: 'Mapy.cz',
-            url: 'https://en.mapy.cz/zakladni?x=%lng%&y=%lat%&z=18&base=ophoto',
-            regions: ['CZ', 'SK']
         },
         {
             // Svalbard
