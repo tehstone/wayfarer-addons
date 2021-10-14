@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.3.2
+// @version      0.3.3
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -80,7 +80,7 @@
           document.querySelector('app-should-be-wayspot') ||
           document.querySelector('app-review-edit') ||
           document.querySelector('app-review-photo');
-        
+
         if (!ref) {
             setTimeout(function() {
                 initTimer(container, expiry);
@@ -260,6 +260,7 @@
 
         const buttons = document.getElementsByTagName("wf-split-button");
         for(let i=0; i < buttons.length;i++) {
+            buttons[i].style.display = "none";
             let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_${i}`);
 
             if (!smartSubmitEnabled) {
@@ -274,7 +275,6 @@
                 smartSubmitButton.classList.add("wf-button");
                 smartSubmitButton.classList.add("wf-button--disabled");
                 smartSubmitButton.disabled = true;
-                smartSubmitButton.style.marginLeft = "1.5rem";
                 smartSubmitButton.id = `wayfarerrtssbutton_${i}`;
                 smartSubmitButton.innerHTML = "Smart Submit";
                 smartSubmitButton.onclick = function() {
@@ -284,9 +284,7 @@
             insertAfter(smartSubmitButton, buttons[i].parentNode);
         }
 
-        document.body.addEventListener('rejectionDialogOpened', function () {
-                                            addButtonToRejectDialog();
-                                        }, true);
+        document.body.addEventListener('rejectionDialogOpened', addButtonToRejectDialog, true);
 
         const ratingElementParts = document.getElementsByClassName("wf-review-card");
         const rejectStar = ratingElementParts[0].getElementsByClassName("wf-rate__star")[0];
@@ -296,23 +294,7 @@
             };
         }
 
-        checkTimer = setInterval(() => {
-            const buttonWrapper = document.getElementsByTagName("wf-split-button");
-            if (buttonWrapper.length < 1) {
-                return;
-            }
-            const buttons = buttonWrapper[0].getElementsByTagName("button");
-            if (!buttons[0].disabled) {
-                for(let i=0; i < buttonWrapper.length;i++) {
-                    let smartButton = document.getElementById(`wayfarerrtssbutton_${i}`);
-                    smartButton.disabled = false;
-                    smartButton.classList.remove("wf-button--disabled");
-                    smartButton.classList.add("wf-button--primary");
-                }
-                clearInterval(checkTimer);
-                return;
-            }
-        }, 500);
+        addSubmitButtonObserver();
 
         dupeModalCheckTimer = setInterval(() => {
             const dupeModal = document.getElementsByTagName("app-confirm-duplicate-modal");
@@ -335,6 +317,31 @@
                 insertAfter(smartButton, buttons[buttons.length-1]);
             }
         }, 500);
+    }
+
+    function addSubmitButtonObserver() {
+        const buttonWrapper = document.getElementsByTagName("wf-split-button");
+        if (buttonWrapper.length < 1) {
+            setTimeout(addSmartSubmitButton, 250);
+        }
+
+        const button = buttonWrapper[0].querySelector("button");
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type == 'attributes' && mutation.attributeName == 'disabled') {
+                    for(let i=0; i < buttonWrapper.length;i++) {
+                        let smartButton = document.getElementById(`wayfarerrtssbutton_${i}`);
+                        smartButton.disabled = button.disabled;
+                        smartButton.classList.toggle('wf-button--disabled', button.disabled);
+                        smartButton.classList.toggle('wf-button--primary', !button.disabled);
+                    }
+                }
+            });
+        });
+
+        observer.observe(button, {
+            attributes: true
+        });
     }
 
     function addButtonToRejectDialog() {
@@ -437,7 +444,7 @@
         counterLabel.style.fontWeight = "bold";
     }
 
-    function randomIntFromInterval(min, max) { 
+    function randomIntFromInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
