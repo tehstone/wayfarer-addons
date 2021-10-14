@@ -80,7 +80,7 @@
           document.querySelector('app-should-be-wayspot') ||
           document.querySelector('app-review-edit') ||
           document.querySelector('app-review-photo');
-        
+
         if (!ref) {
             setTimeout(function() {
                 initTimer(container, expiry);
@@ -284,9 +284,7 @@
             insertAfter(smartSubmitButton, buttons[i].parentNode);
         }
 
-        document.body.addEventListener('rejectionDialogOpened', function () {
-                                            addButtonToRejectDialog();
-                                        }, true);
+        document.body.addEventListener('rejectionDialogOpened', addButtonToRejectDialog, true);
 
         const ratingElementParts = document.getElementsByClassName("wf-review-card");
         const rejectStar = ratingElementParts[0].getElementsByClassName("wf-rate__star")[0];
@@ -301,17 +299,26 @@
             if (buttonWrapper.length < 1) {
                 return;
             }
-            const buttons = buttonWrapper[0].getElementsByTagName("button");
-            if (!buttons[0].disabled) {
-                for(let i=0; i < buttonWrapper.length;i++) {
-                    let smartButton = document.getElementById(`wayfarerrtssbutton_${i}`);
-                    smartButton.disabled = false;
-                    smartButton.classList.remove("wf-button--disabled");
-                    smartButton.classList.add("wf-button--primary");
-                }
-                clearInterval(checkTimer);
-                return;
-            }
+            clearInterval(checkTimer);
+            const button = buttonWrapper[0].querySelector("button");
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+	                if (mutation.type == 'attributes' && mutation.attributeName == 'disabled') {
+    	                for(let i=0; i < buttonWrapper.length;i++) {
+        	                let smartButton = document.getElementById(`wayfarerrtssbutton_${i}`);
+            	            smartButton.disabled = button.disabled;
+                	        smartButton.classList.toggle('wf-button--disabled', button.disabled);
+                        	smartButton.classList.toggle('wf-button--primary', !button.disabled);
+                    	}
+                	}
+            	});
+            });
+
+            observer.observe(button, {
+                attributes: true
+            });
+
         }, 500);
 
         dupeModalCheckTimer = setInterval(() => {
@@ -437,7 +444,7 @@
         counterLabel.style.fontWeight = "bold";
     }
 
-    function randomIntFromInterval(min, max) { 
+    function randomIntFromInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
