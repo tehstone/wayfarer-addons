@@ -272,7 +272,6 @@
 
         const buttons = document.getElementsByTagName("wf-split-button");
         for(let i=0; i < buttons.length;i++) {
-            buttons[i].style.display = "none";
             let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_${i}`);
 
             if (!smartSubmitEnabled) {
@@ -284,23 +283,21 @@
 
             if (smartSubmitButton === null) {
                 smartSubmitButton = document.createElement("button");
-                smartSubmitButton.classList.add("wf-button");
-                smartSubmitButton.classList.add("wf-button--disabled");
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled';
                 smartSubmitButton.disabled = true;
                 smartSubmitButton.id = `wayfarerrtssbutton_${i}`;
                 smartSubmitButton.innerHTML = "Smart Submit";
-                smartSubmitButton.onclick = function() {
-                    checkSubmitReview();
-                }
+                smartSubmitButton.onclick = checkSubmitReview;
             }
-            insertAfter(smartSubmitButton, buttons[i].parentNode);
+			const submitButton = buttons[i].firstElementChild;
+			insertAfter(smartSubmitButton, submitButton);
+			submitButton.style.display = 'none';
         }
 
         document.body.addEventListener('rejectionDialogOpened', addButtonToRejectDialog, true);
 
-        const ratingElementParts = document.getElementsByClassName("wf-review-card");
-        const rejectStar = ratingElementParts[0].getElementsByClassName("wf-rate__star")[0];
-        if (rejectStar !== null && rejectStar !== undefined) {
+        const rejectStar = document.querySelector('.wf-review-card .wf-rate__star');
+        if (rejectStar) {
             rejectStar.onclick = function() {
                 setTimeout(addButtonToRejectDialog, 500);
             };
@@ -337,7 +334,7 @@
             setTimeout(addSmartSubmitButton, 250);
         }
 
-        const button = buttonWrapper[0].querySelector("button");
+        const button = buttonWrapper[0].querySelector('button.wf-button--primary');
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type == 'attributes' && mutation.attributeName == 'disabled') {
@@ -352,7 +349,8 @@
         });
 
         observer.observe(button, {
-            attributes: true
+            attributes: true,
+			attributeFilter: ['disabled']
         });
     }
 
@@ -584,7 +582,7 @@
               }
 
             .wrap-collabsible {
-                margin-bottom: 1.2rem;
+                margin: 1.2rem auto;
             }
 
             #collapsible,
