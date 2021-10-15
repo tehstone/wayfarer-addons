@@ -113,7 +113,7 @@ function init() {
           .insertAdjacentHTML('afterBegin', '<div class="alert alert-danger"><strong><span class="glyphicon glyphicon-remove"></span> Wayfarer Review History initialization failed, refresh page</strong></div>');
         return;
       }
-      setTimeout(addTranslateButton, 1000);
+      setTimeout(addRHButtons, 1000);
       tryNumber--;
       return;
     }
