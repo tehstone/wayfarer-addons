@@ -33,7 +33,9 @@ function init() {
     let tryNumber = 10;
     let candidate;
     let map;
+    let mapCtx;
     let overlay;
+    let closeCircle;
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -95,11 +97,46 @@ function init() {
             return;
         }
         const gmap = document.querySelector('app-location-accuracy nia-map');
-        const mapCtx = gmap.__ngContext__.at(-1);
+        mapCtx = gmap.__ngContext__.at(-1);
         map = mapCtx.componentRef.map;
+        map.setZoom(17);
         
         addS2Overlay(map, 17, "#FF0000");
+        locationChangeBtnListener();
+    }
 
+    function locationChangeBtnListener() {
+        const markerone = mapCtx.markers.default.markers[0];
+        const locationChangeBtn = document.querySelector("#location-accuracy-card > div.wf-review-card__body > div > div.mt-2.flex.justify-between.pb-1.space-x-4 > div:nth-child(2) > button");
+        if (locationChangeBtn) {
+            drawCloseCircle();
+            locationChangeBtn.addEventListener('click', function() {
+                addListenerToMarker(true)}, true);
+        } else {
+            setTimeout(locationChangeBtnListener, 250);
+            return;
+        }
+    }
+
+    function addListenerToMarker(firstTime) {
+        if (firstTime) {
+            setTimeout(function() {addListenerToMarker(false)}, 500);
+        }
+        if (mapCtx.markers.suggested) {
+            const _markerOnDrag = mapCtx.markers.suggested.markerOnDrag;
+            mapCtx.markers.suggested.markerOnDrag = function(t) {
+                if (t) {
+                    if (t.lat) {
+                        drawCloseCircleAtCoords(t['lat'], t['lng']);
+                    }
+                }
+                _markerOnDrag();
+            };
+            //marker.addEventListener('mouseup', drawCloseCircle);
+        } else {
+            setTimeout(function() {addListenerToMarker(false)}, 250);
+                return;
+        }
     }
 
     class S2Overlay{
@@ -209,6 +246,41 @@ function init() {
 
         map.addListener('idle', () => {
             overlay.updateGrid(map, gridLevel, color);
+        });
+    }
+
+    function drawCloseCircle() {
+        if (closeCircle) {
+            closeCircle.setMap(null)
+        }
+        const {lat, lng} = candidate;
+        const latLng = new google.maps.LatLng(lat, lng);
+        closeCircle = new google.maps.Circle({
+            map: map,
+            center: latLng,
+            radius: 20,
+            strokeColor: 'red',
+            fillColor: 'red',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillOpacity: 0.2
+        });
+    }
+
+    function drawCloseCircleAtCoords(lat, lng) {
+        if (closeCircle) {
+            closeCircle.setMap(null)
+        }
+        const latLng = new google.maps.LatLng(lat, lng);
+        closeCircle = new google.maps.Circle({
+            map: map,
+            center: latLng,
+            radius: 20,
+            strokeColor: 'red',
+            fillColor: 'red',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillOpacity: 0.2
         });
     }
 
