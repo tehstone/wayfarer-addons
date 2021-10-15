@@ -155,7 +155,7 @@
         if (smartSubmitEnabled === undefined || smartSubmitEnabled === null || smartSubmitEnabled === ""){
             smartSubmitEnabled = false;
         }
-        smartSubmitEnabledInput.checked = smartSubmitEnabled;
+        smartSubmitEnabledInput.checked = smartSubmitEnabled === "true";
         smartSubmitEnabledInput.addEventListener('change', function () {
             smartSubmitEnabled = this.checked;
             localStorage["wfrt_smart_submit_enabled_" + userId] = smartSubmitEnabled;
@@ -172,9 +172,12 @@
         minDelayInput.setAttribute("type", "number");
         minDelayInput.setAttribute("size", '2');
         let minDelay = localStorage["wfrt_min_delay_" + userId];
-        if (minDelay === undefined || minDelay === null || minDelay === "" || minDelay === "false"){
+        if (minDelay === undefined || minDelay === null || minDelay === "false"){
             minDelay = 20;
             localStorage["wfrt_min_delay_" + userId] = minDelay;
+        }
+        if (minDelay === "") {
+            minDelay = 0;
         }
         minDelayInput.value = minDelay;
         minDelayInput.addEventListener('change', function () {
@@ -193,9 +196,12 @@
         maxDelayInput.setAttribute("type", "number");
         maxDelayInput.setAttribute("size", '2');
         let maxDelay = localStorage["wfrt_max_delay_" + userId];
-        if (maxDelay === undefined || maxDelay === null || maxDelay === "" || maxDelay === "false"){
+        if (maxDelay === undefined || maxDelay === null || maxDelay === "false"){
             maxDelay = 30;
             localStorage["wfrt_max_delay_" + userId] = maxDelay;
+        }
+        if (maxDelay === "") {
+            maxDelay = 0;
         }
         maxDelayInput.value = maxDelay;
         maxDelayInput.addEventListener('change', function () {
@@ -256,6 +262,12 @@
         let smartSubmitEnabled = localStorage["wfrt_smart_submit_enabled_" + userId];
         if (smartSubmitEnabled === undefined || smartSubmitEnabled === null || smartSubmitEnabled === ""){
             smartSubmitEnabled = false;
+        } else {
+            smartSubmitEnabled = smartSubmitEnabled === "true";
+        }
+
+        if (smartSubmitEnabled !== true) {
+            return;
         }
 
         const buttons = document.getElementsByTagName("wf-split-button");
