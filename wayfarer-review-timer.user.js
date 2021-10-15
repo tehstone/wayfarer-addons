@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.3.3
+// @version      0.3.4
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -96,7 +96,7 @@
         countLabel.textContent = 'Time remaining: ';
         let counter = document.createElement('p');
         counter.id = "wayfarerrtmr_counter"
-        updateTime(counter, expiry);
+        
         div.appendChild(countLabel);
         div.appendChild(counter);
         container.appendChild(div);
@@ -410,7 +410,7 @@
         let delay = randomIntFromInterval(parseInt(minDelay), parseInt(maxDelay));
         //console.log(`minDelay of ${minDelay}, maxDelay of ${maxDelay}, diff of ${diff}, delay of ${delay}`);
         if (diff + delay > 1200) {
-            updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)} seconds`, `${Math.abs(1200 - delay - diff)}`);
+            updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)}`, `${Math.abs(1200 - delay - diff)}`);
         }
         waitToSubmit(delay);
     }
@@ -421,7 +421,7 @@
             btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
             btn.click();
         } else {
-            updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)} seconds`, `${Math.abs(1200 - delay - diff)}`);
+            updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)}`, `${Math.abs(1200 - delay - diff)}`);
             setTimeout(function() {
                 waitToSubmit(delay);
             }, 1000);
