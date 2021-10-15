@@ -158,6 +158,7 @@
       } else if (isReject && e.keyCode === 27) { // escape
         cancelReject();
       } else if (isReject && e.keyCode === 13) { // 13
+        suppress = true;
         submitReject(e);
       } else if (e.shiftKey && e.keyCode === 8) {
         backReject();
