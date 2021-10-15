@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.3.2
+// @version      0.3.3
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -251,7 +251,7 @@ function init() {
     		const totalparent = document.createElement('div');
     		let totaltext = document.createElement('div');
     		totaltext.innerHTML = "Processed & Agreement";
-    		totaltext.classList.add("wayfarercc_text");
+    		totaltext.classList.add("wayfareres_text");
 
     		let totalcount = document.createElement('div');
     		totalcount.id = "totalcountnumber"
@@ -259,13 +259,13 @@ function init() {
     		allAgreements = getTotalAgreementCount(total, available, progress);
     		const percent = ((allAgreements / finished)*100).toFixed(1);
     		totalcount.innerHTML = allAgreements + " (" + percent + "%)";
-    		totalcount.classList.add("wayfarercc_count");
+    		totalcount.classList.add("wayfareres_count");
 
     		totalparent.appendChild(totaltext);
     		totalparent.appendChild(totalcount);
     		insertAfter(totalparent, parentRef);
     		totalparent.classList.add("profile-stats__stat");
-    		totalparent.classList.add("wayfarercc_parent");
+    		totalparent.classList.add("wayfareres_parent");
     	}
 	}
 
@@ -294,14 +294,11 @@ function init() {
 
 	function getStatsParent() {
 		var els = document.getElementsByClassName("profile-stats__section-title");
-		for (var i = 0; i < els.length; i++) {
-       		const element = els[i];
-       		if (element.innerHTML === "Agreements") {
-       			return element;
-       		}
-       	}
-       	console.log("element not found");
-       	return null;
+		if (els.length > 0) {
+			return els[0];
+		}
+		console.log("Agreements Title element not found");
+		return null;
 	}
 
 	function exportStats() {
@@ -391,18 +388,20 @@ function init() {
 		    	font-size: 16px;
 		    }
 
-		      .wayfarercc_parent {
+		      .wayfareres_parent {
 		      	display: flex;
+		      	justify-content: space-between;
 		      	margin: 16px 0px 0px;
 		      }
 
-		      .wayfarercc_text {
+		      .wayfareres_text {
 		      	font-size: 18px;
 		      }
 
-		      .wayfarercc_count {
+		      .wayfareres_count {
 		      	font-size: 18px;
-		      	margin: 0px 0px 0px 80px;
+		      	display: flex;
+		      	margin: 0px 0px 0px 0px;
 		      }
 
 		      .wayfarercc__visible {
