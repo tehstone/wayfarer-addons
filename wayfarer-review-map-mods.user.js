@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.2.0
+// @version      0.2.1
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -201,7 +201,7 @@ function init() {
         cellColorInput.classList.add('wayfarercc_input');
 
         const cellColorLabel = document.createElement("label");
-        cellColorLabel.innerText = "Review Map Cell Size:";
+        cellColorLabel.innerText = "Review Map Grid Color:";
         cellColorLabel.setAttribute("for", "wayfarermmcellcolorone");
         cellColorLabel.classList.add('wayfareres_settings_label');
 
