@@ -31,11 +31,14 @@
 
 function init() {
     let tryNumber = 10;
+    let settingsTryNumber = 10;
     let candidate;
     let map;
     let mapCtx;
     let overlay;
     let closeCircle;
+    let cellShade;
+    let userId;
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -51,6 +54,7 @@ function init() {
 
     function parseCandidate(e) {
         tryNumber = 10;
+        settingsTryNumber = 10;
         try {
             const response = this.response;
             const json = JSON.parse(response);
@@ -89,6 +93,7 @@ function init() {
             return;
         }
         addMapMods();
+        addSettings();
     }
 
     function addMapMods() {
@@ -100,8 +105,11 @@ function init() {
         mapCtx = gmap.__ngContext__.at(-1);
         map = mapCtx.componentRef.map;
         map.setZoom(17);
-        
-        addS2Overlay(map, 17, "#FF0000");
+
+        const {cellSize, cellColor} = getDrawSettings();
+
+        addS2Overlay(map, cellSize, cellColor);
+        addS2Highlight(map, candidate['lat'], candidate['lng']);
         locationChangeBtnListener();
     }
 
@@ -128,15 +136,96 @@ function init() {
                 if (t) {
                     if (t.lat) {
                         drawCloseCircleAtCoords(t['lat'], t['lng']);
+                        const map = mapCtx.componentRef.map;
+                        addS2Highlight(map, t['lat'], t['lng']);
                     }
                 }
-                _markerOnDrag();
+                _markerOnDrag(t);
             };
-            //marker.addEventListener('mouseup', drawCloseCircle);
         } else {
             setTimeout(function() {addListenerToMarker(false)}, 250);
                 return;
         }
+    }
+
+    function addSettings() {
+        const settingsDiv = document.getElementById("wayfarerrtsettings");
+        if (!settingsDiv) {
+            if (settingsTryNumber === 0) {
+                return;
+            }
+            setTimeout(addSettings, 500);
+            settingsTryNumber--;
+            return;
+        }
+
+        userId = getUserId();
+
+        let cellSizeInput = document.createElement('input');
+        cellSizeInput.setAttribute("type", "number");
+        cellSizeInput.setAttribute("size", '2');
+        let cellSize = localStorage["wfmm_cell_size_one_" + userId];
+        if (cellSize === undefined || cellSize === null || cellSize === "false" || cellSize === ""){
+            cellSize = 17;
+            localStorage["wfmm_cell_size_one_" + userId] = cellSize;
+        }
+        cellSizeInput.value = cellSize;
+        cellSizeInput.addEventListener('change', function () {
+            cellSize = this.value;
+            localStorage["wfmm_cell_size_one_" + userId] = cellSize;
+        });
+        cellSizeInput.id = "wayfarermmcellsizeone";
+        cellSizeInput.classList.add('wayfarercc_input');
+
+        const cellSizeLabel = document.createElement("label");
+        cellSizeLabel.innerText = "Review Map Cell Size:";
+        cellSizeLabel.setAttribute("for", "wayfarermmcellsizeone");
+        cellSizeLabel.classList.add('wayfareres_settings_label');
+
+        let cellColorInput = document.createElement('input');
+        cellColorInput.setAttribute("type", "text");
+        cellColorInput.setAttribute("minlength", '6');
+        cellColorInput.setAttribute("maxlength", '7');
+        cellColorInput.setAttribute("size", '2');
+        let cellColor = localStorage["wfmm_cell_color_one_" + userId];
+        if (cellColor === undefined || cellColor === null || cellColor === "false" || cellColor === ""){
+            cellColor = "#FF0000";
+            localStorage["wfmm_cell_color_one_" + userId] = cellColor;
+        }
+        cellColorInput.value = cellColor;
+        cellColorInput.addEventListener('change', function () {
+            cellColor = this.value;
+            localStorage["wfmm_cell_color_one_" + userId] = cellColor;
+        });
+        cellColorInput.id = "wayfarermmcellcolorone";
+        cellColorInput.classList.add('wayfarercc_input');
+
+        const cellColorLabel = document.createElement("label");
+        cellColorLabel.innerText = "Review Map Cell Size:";
+        cellColorLabel.setAttribute("for", "wayfarermmcellcolorone");
+        cellColorLabel.classList.add('wayfareres_settings_label');
+
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(cellSizeLabel);
+        settingsDiv.appendChild(cellSizeInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(cellColorLabel);
+        settingsDiv.appendChild(cellColorInput);
+        settingsDiv.appendChild(document.createElement('br'));
+    }
+
+    function getUserId() {
+        var els = document.getElementsByTagName("image");
+        for (var i = 0; i < els.length; i++) {
+            const element = els[i];
+            const attribute = element.getAttribute("href");
+            let fields = attribute.split('/');
+            let userId = fields[fields.length-1];
+            fields = userId.split('=');
+            userId = fields[0];
+            return userId;
+        }
+        return "temporary_default_userid";
     }
 
     class S2Overlay{
@@ -282,6 +371,44 @@ function init() {
             strokeWeight: 1,
             fillOpacity: 0.2
         });
+    }
+
+    function addS2Highlight(map, lat, lng){
+        if (cellShade) {
+            cellShade.setMap(null)
+        }
+
+        const {cellSize} = getDrawSettings();
+        let cell = window.S2.S2Cell.FromLatLng({lat: lat, lng: lng}, cellSize);
+
+        let cellCorners = cell.getCornerLatLngs();
+        cellCorners[4] = cellCorners[0]; //Loop it
+
+        cellShade = new google.maps.Polygon({
+            path: cellCorners,
+            geodesic: true,
+            fillColor: '#000',
+            fillOpacity: 0.2,
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            map: map
+        });
+    }
+
+    function getDrawSettings() {
+        userId = getUserId();
+        let cellSize = localStorage["wfmm_cell_size_one_" + userId];
+        if (cellSize === undefined || cellSize === null || cellSize === "false" || cellSize === ""){
+            cellSize = 17;
+            localStorage["wfmm_cell_size_one_" + userId] = cellSize;
+        }
+        let cellColor = localStorage["wfmm_cell_color_one_" + userId];
+        if (cellColor === undefined || cellColor === null || cellColor === "false" || cellColor === ""){
+            cellColor = "#FF0000";
+            localStorage["wfmm_cell_color_one_" + userId] = cellColor;
+        }
+
+        return {"cellSize": cellSize, "cellColor": cellColor};
     }
 
 
