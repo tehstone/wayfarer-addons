@@ -106,6 +106,7 @@ function init() {
             gmap = document.querySelector('app-location-accuracy nia-map');
             mapCtx = gmap.__ngContext__.at(-1);
             map = mapCtx.componentRef.map;
+            addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
             mapCtx = gmap.__ngContext__.at(-1).niaMap;
@@ -129,7 +130,9 @@ function init() {
         if (locationChangeBtn) {
             drawCloseCircle();
             locationChangeBtn.addEventListener('click', function() {
-                addListenerToMarker(true)}, true);
+                drawMoveCircle();
+                addListenerToMarker(true);
+            }, true);
         } else {
             setTimeout(locationChangeBtnListener, 250);
             return;
@@ -155,6 +158,27 @@ function init() {
         } else {
             setTimeout(function() {addListenerToMarker(false)}, 250);
                 return;
+        }
+    }
+
+    function addNearbyTooltips() {
+        const markerDiv = document.querySelector("#location-accuracy-card > div.wf-review-card__body > div > nia-map > div > ng-component > agm-map > div.agm-map-container-inner.sebm-google-map-container-inner > div > div > div:nth-child(2) > div:nth-child(3) > div > div:nth-child(3)");
+        if (!markerDiv) {
+            setTimeout(addNearbyTooltips, 500);
+            return;
+        }
+
+        let markers = markerDiv.children;
+        if (markers.length <=1) {
+            return;
+        }
+        markers = Array.from(markers).filter(m => window.getComputedStyle(m).width === "32px");
+
+        nearby = mapCtx.markers.nearby;
+        if (nearby.markers && nearby.markers.length > 0) {
+            for (let i = 0; i < nearby.markers.length; i++) {
+                markers[i].title = nearby.markers[i]['infoWindowComponentData']['title']
+            }
         }
     }
 
@@ -348,6 +372,21 @@ function init() {
         });
     }
 
+    function drawMoveCircle() {
+        const {lat, lng} = candidate;
+        const latLng = new google.maps.LatLng(lat, lng);
+        new google.maps.Circle({
+            map: map,
+            center: latLng,
+            radius: 3,
+            strokeColor: 'red',
+            fillColor: 'red',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillOpacity: 0.2
+        });
+    }
+
     function drawCloseCircle() {
         if (closeCircle) {
             closeCircle.setMap(null)
@@ -358,8 +397,8 @@ function init() {
             map: map,
             center: latLng,
             radius: 20,
-            strokeColor: 'red',
-            fillColor: 'red',
+            strokeColor: 'blue',
+            fillColor: 'blue',
             strokeOpacity: 0.8,
             strokeWeight: 1,
             fillOpacity: 0.2
@@ -375,8 +414,8 @@ function init() {
             map: map,
             center: latLng,
             radius: 20,
-            strokeColor: 'red',
-            fillColor: 'red',
+            strokeColor: 'blue',
+            fillColor: 'blue',
             strokeOpacity: 0.8,
             strokeWeight: 1,
             fillOpacity: 0.2
