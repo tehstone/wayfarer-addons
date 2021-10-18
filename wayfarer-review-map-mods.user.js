@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.2.1
+// @version      0.2.2
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -101,9 +101,19 @@ function init() {
             setTimeout(addMapMods, 200);
             return;
         }
-        const gmap = document.querySelector('app-location-accuracy nia-map');
-        mapCtx = gmap.__ngContext__.at(-1);
-        map = mapCtx.componentRef.map;
+        let gmap;
+        if (document.querySelector('app-location-accuracy nia-map')) {
+            gmap = document.querySelector('app-location-accuracy nia-map');
+            mapCtx = gmap.__ngContext__.at(-1);
+            map = mapCtx.componentRef.map;
+        } else if (document.querySelector("app-select-location-edit")) {
+            gmap = document.querySelector("app-select-location-edit");
+            mapCtx = gmap.__ngContext__.at(-1).niaMap;
+            map = mapCtx.componentRef.map;
+        }
+        else {
+            return;
+        }
         map.setZoom(17);
 
         const {cellSize, cellColor} = getDrawSettings();
