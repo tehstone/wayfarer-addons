@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.3.0
+// @version      0.4.2
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -106,6 +106,7 @@ function init() {
             gmap = document.querySelector('app-location-accuracy nia-map');
             mapCtx = gmap.__ngContext__.at(-1);
             map = mapCtx.componentRef.map;
+            map.setZoom(17);
             addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
@@ -115,13 +116,13 @@ function init() {
         else {
             return;
         }
-        map.setZoom(17);
+        
+        const {cellSize, cellColor, secondGridEnabled, cellSizeTwo, cellColorTwo} = getDrawSettings();
 
-        const {cellSize, cellColor} = getDrawSettings();
-
-        addS2Overlay(map, cellSize, cellColor);
+        addS2Overlay(map, cellSize, cellColor, secondGridEnabled, cellSizeTwo, cellColorTwo);
         addS2Highlight(map, candidate['lat'], candidate['lng']);
         locationChangeBtnListener();
+        locationResetChangeBtnListener();
     }
 
     function locationChangeBtnListener() {
@@ -136,6 +137,15 @@ function init() {
         } else {
             setTimeout(locationChangeBtnListener, 250);
             return;
+        }
+    }
+
+    function locationResetChangeBtnListener() {
+        let resetButton = document.querySelector("#location-accuracy-card > div.wf-review-card__header > div.pl-2.ng-star-inserted > button");
+        if (resetButton) {
+            resetButton.onclick = function() {
+                map.setZoom(17);
+            }
         }
     }
 
@@ -174,11 +184,56 @@ function init() {
         }
         markers = Array.from(markers).filter(m => window.getComputedStyle(m).width === "32px");
 
+        let closeMarker = false;
+        const nomCoords = [candidate["lat"], candidate["lng"]];
         nearby = mapCtx.markers.nearby;
         if (nearby.markers && nearby.markers.length > 0) {
             for (let i = 0; i < nearby.markers.length; i++) {
                 markers[i].title = nearby.markers[i]['infoWindowComponentData']['title']
+                if (!closeMarker) {
+                    const distance = haversineDistance(nomCoords, [nearby.markers[i]["latitude"], nearby.markers[i]["longitude"]]);
+                    if (distance <= 20) {
+                        closeMarker = true;
+                    }
+                }
             }
+        }
+
+        if (closeMarker) {
+            addDupeCheckWarning();
+        }
+    }
+
+    function haversineDistance(coords1, coords2) {
+        function toRad(x) {
+            return x * Math.PI / 180;
+        }
+
+        let lon1 = coords1[0];
+        let lat1 = coords1[1];
+
+        let lon2 = coords2[0];
+        let lat2 = coords2[1];
+        let R = 6371; // km
+
+        let x1 = lat2 - lat1;
+        let dLat = toRad(x1);
+        let x2 = lon2 - lon1;
+        let dLon = toRad(x2)
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        let d = R * c;
+
+        return d * 1000;
+    }
+
+    function addDupeCheckWarning() {
+        let header = document.querySelector("body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > wf-page-header > div > div:nth-child(1) > p > div");
+        if (header) {
+            header.innerText = "There is at least one waypoint within 20 meters of this nomination, check closely for duplicates!";
+            header.style.color = "red";
         }
     }
 
@@ -239,12 +294,85 @@ function init() {
         cellColorLabel.setAttribute("for", "wayfarermmcellcolorone");
         cellColorLabel.classList.add('wayfareres_settings_label');
 
+        // second grid cell
+        let secondGridEnabledInput = document.createElement('input');
+        secondGridEnabledInput.setAttribute("type", "checkbox");
+        let secondGridEnabled = localStorage["wfmm_second_grid_enabled_" + userId];
+        if (secondGridEnabled === undefined || secondGridEnabled === null || secondGridEnabled === ""){
+            secondGridEnabled = false;
+        }
+        secondGridEnabledInput.checked = secondGridEnabled === "true";
+        secondGridEnabledInput.addEventListener('change', function () {
+            secondGridEnabled = this.checked;
+            localStorage["wfmm_second_grid_enabled_" + userId] = secondGridEnabled;
+        });
+        secondGridEnabledInput.id = "wayfarermmsecondgridenabled";
+        secondGridEnabledInput.classList.add('wayfarercc_input');
+
+        const secondGridEnabledLabel = document.createElement("label");
+        secondGridEnabledLabel.innerText = "Draw Second Grid Cells:";
+        secondGridEnabledLabel.setAttribute("for", "wayfarermmsecondgridenabled");
+        secondGridEnabledLabel.classList.add('wayfareres_settings_label');
+
+        let cellSizeInputTwo = document.createElement('input');
+        cellSizeInputTwo.setAttribute("type", "number");
+        cellSizeInputTwo.setAttribute("size", '2');
+        cellSize = localStorage["wfmm_cell_size_two_" + userId];
+        if (cellSize === undefined || cellSize === null || cellSize === "false" || cellSize === ""){
+            cellSize = 14;
+            localStorage["wfmm_cell_size_two_" + userId] = cellSize;
+        }
+        cellSizeInputTwo.value = cellSize;
+        cellSizeInputTwo.addEventListener('change', function () {
+            cellSize = this.value;
+            localStorage["wfmm_cell_size_two_" + userId] = cellSize;
+        });
+        cellSizeInputTwo.id = "wayfarermmcellsizetwo";
+        cellSizeInputTwo.classList.add('wayfarercc_input');
+
+        const cellSizeLabelTwo = document.createElement("label");
+        cellSizeLabelTwo.innerText = "Review Map 2nd Cell Size:";
+        cellSizeLabelTwo.setAttribute("for", "wayfarermmcellsizetwo");
+        cellSizeLabelTwo.classList.add('wayfareres_settings_label');
+
+        let cellColorInputTwo = document.createElement('input');
+        cellColorInputTwo.setAttribute("type", "text");
+        cellColorInputTwo.setAttribute("minlength", '6');
+        cellColorInputTwo.setAttribute("maxlength", '7');
+        cellColorInputTwo.setAttribute("size", '2');
+        cellColor = localStorage["wfmm_cell_color_two_" + userId];
+        if (cellColor === undefined || cellColor === null || cellColor === "false" || cellColor === ""){
+            cellColor = "#FF0000";
+            localStorage["wfmm_cell_color_two_" + userId] = cellColor;
+        }
+        cellColorInputTwo.value = cellColor;
+        cellColorInputTwo.addEventListener('change', function () {
+            cellColor = this.value;
+            localStorage["wfmm_cell_color_two_" + userId] = cellColor;
+        });
+        cellColorInputTwo.id = "wayfarermmcellcolortwo";
+        cellColorInputTwo.classList.add('wayfarercc_input');
+
+        const cellColorLabelTwo = document.createElement("label");
+        cellColorLabelTwo.innerText = "Review Map 2nd Grid Color:";
+        cellColorLabelTwo.setAttribute("for", "wayfarermmcellcolortwo");
+        cellColorLabelTwo.classList.add('wayfareres_settings_label');
+
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(cellSizeLabel);
         settingsDiv.appendChild(cellSizeInput);
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(cellColorLabel);
         settingsDiv.appendChild(cellColorInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(secondGridEnabledLabel);
+        settingsDiv.appendChild(secondGridEnabledInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(cellSizeLabelTwo);
+        settingsDiv.appendChild(cellSizeInputTwo);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(cellColorLabelTwo);
+        settingsDiv.appendChild(cellColorInputTwo);
         settingsDiv.appendChild(document.createElement('br'));
     }
 
@@ -285,11 +413,15 @@ function init() {
             return new Promise(poll);
         }
 
-        updateGrid(map, gridLevel, col) {
+        updateGrid(map, gridLevel, col, secondGridLevel = null, secondCol = null) {
             this.polyLines.forEach((line) => {
                 line.setMap(null)
             });
-            return this.drawCellGrid(map, gridLevel, col);
+            let ret = this.drawCellGrid(map, gridLevel, col);
+            if (secondGridLevel !== null) {
+                this.drawCellGrid(map, secondGridLevel, secondCol, 2);
+            }
+            return ret;
         }
 
         async drawCellGrid(map, gridLevel, col, thickness = 1) {
@@ -363,13 +495,38 @@ function init() {
         };
     }
 
-    function addS2Overlay(map, gridLevel, color){
+    function addS2Overlay(map, gridLevel, color, secondGridEnabled, gridLevelTwo, colorTwo){
         overlay = new S2Overlay();
-        overlay.drawCellGrid(map, gridLevel, color);
 
-        map.addListener('idle', () => {
-            overlay.updateGrid(map, gridLevel, color);
-        });
+        if (secondGridEnabled) {
+            //To make sure bigger cells are always drawn on top of smaller cells regardless of user config order
+            //If they are equal draw order doesn't matter
+            let smallGridLevel, bigGridLevel, smallColor, bigColor;
+            if (gridLevel > gridLevelTwo) { //eg. L14 cells are bigger than L15 cells
+                smallGridLevel = gridLevel;
+                smallColor = color;
+                bigGridLevel = gridLevelTwo;
+                bigColor = colorTwo;
+            } else {
+                smallGridLevel = gridLevelTwo;
+                smallColor = colorTwo;
+                bigGridLevel = gridLevel;
+                bigColor = color;
+            }
+
+            overlay.drawCellGrid(map, smallGridLevel, smallColor);
+            overlay.drawCellGrid(map, bigGridLevel, bigColor, 2);
+
+            map.addListener('idle', () => {
+                overlay.updateGrid(map, smallGridLevel, smallColor, bigGridLevel, bigColor);
+            });
+        } else {
+            overlay.drawCellGrid(map, gridLevel, color);
+
+            map.addListener('idle', () => {
+                overlay.updateGrid(map, gridLevel, color);
+            });
+        }
     }
 
     function drawMoveCircle() {
@@ -457,7 +614,28 @@ function init() {
             localStorage["wfmm_cell_color_one_" + userId] = cellColor;
         }
 
-        return {"cellSize": cellSize, "cellColor": cellColor};
+        let secondGridEnabled = localStorage["wfmm_second_grid_enabled_" + userId];
+        if (secondGridEnabled === undefined || secondGridEnabled === null || secondGridEnabled === ""){
+            secondGridEnabled = false;
+        } else {
+            secondGridEnabled = secondGridEnabled === "true";
+        }
+        
+        let cellSizeTwo = localStorage["wfmm_cell_size_two_" + userId];
+        if (cellSizeTwo === undefined || cellSizeTwo === null || cellSizeTwo === "false" || cellSizeTwo === ""){
+            cellSizeTwo = 14;
+            localStorage["wfmm_cell_size_two_" + userId] = cellSizeTwo;
+        }
+        let cellColorTwo = localStorage["wfmm_cell_color_two_" + userId];
+        if (cellColorTwo === undefined || cellColorTwo === null || cellColorTwo === "false" || cellColorTwo === ""){
+            cellColorTwo = "#0000FF";
+            localStorage["wfmm_cell_color_two_" + userId] = cellColorTwo;
+        }
+
+        return {
+            "cellSize": cellSize, "cellColor": cellColor, "secondGridEnabled": secondGridEnabled, 
+            "cellSizeTwo": cellSizeTwo, "cellColorTwo": cellColorTwo
+        };
     }
 
 
