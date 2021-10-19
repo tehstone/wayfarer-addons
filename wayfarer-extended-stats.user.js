@@ -257,6 +257,9 @@ function init() {
     		totalcount.id = "totalcountnumber"
     		const {accepted, rejected, duplicated, finished, available, progress, total} = stats;
     		allAgreements = getTotalAgreementCount(total, available, progress);
+    		if (allAgreements === 0 ) {
+    			allAgreements = accepted + rejected + duplicated;
+			}
     		const percent = ((allAgreements / finished)*100).toFixed(1);
     		totalcount.innerHTML = allAgreements + " (" + percent + "%)";
     		totalcount.classList.add("wayfareres_count");
