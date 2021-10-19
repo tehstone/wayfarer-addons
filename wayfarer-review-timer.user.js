@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.3.5
+// @version      0.3.6
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
