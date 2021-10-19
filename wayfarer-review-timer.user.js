@@ -34,7 +34,6 @@
     let expireTime = null;
     let userId = null;
     let submitPopup = null;
-    let timer = null;
     let checkTimer = null;
     let rejectCheckTimer = null;
     let dupeModalCheckTimer = null;
@@ -88,28 +87,29 @@
             return;
         }
 
-        const div = document.createElement('div');
-        div.className = 'wayfarerrtmr';
+        let counter = document.getElementById("wayfarerrtmr_counter");
+        if (!counter) {
+            const div = document.createElement('div');
+            div.className = 'wayfarerrtmr';
 
-        let countLabel = document.createElement('p');
-        countLabel.id = "wayfarerrtmr_counterlabel";
-        countLabel.textContent = 'Time remaining: ';
-        let counter = document.createElement('p');
-        counter.id = "wayfarerrtmr_counter"
-        
-        div.appendChild(countLabel);
-        div.appendChild(counter);
-        container.appendChild(div);
+            let countLabel = document.createElement('p');
+            countLabel.id = "wayfarerrtmr_counterlabel";
+            countLabel.textContent = 'Time remaining: ';
+            counter = document.createElement('p');
+            counter.id = "wayfarerrtmr_counter"
+            counter.classList.add("wftmr_counter");
+            
+            div.appendChild(countLabel);
+            div.appendChild(counter);
+            container.appendChild(div);
 
-        timer = setInterval(() => {
-            if (!counter.closest('html')) {
-                clearInterval(timer);
-                console.log('clearing timer interval');
-                return;
-            } else {
+            let timer = setInterval(() => {
                 updateTime(counter, expiry);
-            }
-        }, 1000);
+            }, 1000);
+
+        } else {
+            counter.style.display = 'block';
+        }
     }
 
     function updateTime(counter, expiry) {
@@ -218,10 +218,10 @@
 
         settingsDiv.appendChild(smartSubmitEnabledLabel);
         settingsDiv.appendChild(smartSubmitEnabledInput);
-        settingsDiv.appendChild(document.createElement('br'))
+        settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(minDelayLabel);
         settingsDiv.appendChild(minDelayInput);
-        settingsDiv.appendChild(document.createElement('br'))
+        settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(maxDelayLabel);
         settingsDiv.appendChild(maxDelayInput);
         settingsDiv.classList.add('wayfarerrh__visible');
@@ -446,9 +446,20 @@
             button.innerHTML = message;
         }
 
-        clearInterval(timer);
-        let counter = document.getElementById("wayfarerrtmr_counter");
-        counter.innerHTML = timeRemaining;
+        let timerText = document.getElementById("wayfarerrtmr_counter");
+        timerText.style.display = 'none';
+
+        let counter = document.getElementById("wayfarerrtmr_subcounter");
+        if (!counter) {
+            counter = document.createElement('p');
+            counter.innerHTML = timeRemaining;
+            counter.id = "wayfarerrtmr_subcounter";
+            counter.classList.add("wftmr_counter");
+            timerText.parentNode.appendChild(counter);
+        } else {
+            counter.innerHTML = timeRemaining;
+        }
+    
         let counterLabel = document.getElementById("wayfarerrtmr_counterlabel");
         counterLabel.textContent = 'Submitting in:';
         counterLabel.style.fontWeight = "bold";
@@ -490,7 +501,7 @@
               color: #ddd;
           }
 
-          .wayfarerrtmr p:nth-child(2) {
+          .wftmr_counter {
               font-size: 20px;
               color: #20B8E3;
           }
