@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.2
+// @version      0.4.3
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -209,11 +209,11 @@ function init() {
             return x * Math.PI / 180;
         }
 
-        let lon1 = coords1[0];
-        let lat1 = coords1[1];
+        let lat1 = coords1[0];
+        let lon1 = coords1[1];
 
-        let lon2 = coords2[0];
-        let lat2 = coords2[1];
+        let lat2 = coords2[0];
+        let lon2 = coords2[1];
         let R = 6371; // km
 
         let x1 = lat2 - lat1;
