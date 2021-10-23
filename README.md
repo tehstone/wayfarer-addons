@@ -81,7 +81,8 @@ In addition to these providers, the plugin adds support for 29 regional map prov
 <details>
     <summary>List of regional map providers</summary>
 
-- 🇦🇺 **Australia:** NSW Imagery (NSW only)
+- 🇦🇺 **Australia:** NSW Imagery
+    - **New South Wales:** NSW Imagery
 - 🇦🇽 **Åland Islands:** Maanmittauslaitos, Paikkatietoikkuna
 - 🇧🇪 **Belgium:** NGI/IGN
 - 🇧🇱 **Saint Barthélemy:** Mappy
@@ -92,7 +93,16 @@ In addition to these providers, the plugin adds support for 29 regional map prov
 - 🇫🇴 **Faroe Islands:** Flogmyndir, Føroyakort
 - 🇫🇷 **France:** Mappy
 - 🇬🇫 **French Guiana:** Mappy
-- 🇩🇪 **Germany:** BayernAtlas (Bavaria only), FIS-Broker (Berlin only), GeoPortal Bremen (Bremen only), Hamburg Geo-Online (Bremen, Hamburg, and Schleswig-Holstein only), Geoportal der Metropolregion Hamburg (Bremen and Hamburg only), GeobasisdatenViewer Niedersachsen (Lower Saxony only), GAIA-MV (Mecklenburg-Western Pomerania only), ORKa.MV (Mecklenburg-Western Pomerania only), GeoBasisViewer RLP (Rhineland-Palatinate only), Thüringen Viewer (Thuringia only)
+- 🇩🇪 **Germany:**
+    - **Bavaria:** BayernAtlas
+    - **Berlin:** FIS-Broker
+    - **Bremen:** GeoPortal Bremen, Geoportal der Metropolregion Hamburg, Hamburg Geo-Online
+    - **Hamburg:** Geoportal der Metropolregion Hamburg, Hamburg Geo-Online
+    - **Lower Saxony:** GeobasisdatenViewer Niedersachsen
+    - **Mecklenburg-Western Pomerania:** GAIA-MV, ORKa.MV
+    - **Rhineland-Palatinate:** GeoBasisViewer RLP
+    - **Schleswig-Holstein:** Hamburg Geo-Online
+    - **Thuringia:** Thüringen Viewer
 - 🇬🇵 **Guadeloupe:** Mappy
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
 - 🇰🇷 **South Korea:** Kakao, Naver
@@ -107,7 +117,8 @@ In addition to these providers, the plugin adds support for 29 regional map prov
 - 🇵🇲 **Saint Pierre and Miquelon:** Mappy
 - 🇷🇪 **Réunion:** Mappy
 - 🇸🇪 **Sweden:** Eniro, Lantmäteriet
-- 🇸🇯 **Svalbard and Jan Mayen:** TopoSvalbard (Svalbard only)
+- 🇸🇯 **Svalbard and Jan Mayen:**
+    - **Svalbard:** TopoSvalbard
 - 🇸🇰 **Slovakia:** Mapy.cz
 - 🇸🇽 **Sint Maarten:** Mappy
 - 🇼🇫 **Wallis and Futuna:** Mappy
