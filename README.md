@@ -76,23 +76,20 @@ Adds direct links to external map providers wherever maps are displayed in Wayfa
 - Bing Maps
 - Yandex.Maps
 
-In addition to these providers, the plugin adds support for 29 regional map providers across 28 countries. Depending on the location of the wayspot, you may also see some of these map providers, many of which offer very high quality features such as high-resolution aerial imagery, property boundaries or street view:
+In addition to these providers, the plugin adds support for 52 regional map providers across 38 countries. Depending on the location of the wayspot, you may also see some of these map providers, many of which offer very high quality features such as high-resolution aerial imagery, property boundaries or street view:
 
 <details>
     <summary>List of regional map providers</summary>
 
 - 🇦🇺 **Australia:** NSW Imagery
     - **New South Wales:** NSW Imagery
+    - **South Australia:** Location SA Viewer
+    - **Western Australia:** Landgate Map Viewer Plus
 - 🇦🇽 **Åland Islands:** Maanmittauslaitos, Paikkatietoikkuna
 - 🇧🇪 **Belgium:** NGI/IGN
 - 🇧🇱 **Saint Barthélemy:** Mappy
 - 🇨🇭 **Switzerland:** Admin.ch
 - 🇨🇿 **Czech Republic:** Mapy.cz
-- 🇩🇰 **Denmark:** Find vej, Krak, SDFE Skråfoto
-- 🇫🇮 **Finland:** Maanmittauslaitos, Paikkatietoikkuna
-- 🇫🇴 **Faroe Islands:** Flogmyndir, Føroyakort
-- 🇫🇷 **France:** Mappy
-- 🇬🇫 **French Guiana:** Mappy
 - 🇩🇪 **Germany:**
     - **Bavaria:** BayernAtlas
     - **Berlin:** FIS-Broker
@@ -101,13 +98,26 @@ In addition to these providers, the plugin adds support for 29 regional map prov
     - **Lower Saxony:** GeobasisdatenViewer Niedersachsen
     - **Mecklenburg-Western Pomerania:** GAIA-MV, ORKa.MV
     - **Rhineland-Palatinate:** GeoBasisViewer RLP
+    - **Saxony-Anhalt:** Sachsen-Anhalt-Viewer
     - **Schleswig-Holstein:** Hamburg Geo-Online
     - **Thuringia:** Thüringen Viewer
+- 🇩🇰 **Denmark:** Find vej, Krak, SDFE Skråfoto
+- 🇪🇦 **Ceuta & Melilla:** Fototeca Digital, Iberpix
+- 🇪🇪 **Estonia:** BalticMaps, Maa-amet Fotoladu, Maainfo
+- 🇪🇸 **Spain:** Fototeca Digital, Iberpix
+- 🇫🇮 **Finland:** Maanmittauslaitos, Paikkatietoikkuna
+- 🇫🇴 **Faroe Islands:** Flogmyndir, Føroyakort
+- 🇫🇷 **France:** Mappy
+- 🇬🇫 **French Guiana:** Mappy
+- 🇬🇮 **Gibraltar:** Fototeca Digital, Iberpix
 - 🇬🇵 **Guadeloupe:** Mappy
+- 🇮🇨 **Canary Islands:** Fototeca Digital, Iberpix
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
 - 🇰🇷 **South Korea:** Kakao, Naver
 - 🇱🇮 **Liechtenstein:** Admin.ch, Geodatenportal der LLV
+- 🇱🇹 **Lithuania:** Geoportal.lt, Maps.lt
 - 🇱🇺 **Luxembourg:** Geoportal Luxembourg
+- 🇱🇻 **Latvia:** BalticMaps, LĢIA Kartes
 - 🇲🇨 **Monaco:** Mappy
 - 🇲🇫 **Saint Martin:** Mappy
 - 🇲🇶 **Martinique:** Mappy
