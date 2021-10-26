@@ -116,6 +116,11 @@ In addition to these providers, the plugin adds support for 29 regional map prov
 
 These are automatically made available to you in each respective region.
 
+# Compact View
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-compact-card.user.js)
+
+Condenses the views and rating cards into smaller cards, reduces fluff and blankspace.
+
 # Review Counter
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
 
