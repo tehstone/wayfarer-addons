@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Compact Card Reviewing
-// @version      0.0.2
+// @version      0.0.3
 // @description  Add compact card reviewing
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-compact-card.user.js
@@ -22,57 +22,75 @@
 // GNU General Public License for more details.
 
 // You can find a copy of the GNU General Public License in the root
-// directory of this script's GitHub repository: 
+// directory of this script's GitHub repository:
 // <https://github.com/tehstone/wayfarer-addons/blob/main/LICENSE>
 // If not, see <https://www.gnu.org/licenses/>.
+
+// Special thanks to HaramDingo for adapting this file.
 
 /* eslint-env es6 */
 /* eslint no-var: "error" */
 
 function init() {
 	let tryNumber = 10;
+    let settingsTryNumber = 10;
 	let nominations;
+    let candidate;
 
-	/**
-	 * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
-	 */
-	(function (open) {
-		XMLHttpRequest.prototype.open = function (method, url) {
-			if (url == '/api/v1/vault/review') {
-				if (method == 'GET') {
-					this.addEventListener('load', checkResponse, false);
-				}
-			}
-			open.apply(this, arguments);
-		};
-	})(XMLHttpRequest.prototype.open);
+    /**
+     * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
+     */
+    (function (open) {
+    XMLHttpRequest.prototype.open = function (method, url) {
+        if (url == '/api/v1/vault/review' && method == 'GET') {
+            this.addEventListener('load', parseCandidate, false);
+        }
+        open.apply(this, arguments);
+        };
+    })(XMLHttpRequest.prototype.open);
 
-	addCss();
+    function parseCandidate(e) {
+        tryNumber = 10;
+        settingsTryNumber = 10;
+        try {
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (!json) {
+                alert('Failed to parse response from Wayfarer');
+                return;
+            }
+            // ignore if it's related to captchas
+            if (json.captcha)
+                return;
 
-	function checkResponse(e) {
-		try {
-			const response = this.response;
-			const json = JSON.parse(response);
-			if (!json) {
-				alert('Failed to parse response from Wayfarer');
-				return;
-			}
-			// ignore if it's related to captchas
-			if (json.captcha)
-				return;
+            candidate = json.result;
+            if (!candidate) {
+                alert('Wayfarer\'s response didn\'t include a candidate.');
+                return;
+            }
+            checkPageType();
 
-			nominations = json.result;
-			if (!nominations) {
-				alert('Wayfarer\'s response didn\'t include nominations.');
-				return;
-			}
-			applyUiMods();
+        } catch (e) {
+            console.log(e); // eslint-disable-line no-console
+        }
+    }
 
-		} catch (e)	{
-			console.log(e); // eslint-disable-line no-console
-		}
+    function checkPageType() {
+        const ref = document.querySelector('app-should-be-wayspot') ||
+                    document.querySelector('app-review-edit')
 
-	}
+        if (!ref) {
+            if (tryNumber === 0) {
+               document.querySelector('body')
+                  .insertAdjacentHTML('afterBegin', '<div class="alert alert-danger"><strong><span class="glyphicon glyphicon-remove"></span> Wayfarer Review History initialization failed, refresh page</strong></div>');
+                return;
+            }
+            setTimeout(checkPageType, 500);
+            tryNumber--;
+            return;
+        }
+        applyUiMods();
+    }
 
 	function applyUiMods() {
 		const ref = document.querySelector('app-should-be-wayspot');
@@ -89,31 +107,38 @@ function init() {
 		}
 
 		const divNames = {
+            main: document.querySelector('app-review-new'),
+            headerTop: document.querySelector('wf-page-header'),
+            sidebar: document.querySelector('app-sidebar'),
 			shouldBePortal: document.querySelector('app-should-be-wayspot'),
-			titleAndDescription: document.querySelector('app-title-and-description'), 
-			duplicates: document.querySelector('app-check-duplicates'), 
-			historicOrCultural: document.querySelector('app-historic-cultural-significance'), 
-			visuallyUnique: document.querySelector('app-visually-unique'), 
-			safeAccess: document.querySelector('app-safe-access'), 
-			location: document.querySelector('app-location-accuracy'), 
-			whatIsIt: document.querySelector('app-review-categorization'), 
+			titleAndDescription: document.querySelector('app-title-and-description'),
+			duplicates: document.querySelector('app-check-duplicates'),
+			historicOrCultural: document.querySelector('app-historic-cultural-significance'),
+			visuallyUnique: document.querySelector('app-visually-unique'),
+			safeAccess: document.querySelector('app-safe-access'),
+			location: document.querySelector('app-location-accuracy'),
+			whatIsIt: document.querySelector('app-review-categorization'),
 			additionalComment: document.querySelector('app-review-comments'),
-			supportingInfo: document.querySelector('app-supporting-info')
+			supportingInfo: document.querySelector('app-supporting-info'),
 		};
 
+        // divNames.headerTop.style.display = "none";
+        divNames.headerTop.children[0].children[0].children[1].style.display = "none";
+        // divNames.additionalComment.style.display = "none";
+        // divNames.sidebar.style.display = "none";
 		divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
 		divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
 
 		var fragment = document.createDocumentFragment();
-		//fragment.appendChild(divNames.titleAndDescription);
-		//fragment.style["flex-direction"] = "column";
-		//fragment.style.display = "flex";
+		// fragment.appendChild(divNames.titleAndDescription);
+		// fragment.style["flex-direction"] = "column";
+		// fragment.style.display = "flex";
 		let outer = document.createElement("div");
 		outer.style.display = "flex";
 		outer.style["flex-direction"] = "column";
 		outer.appendChild(divNames.titleAndDescription);
 		let threeCard = document.createElement("div");
-		threeCard.style.height = "50%";
+		threeCard.style.height = "34%";
 		threeCard.style.display = "flex";
 		threeCard.style["flex-direction"] = "column";
 		outer.appendChild(threeCard);
@@ -121,20 +146,42 @@ function init() {
 		//supportingInfo.parentNode
 		insertAfter(fragment, divNames.shouldBePortal);
 	    //document.querySelector('body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div:nth-child(2) > app-review-new > div > div').appendChild(fragment);
-	    divNames.titleAndDescription.classList.remove("card--expand");
+        // divNames.shouldBePortal.children[0].children[0].children[0].children[0].style.display = "none";
+        // divNames.supportingInfo.children[0].children[0].children[0].children[0].style.display = "none";
+        document.querySelector('app-title-and-description .text-4xl').innerText.fontSize = "12pt";
+
+        // Address changes
+        // document.querySelector('app-should-be-wayspot .wf-image-modal ~ div').innerText.replace('Street', '');
+        // document.querySelector('app-should-be-wayspot .wf-image-modal ~ div').innerText = "Somewhere in Australia";
+        // document.querySelector('app-should-be-wayspot .wf-image-modal ~ div').style.display = "none";
+
+        divNames.main.children[0].children[0].children[1].children[0].style.padding = "0pt";
+        divNames.main.children[0].children[0].children[0].style.height = "50%";
+        divNames.main.children[0].children[0].children[0].children[1].style.height = "69%";
+        divNames.main.children[0].children[0].children[0].children[2].style.maxHeight = "41em";
+        // divNames.main.children[0].children[0].children[0].children[2].style.marginBottom = "-8em";
+
+        divNames.titleAndDescription.classList.remove("card--expand");
 	    divNames.titleAndDescription.style.padding = "0pt";
-	    divNames.titleAndDescription.classList.add("small-card");
-	    divNames.titleAndDescription.style.height = "50%";
+	    // divNames.titleAndDescription.classList.add("small-card");
+	    // divNames.titleAndDescription.style.height = "55%";
 	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].innerText = "Title/Description";
-	    divNames.titleAndDescription.getElementsByClassName('wf-review-card')[0].style.paddingTop = "0pt";
-	    divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
-	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].style.fontSize = "16pt";
+        divNames.titleAndDescription.children[0].children[1].children[0].children[0].children[0].classList.remove("text-4xl");
+        divNames.titleAndDescription.children[0].children[1].children[0].children[0].children[0].classList.add("text-3xl");
+        divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.remove("text-lg");
+        divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.add("text-base");
+        divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
+	    // divNames.titleAndDescription.getElementsByClassName('wf-review-card')[0].style.paddingTop = "12pt";
 	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].style.margin = "0pt";
 	    divNames.titleAndDescription.children[0].children[1].children[0].style.padding = "0pt";
-	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginBottom = "-1em";
-	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginTop = "-0.2em";
-	    divNames.titleAndDescription.children[0].classList.remove("wf-review-card");
-	    
+	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginBottom = "-0.6em";
+	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginTop = "-0.6em";
+        // divNames.titleAndDescription.getElementsByClassName("wf-review-card_footer")[0].style.marginBottom = "0em";
+	    // divNames.titleAndDescription.children[0].classList.remove("wf-review-card");
+        // divNames.titleAndDescription.children[0].children[0].remove();
+        // divNames.shouldBePortal.children[0].children[0].remove();
+        // divNames.supportingInfo.children[0].children[0].remove();
+
 	    const titleHeader = divNames.titleAndDescription.children[0].children[0];
 	    const titleBody = divNames.titleAndDescription.children[0].children[1];
 	    const titleReview = divNames.titleAndDescription.children[0].children[2];
@@ -145,51 +192,79 @@ function init() {
 	    let titleHeadBox = document.createElement("div");
 	    titleHeadBox.style.display = "flex";
 	    titleHeadBox.style["flex-direction"] = "row";
-	    titleHeadBox.style.margin = "5pt";
+	    titleHeadBox.style.margin = "12pt 12pt 12pt 12pt";
 	    titleHeadBox.appendChild(titleHeader);
 	    titleHeadBox.appendChild(titleReview);
 	    divNames.titleAndDescription.children[0].insertBefore(titleHeadBox, titleBody);
-	    //insertAfter(titleBox, divNames.titleAndDescription.children[0].children[2]);
-
-	    divNames.historicOrCultural.classList.add("middle-card");
-	    divNames.visuallyUnique.classList.remove("middle-card");
-	    divNames.safeAccess.classList.add("middle-card");
 
 	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].style.padding = "0pt";
 	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
 	    divNames.historicOrCultural.children[0].children[0].children[0].children[1].style.display = "none";
 	    divNames.historicOrCultural.children[0].children[1].style.display = "none";
-	    divNames.historicOrCultural.children[0].children[0].style.marginBottom = "-20pt";
-	    divNames.historicOrCultural.children[0].children[0].style.minHeight = "-6pt";
-	    divNames.historicOrCultural.style.maxHeight = "3em";
+	    divNames.historicOrCultural.children[0].children[0].style.marginBottom = "-36pt";
+	    divNames.historicOrCultural.children[0].children[0].style.marginTop = "-6pt";
+	    // divNames.historicOrCultural.children[0].children[0].style.minHeight = "-6pt";
+	    divNames.historicOrCultural.children[0].style.maxHeight = "4em";
 	    divNames.visuallyUnique.children[0].children[0].children[0].children[0].style.padding = "0pt";
 	    divNames.visuallyUnique.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
 	    divNames.visuallyUnique.children[0].children[0].children[0].children[1].style.display = "none";
 	    divNames.visuallyUnique.children[0].children[1].style.display = "none";
-	    divNames.visuallyUnique.children[0].children[0].style.marginBottom = "-20pt";
+	    divNames.visuallyUnique.children[0].children[0].style.marginBottom = "-36pt";
 	    divNames.visuallyUnique.children[0].children[0].style.marginTop = "-6pt";
-	    divNames.visuallyUnique.style.maxHeight = "3em";
+	    divNames.visuallyUnique.children[0].style.maxHeight = "4em";
 	    divNames.safeAccess.children[0].children[0].children[0].children[0].style.padding = "0pt";
 	    divNames.safeAccess.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
 	    divNames.safeAccess.children[0].children[0].children[0].children[1].style.display = "none";
 	    divNames.safeAccess.children[0].children[1].style.display = "none";
-	    divNames.safeAccess.children[0].children[0].style.marginBottom = "-20pt";
+	    divNames.safeAccess.children[0].children[0].style.marginBottom = "-36pt";
 	    divNames.safeAccess.children[0].children[0].style.marginTop = "-6pt";
-	    divNames.safeAccess.style.maxHeight = "3em";
+	    divNames.safeAccess.children[0].style.maxHeight = "4em";
+        divNames.location.children[0].children[0].children[0].children[1].style.display = "none";
+        divNames.whatIsIt.children[0].children[0].children[0].children[1].style.display = "none";
 
-	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].innerText = "Historic/Cultural";
+        // flavour text updates
+        // divNames.shouldBePortal.children[0].children[0].children[0].children[0].innerText = "Is This Good Wayspot?";
+	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].innerText = "Significance";
+        divNames.visuallyUnique.children[0].children[0].children[0].children[0].innerText = "Uniqueness";
+        divNames.safeAccess.children[0].children[0].children[0].children[0].innerText = "Accessibility";
+        // divNames.whatIsIt.children[0].children[0].children[0].children[0].innerText = "Category";
+
+        // divNames.titleAndDescription.children[0].style.height = "120%";
+        divNames.titleAndDescription.children[0].style.maxHeight = "20em";
+
+        divNames.historicOrCultural.children[0].style.margin = "6pt 0pt 0pt";
+        divNames.visuallyUnique.children[0].style.margin = "6pt 0pt 6pt";
+
+	    divNames.historicOrCultural.appendChild(divNames.visuallyUnique);
+
+        // divNames.supportingInfo.appendChild(divNames.whatIsIt);
+        divNames.supportingInfo.children[0].style.minHeight = "33.75em";
+        divNames.supportingInfo.children[0].style.maxHeight = "33.75em";
+        divNames.supportingInfo.children[0].children[1].children[0].children[1].classList.add("text-base");
 
 	    threeCard.appendChild(divNames.historicOrCultural);
 	    threeCard.appendChild(divNames.visuallyUnique);
 	    threeCard.appendChild(divNames.safeAccess);
 
-	    divNames.duplicates.classList.remove("card--double-width");
+	    divNames.duplicates.appendChild(divNames.location);
+        // divNames.duplicates.appendChild(divNames.whatIsIt);
+        divNames.duplicates.style["flex-direction"] = "row";
+        // divNames.duplicates.style.flex = "1";
+
+
+	    // divNames.duplicates.classList.remove("card--double-width");
 	    divNames.duplicates.classList.add("card--expand");
-	    divNames.duplicates.style.order = 4;
+	    // divNames.duplicates.style.order = 5;
+        divNames.duplicates.style.display = "flex";
+        divNames.duplicates.children[0].style.minWidth = "49%";
+        divNames.duplicates.children[1].style.margin = "0pt 0pt 0pt 12pt";
 
 	    divNames.location.classList.remove("card--double-width");
 	    divNames.location.classList.add("card--expand");
-	    divNames.location.style.order = 6;
+        // divNames.location.style.display = "flex";
+        // divNames.location.style.flex = "1";
+	    // divNames.location.style.order = 6;
+        divNames.location.style.minWidth = "49%";
 
 	    threeCard.style.order = 2;
 	    divNames.titleAndDescription.style.order = 1;
@@ -197,18 +272,40 @@ function init() {
 	    divNames.visuallyUnique.style.order = 3;
 	    divNames.safeAccess.style.order = 4;
 	    divNames.whatIsIt.style.order = 7;
-	    divNames.whatIsIt.style.minWidth = "40%";
 
-	    divNames.historicOrCultural.children[0].children[0].classList.remove("wf-review-card__header");
-	    divNames.visuallyUnique.children[0].children[0].classList.remove("wf-review-card__header");
-	    divNames.safeAccess.children[0].children[0].classList.remove("wf-review-card__header");		    
-	    divNames.historicOrCultural.children[0].children[2].classList.remove("wf-review-card__footer");
-	    divNames.visuallyUnique.children[0].children[2].classList.remove("wf-review-card__footer");
-	    divNames.safeAccess.children[0].children[2].classList.remove("wf-review-card__footer");
-	    divNames.titleAndDescription.children[0].classList.remove('card');
-	    divNames.historicOrCultural.children[0].classList.remove('card');
-	    divNames.visuallyUnique.children[0].classList.remove('card');
-	    divNames.safeAccess.children[0].classList.remove('card');
+        // divNames.main.children[0].children[0].children[1].children[1].style.display = "none";
+        divNames.main.children[0].children[0].children[1].children[1].remove();
+
+        divNames.whatIsIt.appendChild(divNames.additionalComment);
+        // divNames.duplicates.appendChild(divNames.whatIsIt);
+        divNames.whatIsIt.style["flex-direction"] = "row";
+	    divNames.whatIsIt.classList.remove("card--double-width");
+        divNames.whatIsIt.classList.add("flex-full");
+	    divNames.whatIsIt.classList.add("card--expand");
+	    // divNames.whatIsIt.style.order = 5;
+        divNames.whatIsIt.style.display = "flex";
+        divNames.whatIsIt.children[0].style.minWidth = "49.65%";
+        divNames.whatIsIt.children[1].style.margin = "0pt 0pt 0pt 12pt";
+        divNames.whatIsIt.style.padding = "0pt";
+
+	    divNames.additionalComment.classList.remove("card--double-width");
+	    divNames.additionalComment.classList.add("card--expand");
+        // divNames.additionalComment.style.display = "flex";
+        // divNames.additionalComment.style.flex = "1";
+	    // divNames.additionalComment.style.order = 6;
+        divNames.additionalComment.style.minWidth = "49.1%";
+
+        // Used to remove borders.
+	    // divNames.historicOrCultural.children[0].children[0].classList.remove("wf-review-card__header");
+	    // divNames.visuallyUnique.children[0].children[0].classList.remove("wf-review-card__header");
+	    // divNames.safeAccess.children[0].children[0].classList.remove("wf-review-card__header");
+	    // divNames.historicOrCultural.children[0].children[2].classList.remove("wf-review-card__footer");
+	    // divNames.visuallyUnique.children[0].children[2].classList.remove("wf-review-card__footer");
+	    // divNames.safeAccess.children[0].children[2].classList.remove("wf-review-card__footer");
+	    // divNames.titleAndDescription.children[0].classList.remove('card');
+	    // divNames.historicOrCultural.children[0].classList.remove('card');
+	    // divNames.visuallyUnique.children[0].classList.remove('card');
+	    // divNames.safeAccess.children[0].classList.remove('card');
 	}
 
 	function insertAfter(newNode, referenceNode) {
@@ -278,7 +375,7 @@ function init() {
 			}
 
 			.three-card-parent .small-card{
-			    max-height: 10.08em;    
+			    max-height: 10.08em;
 			}
 
 			/* Open in drop down CSS */
@@ -411,4 +508,3 @@ function init() {
 }
 
 init();
-
