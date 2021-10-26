@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.3.6
+// @version      0.3.7
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -116,7 +116,6 @@
         let diff = Math.ceil((expiry - new Date().getTime()) / 1000);
         if (diff < 0) {
             counter.textContent = "Expired";
-            clearInterval(timer);
             return;
         }
         let minutes = Math.floor(diff / 60);
@@ -311,27 +310,31 @@
                 return;
             }
             const parent = document.getElementsByClassName("mat-dialog-actions");
-            let smartButton = document.getElementById(`wayfarerrtssbutton_d`);
-            if (smartButton === null) {
+            let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_d`);
+            if (smartSubmitButton === null) {
                 const buttons = parent[0].getElementsByTagName('button');
-                smartButton = document.createElement("button");
-                smartButton.classList.add("wf-button");
-                smartButton.classList.add("wf-button--primary");
-                smartButton.style.marginLeft = "1.5rem";
-                smartButton.id = `wayfarerrtssbutton_d`;
-                smartButton.innerHTML = "Smart Submit";
-                smartButton.onclick = function() {
+                smartSubmitButton = document.createElement("button");
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary';
+                smartSubmitButton.style.marginLeft = "1.5rem";
+                smartSubmitButton.id = `wayfarerrtssbutton_d`;
+                smartSubmitButton.innerHTML = "Smart Submit";
+                smartSubmitButton.onclick = function() {
                     checkSubmitReview();
                 }
-                insertAfter(smartButton, buttons[buttons.length-1]);
+                insertAfter(smartSubmitButton, buttons[1]);
+
+                buttons[1].style.display = "none";
             }
+
+            clearInterval(this);
         }, 500);
     }
 
     function addSubmitButtonObserver() {
         const buttonWrapper = document.getElementsByTagName("wf-split-button");
         if (buttonWrapper.length < 1) {
-            setTimeout(addSmartSubmitButton, 250);
+            setTimeout(addSubmitButtonObserver, 250);
+            return;
         }
 
         const button = buttonWrapper[0].querySelector('button.wf-button--primary');
@@ -359,12 +362,11 @@
         if (parent.length < 1) {
             return;
         }
+        const buttons = parent[0].getElementsByTagName('button');
         let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_r`);
         if (smartSubmitButton === null) {
-            const buttons = parent[0].getElementsByTagName('button');
             smartSubmitButton = document.createElement("button");
-            smartSubmitButton.classList.add("wf-button");
-            smartSubmitButton.classList.add("wf-button--disabled");
+            smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled';
             smartSubmitButton.disabled = true;
             smartSubmitButton.style.marginLeft = "1.5rem";
             smartSubmitButton.id = `wayfarerrtssbutton_r`;
@@ -372,26 +374,30 @@
             smartSubmitButton.onclick = function() {
                 checkSubmitReview();
             }
-            insertAfter(smartSubmitButton, buttons[buttons.length-1]);
+            insertAfter(smartSubmitButton, buttons[1]);
+
+            buttons[1].style.display = "none";
         }
 
-        rejectCheckTimer = setInterval(() => {
-            const buttonWrapper = document.getElementsByClassName("mat-dialog-actions");
-            if (buttonWrapper.length < 1) {
-                return;
-            }
-            const buttons = buttonWrapper[0].getElementsByTagName("button");
-            if (!buttons[1].disabled) {
-                for(let i=0; i < buttonWrapper.length;i++) {
+        addRejectButtonObserver(buttons[1]);
+    }
+
+    function addRejectButtonObserver(button) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type == 'attributes' && mutation.attributeName == 'disabled') {
                     let smartButton = document.getElementById(`wayfarerrtssbutton_r`);
-                    smartButton.disabled = false;
-                    smartButton.classList.remove("wf-button--disabled");
-                    smartButton.classList.add("wf-button--primary");
+                    smartButton.disabled = button.disabled;
+                    smartButton.classList.toggle('wf-button--disabled', button.disabled);
+                    smartButton.classList.toggle('wf-button--primary', !button.disabled);
                 }
-                clearInterval(rejectCheckTimer);
-                return;
-            }
-        }, 500);
+            });
+        });
+
+        observer.observe(button, {
+            attributes: true,
+            attributeFilter: ['disabled']
+        });
     }
 
     function checkSubmitReview() {
