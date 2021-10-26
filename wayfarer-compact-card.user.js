@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Compact Card Reviewing
-// @version      0.0.3
+// @version      0.1.0
 // @description  Add compact card reviewing
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-compact-card.user.js
@@ -122,17 +122,11 @@ function init() {
 			supportingInfo: document.querySelector('app-supporting-info'),
 		};
 
-        // divNames.headerTop.style.display = "none";
         divNames.headerTop.children[0].children[0].children[1].style.display = "none";
-        // divNames.additionalComment.style.display = "none";
-        // divNames.sidebar.style.display = "none";
 		divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
 		divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
 
 		var fragment = document.createDocumentFragment();
-		// fragment.appendChild(divNames.titleAndDescription);
-		// fragment.style["flex-direction"] = "column";
-		// fragment.style.display = "flex";
 		let outer = document.createElement("div");
 		outer.style.display = "flex";
 		outer.style["flex-direction"] = "column";
@@ -143,11 +137,7 @@ function init() {
 		threeCard.style["flex-direction"] = "column";
 		outer.appendChild(threeCard);
 		fragment.appendChild(outer);
-		//supportingInfo.parentNode
 		insertAfter(fragment, divNames.shouldBePortal);
-	    //document.querySelector('body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div:nth-child(2) > app-review-new > div > div').appendChild(fragment);
-        // divNames.shouldBePortal.children[0].children[0].children[0].children[0].style.display = "none";
-        // divNames.supportingInfo.children[0].children[0].children[0].children[0].style.display = "none";
         document.querySelector('app-title-and-description .text-4xl').innerText.fontSize = "12pt";
 
         // Address changes
@@ -159,28 +149,21 @@ function init() {
         divNames.main.children[0].children[0].children[0].style.height = "50%";
         divNames.main.children[0].children[0].children[0].children[1].style.height = "69%";
         divNames.main.children[0].children[0].children[0].children[2].style.maxHeight = "41em";
-        // divNames.main.children[0].children[0].children[0].children[2].style.marginBottom = "-8em";
 
         divNames.titleAndDescription.classList.remove("card--expand");
 	    divNames.titleAndDescription.style.padding = "0pt";
-	    // divNames.titleAndDescription.classList.add("small-card");
-	    // divNames.titleAndDescription.style.height = "55%";
+
 	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].innerText = "Title/Description";
         divNames.titleAndDescription.children[0].children[1].children[0].children[0].children[0].classList.remove("text-4xl");
         divNames.titleAndDescription.children[0].children[1].children[0].children[0].children[0].classList.add("text-3xl");
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.remove("text-lg");
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.add("text-base");
         divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
-	    // divNames.titleAndDescription.getElementsByClassName('wf-review-card')[0].style.paddingTop = "12pt";
+
 	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].style.margin = "0pt";
 	    divNames.titleAndDescription.children[0].children[1].children[0].style.padding = "0pt";
 	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginBottom = "-0.6em";
 	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginTop = "-0.6em";
-        // divNames.titleAndDescription.getElementsByClassName("wf-review-card_footer")[0].style.marginBottom = "0em";
-	    // divNames.titleAndDescription.children[0].classList.remove("wf-review-card");
-        // divNames.titleAndDescription.children[0].children[0].remove();
-        // divNames.shouldBePortal.children[0].children[0].remove();
-        // divNames.supportingInfo.children[0].children[0].remove();
 
 	    const titleHeader = divNames.titleAndDescription.children[0].children[0];
 	    const titleBody = divNames.titleAndDescription.children[0].children[1];
@@ -203,7 +186,7 @@ function init() {
 	    divNames.historicOrCultural.children[0].children[1].style.display = "none";
 	    divNames.historicOrCultural.children[0].children[0].style.marginBottom = "-36pt";
 	    divNames.historicOrCultural.children[0].children[0].style.marginTop = "-6pt";
-	    // divNames.historicOrCultural.children[0].children[0].style.minHeight = "-6pt";
+	    
 	    divNames.historicOrCultural.children[0].style.maxHeight = "4em";
 	    divNames.visuallyUnique.children[0].children[0].children[0].children[0].style.padding = "0pt";
 	    divNames.visuallyUnique.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
@@ -223,13 +206,10 @@ function init() {
         divNames.whatIsIt.children[0].children[0].children[0].children[1].style.display = "none";
 
         // flavour text updates
-        // divNames.shouldBePortal.children[0].children[0].children[0].children[0].innerText = "Is This Good Wayspot?";
 	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].innerText = "Significance";
         divNames.visuallyUnique.children[0].children[0].children[0].children[0].innerText = "Uniqueness";
         divNames.safeAccess.children[0].children[0].children[0].children[0].innerText = "Accessibility";
-        // divNames.whatIsIt.children[0].children[0].children[0].children[0].innerText = "Category";
 
-        // divNames.titleAndDescription.children[0].style.height = "120%";
         divNames.titleAndDescription.children[0].style.maxHeight = "20em";
 
         divNames.historicOrCultural.children[0].style.margin = "6pt 0pt 0pt";
@@ -237,7 +217,6 @@ function init() {
 
 	    divNames.historicOrCultural.appendChild(divNames.visuallyUnique);
 
-        // divNames.supportingInfo.appendChild(divNames.whatIsIt);
         divNames.supportingInfo.children[0].style.minHeight = "33.75em";
         divNames.supportingInfo.children[0].style.maxHeight = "33.75em";
         divNames.supportingInfo.children[0].children[1].children[0].children[1].classList.add("text-base");
@@ -247,23 +226,15 @@ function init() {
 	    threeCard.appendChild(divNames.safeAccess);
 
 	    divNames.duplicates.appendChild(divNames.location);
-        // divNames.duplicates.appendChild(divNames.whatIsIt);
         divNames.duplicates.style["flex-direction"] = "row";
-        // divNames.duplicates.style.flex = "1";
 
-
-	    // divNames.duplicates.classList.remove("card--double-width");
 	    divNames.duplicates.classList.add("card--expand");
-	    // divNames.duplicates.style.order = 5;
         divNames.duplicates.style.display = "flex";
         divNames.duplicates.children[0].style.minWidth = "49%";
         divNames.duplicates.children[1].style.margin = "0pt 0pt 0pt 12pt";
 
 	    divNames.location.classList.remove("card--double-width");
 	    divNames.location.classList.add("card--expand");
-        // divNames.location.style.display = "flex";
-        // divNames.location.style.flex = "1";
-	    // divNames.location.style.order = 6;
         divNames.location.style.minWidth = "49%";
 
 	    threeCard.style.order = 2;
@@ -273,16 +244,13 @@ function init() {
 	    divNames.safeAccess.style.order = 4;
 	    divNames.whatIsIt.style.order = 7;
 
-        // divNames.main.children[0].children[0].children[1].children[1].style.display = "none";
         divNames.main.children[0].children[0].children[1].children[1].remove();
 
         divNames.whatIsIt.appendChild(divNames.additionalComment);
-        // divNames.duplicates.appendChild(divNames.whatIsIt);
         divNames.whatIsIt.style["flex-direction"] = "row";
 	    divNames.whatIsIt.classList.remove("card--double-width");
         divNames.whatIsIt.classList.add("flex-full");
 	    divNames.whatIsIt.classList.add("card--expand");
-	    // divNames.whatIsIt.style.order = 5;
         divNames.whatIsIt.style.display = "flex";
         divNames.whatIsIt.children[0].style.minWidth = "49.65%";
         divNames.whatIsIt.children[1].style.margin = "0pt 0pt 0pt 12pt";
@@ -290,220 +258,11 @@ function init() {
 
 	    divNames.additionalComment.classList.remove("card--double-width");
 	    divNames.additionalComment.classList.add("card--expand");
-        // divNames.additionalComment.style.display = "flex";
-        // divNames.additionalComment.style.flex = "1";
-	    // divNames.additionalComment.style.order = 6;
         divNames.additionalComment.style.minWidth = "49.1%";
-
-        // Used to remove borders.
-	    // divNames.historicOrCultural.children[0].children[0].classList.remove("wf-review-card__header");
-	    // divNames.visuallyUnique.children[0].children[0].classList.remove("wf-review-card__header");
-	    // divNames.safeAccess.children[0].children[0].classList.remove("wf-review-card__header");
-	    // divNames.historicOrCultural.children[0].children[2].classList.remove("wf-review-card__footer");
-	    // divNames.visuallyUnique.children[0].children[2].classList.remove("wf-review-card__footer");
-	    // divNames.safeAccess.children[0].children[2].classList.remove("wf-review-card__footer");
-	    // divNames.titleAndDescription.children[0].classList.remove('card');
-	    // divNames.historicOrCultural.children[0].classList.remove('card');
-	    // divNames.visuallyUnique.children[0].classList.remove('card');
-	    // divNames.safeAccess.children[0].classList.remove('card');
 	}
 
 	function insertAfter(newNode, referenceNode) {
 	    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-	}
-
-	function addCss() {
-		const css = `
-			.translateButton{
-			    border: 2pt solid white;
-			    border-radius: 2pt;
-			    width: 17pt;
-			    background-color: white;
-			    display: block;
-			    height: 17pt;
-			    background-size: contain;
-			    background-repeat: no-repeat;
-			    background-position: center;
-			    margin-bottom: 5pt;
-			    box-shadow: 0 0 2px grey;
-			}
-
-			.customMapButton{
-			    display: inline-block;
-			    background: white;
-			    padding: 5pt;
-			    border-radius: 3pt;
-			    position: relative;
-			    margin: 5pt;
-			    color: black;
-			    box-shadow: 2pt 2pt 3pt grey;
-			    transition: box-shadow 0.2s;
-			}
-
-			.customMapButton:hover{
-				background-color: #F0F0F0;
-				color: black;
-			    box-shadow: 1pt 1pt 3pt grey;
-			}
-
-			.five-star-rating{
-			    border: rgba(0,0,0,0) dashed 2pt;
-			}
-
-			html {
-			  scroll-behavior: smooth;
-			}
-
-			.presetBox{
-			    background: white;
-			    border-radius: 0.2em;
-			    padding: 0.3em;
-			}
-
-			.presetButton{
-				margin-left: 1em;
-			    background: white;
-			    border-radius: 0.3em;
-			    border: black solid 1px;
-			}
-
-			.presetAddButton{
-			    border-radius: 0.3em;
-			    border: none;
-			    margin-left: 0.5em;
-			    margin-right: 1em;
-			}
-
-			.three-card-parent .small-card{
-			    max-height: 10.08em;
-			}
-
-			/* Open in drop down CSS */
-			.dropbtn {
-			  background-color: #4CAF50;
-			  color: white;
-			  padding: 16px;
-			  font-size: 16px;
-			  border: none;
-			  cursor: pointer;
-			}
-
-			.mapsDropdown {
-			  float: left;
-			  background-color: white;
-			  border-radius: 5px;
-			  box-shadow: grey 2px 2px 10px;
-			  margin-bottom: .5em;
-			  font-size: 1.1em;
-			  color: black;
-			  padding: .25em;
-			  width: 7em;
-			  text-align: center;
-			}
-
-			.dropdown-content {
-			  display: none;
-			  position: absolute;
-			  /* left: -.25em; */
-			  transform: translateY(-100%);
-			  border-radius: 5px;
-			  background-color: #f9f9f9;
-			  min-width: 160px;
-			  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-			  z-index: 9001;
-			}
-
-			.dropdown-content a {
-			  color: black;
-			  padding: 12px 16px;
-			  text-decoration: none;
-			  display: block;
-			}
-
-			.dropdown-content a:hover {
-			  background-color: #f1f1f1
-			  border-radius: 5px;
-			}
-
-			.mapsDropdown:hover .dropdown-content {
-			  display: block;
-			}
-
-			.mapsDropdown:hover .dropbtn {
-			  background-color: #3e8e41;
-			}
-
-			.error-message__autoretry {
-			  margin-top: 20px;
-			}
-
-			.error-message__autoretry i {
-			  margin-right: 10px;
-			  -webkit-animation: rotating 2s linear infinite;
-			  -moz-animation: rotating 2s linear infinite;
-			  -ms-animation: rotating 2s linear infinite;
-			  -o-animation: rotating 2s linear infinite;
-			  animation: rotating 2s linear infinite;
-			}
-
-			@-webkit-keyframes rotating /* Safari and Chrome */ {
-			  from {
-			    -webkit-transform: rotate(0deg);
-			    -o-transform: rotate(0deg);
-			    transform: rotate(0deg);
-			  }
-			  to {
-			    -webkit-transform: rotate(360deg);
-			    -o-transform: rotate(360deg);
-			    transform: rotate(360deg);
-			  }
-			}
-			@keyframes rotating {
-			  from {
-			    -ms-transform: rotate(0deg);
-			    -moz-transform: rotate(0deg);
-			    -webkit-transform: rotate(0deg);
-			    -o-transform: rotate(0deg);
-			    transform: rotate(0deg);
-			  }
-			  to {
-			    -ms-transform: rotate(360deg);
-			    -moz-transform: rotate(360deg);
-			    -webkit-transform: rotate(360deg);
-			    -o-transform: rotate(360deg);
-			    transform: rotate(360deg);
-			  }
-			}
-
-			#wfpNotify{
-			    position: absolute;
-			    bottom: 1em;
-			    right: 1em;
-			    width: 30em;
-			    z-index: 100;
-			}
-
-			.wfpNotification{
-			    border-radius: 0.5em;
-			    background-color: #3e8e41CC;
-			    padding: 1em;
-			    margin-top: 1.5em;
-			    color: white;
-			}
-
-			.wfpNotifyCloseButton{
-			    float: right;
-			}
-
-			/* Vanilla Dark Mode support */
-			.theme--dark  .presetBox{
-			    color: black;
-			}
-			`;
-		const style = document.createElement('style');
-		style.type = 'text/css';
-		style.innerHTML = css;
-		document.querySelector('head').appendChild(style);
 	}
 }
 
