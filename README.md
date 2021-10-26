@@ -112,6 +112,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇬🇮 **Gibraltar:** Fototeca Digital, Iberpix
 - 🇬🇵 **Guadeloupe:** Mappy
 - 🇮🇨 **Canary Islands:** Fototeca Digital, Iberpix
+- 🇮🇱 **Israel:** Govmap
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
 - 🇰🇷 **South Korea:** Kakao, Naver
 - 🇱🇮 **Liechtenstein:** Admin.ch, Geodatenportal der LLV
@@ -125,6 +126,8 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇳🇴 **Norway:** Gule Sider, Kommunekart, Norge i bilder, Norgeskart, UT.no
 - 🇵🇱 **Poland:** Geoportal
 - 🇵🇲 **Saint Pierre and Miquelon:** Mappy
+- 🇵🇸 **Palestinian Territories:**
+    - **West Bank:** Govmap
 - 🇷🇪 **Réunion:** Mappy
 - 🇸🇪 **Sweden:** Eniro, Lantmäteriet
 - 🇸🇯 **Svalbard and Jan Mayen:**
