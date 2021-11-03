@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.3.4
+// @version      0.3.5
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -82,7 +82,7 @@ function init() {
 	}
 
 	function addSettings() {
-		const ref = document.querySelector('app-rating-bar');
+		const ref = document.querySelector('wf-rating-bar');
 
 		if (!ref) {
 			if (tryNumber === 0) {
@@ -213,8 +213,8 @@ function init() {
 	}
 
 	function addCopyLink() {
-		const ref = document.querySelector('app-rating-bar');
-		var els = document.getElementsByClassName("profile-stats__section-title")
+		const ref = document.querySelector('wf-rating-bar');
+		var els = document.getElementsByClassName("wf-profile-stats__section-title")
 
 		if (!ref || els.length === 0) {
 			if (tryNumber === 0) {
@@ -296,7 +296,7 @@ function init() {
 	}
 
 	function getStatsParent() {
-		var els = document.getElementsByClassName("profile-stats__section-title");
+		var els = document.getElementsByClassName("wf-profile-stats__section-title");
 		if (els.length > 0) {
 			return els[0];
 		}
