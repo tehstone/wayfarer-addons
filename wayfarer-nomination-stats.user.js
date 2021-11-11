@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.3.1
+// @version      0.3.2
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -98,6 +98,7 @@ function init() {
         let inQueueUpgradeCount = 0;
 	    let dupeCount = 0;
 	    let withdrawnCount = 0;
+	    let niaReviewCount = 0;
 
 	    for(var i = 0; i < nomCount; i++){
 			switch (nominations[i].status){
@@ -123,8 +124,11 @@ function init() {
 	            case "WITHDRAWN":
 	                withdrawnCount++;
 	                break;
+	            case "NIANTIC_REVIEW":
+	            	niaReviewCount++;
+	            	break;
 	            default:
-	                console.log("[WayFarer+] Encountered unknown status: " + nomCtrl.nomList[i].status);
+	                console.log("[WayFarer+] Encountered unknown status: " + nominations[i].status);
 	                break;
 		    }
 		}
@@ -153,6 +157,7 @@ function init() {
             "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
             "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round(dupeCount/nomCount*100)) + "%)" +
             "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
+            "<br/>NIA Review: " + parseInt(niaReviewCount) +
             "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
             "<br/>Accepted ratio: 1:" + Math.round(10*(1/(acceptedCount/deniedCount)))/10 + "<br/>";
 
