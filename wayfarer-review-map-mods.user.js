@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.3
+// @version      0.4.4
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -172,7 +172,7 @@ function init() {
     }
 
     function addNearbyTooltips() {
-        const markerDiv = document.querySelector("#location-accuracy-card > div.wf-review-card__body > div > nia-map > div > ng-component > agm-map > div.agm-map-container-inner.sebm-google-map-container-inner > div > div > div:nth-child(2) > div:nth-child(3) > div > div:nth-child(3)");
+        const markerDiv = document.querySelector("#location-accuracy-card > div.wf-review-card__body > div > nia-map > div > ng-component > agm-map > div.agm-map-container-inner.sebm-google-map-container-inner > div > div > div:nth-child(2) > div:nth-child(2) > div > div:nth-child(3)");
         if (!markerDiv) {
             setTimeout(addNearbyTooltips, 500);
             return;
