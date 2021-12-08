@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.3.5
+// @version      0.3.6
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
@@ -61,7 +61,7 @@
             return;
         }
 
-        json.result.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
+        json.result.nominations.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
         const list = document.getElementsByTagName('app-nominations-list')[0];
         list.addEventListener('click', handleNominationClick);
     }

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.3.2
+// @version      0.3.3
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -581,7 +581,7 @@
         const nomCache = {};
         let box = null;
 
-        result.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
+        result.nominations.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
         ref.addEventListener('click', e => {
             const item = e.target.closest('app-nominations-list-item');
             if (item) {
