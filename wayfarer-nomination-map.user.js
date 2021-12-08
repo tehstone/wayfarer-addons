@@ -85,7 +85,7 @@ function init() {
 			if (json.captcha)
 				return;
 
-			nominations = json.result;
+			nominations = json.result.nominations;
 			if (!nominations) {
 				alert('Wayfarer\'s response didn\'t include nominations.');
 				return;
