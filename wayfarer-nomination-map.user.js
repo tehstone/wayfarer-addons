@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.1.1
+// @version      0.1.2
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
