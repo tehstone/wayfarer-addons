@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.3.3
+// @version      0.3.4
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -68,11 +68,13 @@ function init() {
 			}
 			addNominationDetails();
 			addExportButtons();
+			if ("canAppeal" in json.result) {
+				checkAppealStatus(json.result["canAppeal"]);
+			}
 
 		} catch (e)	{
 			console.log(e); // eslint-disable-line no-console
 		}
-
 	}
 
 	function addNominationDetails() {
@@ -253,6 +255,12 @@ function init() {
 	    }
 
 	    return str;
+	}
+
+	function checkAppealStatus(canAppeal) {
+		if (canAppeal) {
+			alert("You are now eligible to appeal a nomination");
+		}
 	}
 
 	function addCss() {
