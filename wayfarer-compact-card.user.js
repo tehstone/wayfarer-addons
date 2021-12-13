@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Compact Card Reviewing
-// @version      0.1.0
+// @version      0.2.0
 // @description  Add compact card reviewing
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-compact-card.user.js
@@ -120,146 +120,42 @@ function init() {
 			whatIsIt: document.querySelector('app-review-categorization'),
 			additionalComment: document.querySelector('app-review-comments'),
 			supportingInfo: document.querySelector('app-supporting-info'),
+            submitButton: document.querySelector('app-submit-review-split-button')
 		};
 
-        divNames.headerTop.children[0].children[0].children[1].style.display = "none";
-		divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
-		divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
+	divNames.historicOrCultural.children[0].children[0].children[0].children[1].style.display = "none";
+	divNames.historicOrCultural.children[0].children[1].style.display = "none";
+	divNames.visuallyUnique.children[0].children[0].children[0].children[1].style.display = "none";
+	divNames.visuallyUnique.children[0].children[1].style.display = "none";
+	divNames.safeAccess.children[0].children[0].children[0].children[1].style.display = "none";
+	divNames.safeAccess.children[0].children[1].style.display = "none";
 
-		var fragment = document.createDocumentFragment();
-		let outer = document.createElement("div");
-		outer.style.display = "flex";
-		outer.style["flex-direction"] = "column";
-		outer.appendChild(divNames.titleAndDescription);
-		let threeCard = document.createElement("div");
-		threeCard.style.height = "34%";
-		threeCard.style.display = "flex";
-		threeCard.style["flex-direction"] = "column";
-		outer.appendChild(threeCard);
-		fragment.appendChild(outer);
-		insertAfter(fragment, divNames.shouldBePortal);
-        document.querySelector('app-title-and-description .text-4xl').innerText.fontSize = "12pt";
 
-        // Address changes
-        // document.querySelector('app-should-be-wayspot .wf-image-modal ~ div').innerText.replace('Street', '');
-        // document.querySelector('app-should-be-wayspot .wf-image-modal ~ div').innerText = "Somewhere in Australia";
-        // document.querySelector('app-should-be-wayspot .wf-image-modal ~ div').style.display = "none";
+       // flavour text updates
+        divNames.titleAndDescription.children[0].children[0].children[0].children[0].innerText = "Title/Description";
+	divNames.historicOrCultural.children[0].children[0].children[0].children[0].innerText = "Significance";
+        divNames.visuallyUnique.children[0].children[0].children[0].children[0].innerText = "Uniqueness";
+        divNames.safeAccess.children[0].children[0].children[0].children[0].innerText = "Accessibility";
 
-        divNames.main.children[0].children[0].children[1].children[0].style.padding = "0pt";
-        divNames.main.children[0].children[0].children[0].style.height = "50%";
-        divNames.main.children[0].children[0].children[0].children[1].style.height = "69%";
-        divNames.main.children[0].children[0].children[0].children[2].style.maxHeight = "41em";
-
-        divNames.titleAndDescription.classList.remove("card--expand");
-	    divNames.titleAndDescription.style.padding = "0pt";
-
-	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].innerText = "Title/Description";
+        // reduce size of text in box to condense essays
         divNames.titleAndDescription.children[0].children[1].children[0].children[0].children[0].classList.remove("text-4xl");
         divNames.titleAndDescription.children[0].children[1].children[0].children[0].children[0].classList.add("text-3xl");
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.remove("text-lg");
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.add("text-base");
+
+        divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
+        divNames.location.children[0].children[1].children[0].children[1].children[1].children[0].innerText = "Move Pin";
         divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
-
-	    divNames.titleAndDescription.children[0].children[0].children[0].children[0].style.margin = "0pt";
-	    divNames.titleAndDescription.children[0].children[1].children[0].style.padding = "0pt";
-	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginBottom = "-0.6em";
-	    divNames.titleAndDescription.getElementsByClassName("wf-rate")[0].style.marginTop = "-0.6em";
-
-	    const titleHeader = divNames.titleAndDescription.children[0].children[0];
-	    const titleBody = divNames.titleAndDescription.children[0].children[1];
-	    const titleReview = divNames.titleAndDescription.children[0].children[2];
-	    titleHeader.classList.remove("wf-review-card__header");
-	    titleReview.classList.remove("wf-review-card__footer");
-	    titleHeader.style.width = "50%";
-	    titleReview.style.width = "50%";
-	    let titleHeadBox = document.createElement("div");
-	    titleHeadBox.style.display = "flex";
-	    titleHeadBox.style["flex-direction"] = "row";
-	    titleHeadBox.style.margin = "12pt 12pt 12pt 12pt";
-	    titleHeadBox.appendChild(titleHeader);
-	    titleHeadBox.appendChild(titleReview);
-	    divNames.titleAndDescription.children[0].insertBefore(titleHeadBox, titleBody);
-
-	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].style.padding = "0pt";
-	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
-	    divNames.historicOrCultural.children[0].children[0].children[0].children[1].style.display = "none";
-	    divNames.historicOrCultural.children[0].children[1].style.display = "none";
-	    divNames.historicOrCultural.children[0].children[0].style.marginBottom = "-36pt";
-	    divNames.historicOrCultural.children[0].children[0].style.marginTop = "-6pt";
-	    
-	    divNames.historicOrCultural.children[0].style.maxHeight = "4em";
-	    divNames.visuallyUnique.children[0].children[0].children[0].children[0].style.padding = "0pt";
-	    divNames.visuallyUnique.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
-	    divNames.visuallyUnique.children[0].children[0].children[0].children[1].style.display = "none";
-	    divNames.visuallyUnique.children[0].children[1].style.display = "none";
-	    divNames.visuallyUnique.children[0].children[0].style.marginBottom = "-36pt";
-	    divNames.visuallyUnique.children[0].children[0].style.marginTop = "-6pt";
-	    divNames.visuallyUnique.children[0].style.maxHeight = "4em";
-	    divNames.safeAccess.children[0].children[0].children[0].children[0].style.padding = "0pt";
-	    divNames.safeAccess.children[0].children[0].children[0].children[0].style.margin = "5.5pt 0pt -1pt";
-	    divNames.safeAccess.children[0].children[0].children[0].children[1].style.display = "none";
-	    divNames.safeAccess.children[0].children[1].style.display = "none";
-	    divNames.safeAccess.children[0].children[0].style.marginBottom = "-36pt";
-	    divNames.safeAccess.children[0].children[0].style.marginTop = "-6pt";
-	    divNames.safeAccess.children[0].style.maxHeight = "4em";
+        divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.location.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.whatIsIt.children[0].children[0].children[0].children[1].style.display = "none";
 
-        // flavour text updates
-	    divNames.historicOrCultural.children[0].children[0].children[0].children[0].innerText = "Significance";
-        divNames.visuallyUnique.children[0].children[0].children[0].children[0].innerText = "Uniqueness";
-        divNames.safeAccess.children[0].children[0].children[0].children[0].innerText = "Accessibility";
+        // default for what is it is yes
+        divNames.whatIsIt.children[0].children[1].children[0].children[0].children[1].children[0].click();
+        divNames.whatIsIt.children[0].children[1].children[0].children[1].children[1].children[0].click();
+        divNames.whatIsIt.children[0].children[1].children[0].children[2].children[1].children[0].click();
 
-        divNames.titleAndDescription.children[0].style.maxHeight = "20em";
-
-        divNames.historicOrCultural.children[0].style.margin = "6pt 0pt 0pt";
-        divNames.visuallyUnique.children[0].style.margin = "6pt 0pt 6pt";
-
-	    divNames.historicOrCultural.appendChild(divNames.visuallyUnique);
-
-        divNames.supportingInfo.children[0].style.minHeight = "33.75em";
-        divNames.supportingInfo.children[0].style.maxHeight = "33.75em";
-        divNames.supportingInfo.children[0].children[1].children[0].children[1].classList.add("text-base");
-
-	    threeCard.appendChild(divNames.historicOrCultural);
-	    threeCard.appendChild(divNames.visuallyUnique);
-	    threeCard.appendChild(divNames.safeAccess);
-
-	    divNames.duplicates.appendChild(divNames.location);
-        divNames.duplicates.style["flex-direction"] = "row";
-
-	    divNames.duplicates.classList.add("card--expand");
-        divNames.duplicates.style.display = "flex";
-        divNames.duplicates.children[0].style.minWidth = "49%";
-        divNames.duplicates.children[1].style.margin = "0pt 0pt 0pt 12pt";
-
-	    divNames.location.classList.remove("card--double-width");
-	    divNames.location.classList.add("card--expand");
-        divNames.location.style.minWidth = "49%";
-
-	    threeCard.style.order = 2;
-	    divNames.titleAndDescription.style.order = 1;
-	    divNames.historicOrCultural.style.order = 2;
-	    divNames.visuallyUnique.style.order = 3;
-	    divNames.safeAccess.style.order = 4;
-	    divNames.whatIsIt.style.order = 7;
-
-        divNames.main.children[0].children[0].children[1].children[1].remove();
-
-        divNames.whatIsIt.appendChild(divNames.additionalComment);
-        divNames.whatIsIt.style["flex-direction"] = "row";
-	    divNames.whatIsIt.classList.remove("card--double-width");
-        divNames.whatIsIt.classList.add("flex-full");
-	    divNames.whatIsIt.classList.add("card--expand");
-        divNames.whatIsIt.style.display = "flex";
-        divNames.whatIsIt.children[0].style.minWidth = "49.65%";
-        divNames.whatIsIt.children[1].style.margin = "0pt 0pt 0pt 12pt";
-        divNames.whatIsIt.style.padding = "0pt";
-
-	    divNames.additionalComment.classList.remove("card--double-width");
-	    divNames.additionalComment.classList.add("card--expand");
-        divNames.additionalComment.style.minWidth = "49.1%";
-	}
+    }
 
 	function insertAfter(newNode, referenceNode) {
 	    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
