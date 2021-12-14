@@ -144,7 +144,7 @@ function init() {
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.add("text-base");
 
         divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
-        divNames.location.children[0].children[1].children[0].children[1].children[1].children[0].innerText = "Move Pin";
+        // divNames.location.children[0].children[1].children[0].children[1].children[1].children[0].innerText = "Move Pin"; // conflicts with open in
         divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.location.children[0].children[0].children[0].children[1].style.display = "none";
