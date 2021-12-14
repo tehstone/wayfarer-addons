@@ -144,7 +144,7 @@ function init() {
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.add("text-base");
 
         divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
-        // divNames.location.children[0].children[1].children[0].children[1].children[1].children[0].innerText = "Move Pin";
+        document.querySelector('#location-accuracy-card .wf-review-card__body button.wf-button').textContent = 'Move Pin';
         divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.location.children[0].children[0].children[0].children[1].style.display = "none";
