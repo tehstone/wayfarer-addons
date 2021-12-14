@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Compact Card Reviewing
-// @version      0.2.0
+// @version      0.2.1
 // @description  Add compact card reviewing
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-compact-card.user.js
@@ -144,7 +144,7 @@ function init() {
         divNames.titleAndDescription.children[0].children[1].children[0].children[1].classList.add("text-base");
 
         divNames.shouldBePortal.children[0].children[0].children[0].children[1].style.display = "none";
-        // divNames.location.children[0].children[1].children[0].children[1].children[1].children[0].innerText = "Move Pin"; // conflicts with open in
+        // divNames.location.children[0].children[1].children[0].children[1].children[1].children[0].innerText = "Move Pin";
         divNames.titleAndDescription.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.supportingInfo.children[0].children[0].children[0].children[1].style.display = "none";
         divNames.location.children[0].children[0].children[0].children[1].style.display = "none";
