@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.3.4
+// @version      0.3.5
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -22,7 +22,7 @@
 // GNU General Public License for more details.
 
 // You can find a copy of the GNU General Public License in the root
-// directory of this script's GitHub repository: 
+// directory of this script's GitHub repository:
 // <https://github.com/tehstone/wayfarer-addons/blob/main/LICENSE>
 // If not, see <https://www.gnu.org/licenses/>.
 
@@ -258,13 +258,54 @@ function init() {
 	}
 
 	function checkAppealStatus(canAppeal) {
+		const ref = document.querySelector('wf-logo');
+		if (!ref) {
+			setTimeout(checkAppealStatus, 200, canAppeal);
+			return;
+		}
+
+		const div = document.createElement('div');
+		div.className = 'wayfarernost';
+
+		let appealLabel = document.createElement('p');
+		appealLabel.textContent = 'Appeal eligible: ';
+		let appeal = document.createElement('p');
+
 		if (canAppeal) {
-			alert("You are now eligible to appeal a nomination");
+			appeal.textContent = 'Yes';
+		} else {
+			appeal.textContent = 'No';
+		}
+
+		div.appendChild(appealLabel);
+		div.appendChild(appeal);
+
+		const container = ref.parentNode.parentNode;
+		console.log(document.querySelector('.wayfarernost'));
+		if (document.querySelector('.wayfarernost') === null) {
+			container.appendChild(div);
 		}
 	}
 
 	function addCss() {
 		const css = `
+			.wayfarernost {
+				color: #333;
+				margin-left: 2em;
+				padding-top: 0.3em;
+				text-align: center;
+				display: block;
+			}
+
+			.dark .wayfarernost {
+				color: #ddd;
+			}
+
+			.wayfarernost p:nth-child(2) {
+				font-size: 20px;
+				color: #20B8E3;
+			}
+
 			.wayfarernd {
 				color: #333;
 				margin: 20px 50px;
