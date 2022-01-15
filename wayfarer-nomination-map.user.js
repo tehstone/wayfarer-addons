@@ -39,6 +39,7 @@ function init() {
 
     const colorMap = {
         "ACCEPTED": "green",
+		"APPEALED": "purple",
         "NOMINATED": "blue",
         "WITHDRAWN": "grey",
         "VOTING": "yellow",

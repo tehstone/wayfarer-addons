@@ -93,6 +93,7 @@ function init() {
 
 		const nomCount = nominations.length;
 		let acceptedCount = 0;
+		let appealedCount = 0;
 	    let deniedCount = 0;
 	    let inVoteCount = 0;
         let inVoteUpgradeCount = 0;
@@ -117,6 +118,9 @@ function init() {
 	            case "REJECTED":
 	                deniedCount++;
 	                break;
+				case "APPEALED":
+					appealedCount++;
+					break;
 	            case "ACCEPTED":
 	                acceptedCount++;
 	                break;
@@ -161,7 +165,8 @@ function init() {
             "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
             "<br/>NIA Review: " + parseInt(niaReviewCount) +
             "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
-            "<br/>Accepted ratio: 1:" + Math.round(10*(1/(acceptedCount/deniedCount)))/10 + "<br/>";
+			"<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
+            "<br/>Accepted ratio: 1:" + Math.round(10*(1/(acceptedCount/(deniedCount+appealedCount+dupeCount))))/10 + "<br/>";
 
 
 
