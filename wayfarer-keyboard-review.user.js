@@ -134,6 +134,14 @@
     ratingElements[0].scrollIntoView(false);
     document.addEventListener('keydown', keyDownEvent);
 
+    // Add CSS styling to indicate options 4 and 5 for what is it if that question is mandatory
+    if (document.querySelector('.review-categorization > mat-button-toggle-group')) {
+      const catCard = document.getElementById('categorization-card');
+      if (catCard && !catCard.classList.contains('wbkb-yesno')) {
+        catCard.classList.add('wbkb-yesno');
+      }
+    }
+
     const dupeContainer = document.getElementsByTagName("app-check-duplicates");
     if (dupeContainer.length > 0) {
       const dupeImages = dupeContainer[0].getElementsByClassName("cursor-pointer");
@@ -646,7 +654,7 @@
       ${whatIsButtons}
       div.review-categorization > button:last-child::before { margin-left: -14px; }
 
-      app-review-new #categorization-card > div:first-child > div:first-child::after {
+      app-review-new #categorization-card.wbkb-yesno > div:first-child > div:first-child::after {
         content: '[4] = Other\\a[5] = Nothing';
         margin-top: 10px;
         display: block;
