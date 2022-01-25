@@ -217,16 +217,14 @@
       }
     } else {
       if (revPosition === 6) { // what is it? menu
-        if (e.keyCode >= 97 && e.keyCode <= 99) { // 1-3 Num pad
+        if (e.keyCode >= 97 && e.keyCode <= 102) { // 1-6 Num pad
           suppress = setRating(e.keyCode - 97, true);
           document.activeElement.blur();
-        } else if (e.keyCode >= 49 && e.keyCode <= 51) { // 1-3 normal
+        } else if (e.keyCode >= 49 && e.keyCode <= 54) { // 1-6 normal
           suppress = setRating(e.keyCode - 49, true);
           document.activeElement.blur();
-        } else if (e.keyCode === 100 || e.keyCode === 52) {
-          suppress = setRating(3, false);
-        } else if (e.keyCode === 101 || e.keyCode === 53) {
-          suppress = setRating(4, false);
+        } else if (e.keyCode === 9) {
+          suppress = setRating(e.shiftKey ? -1 : -2, false);
         } else if (e.keyCode === 13) { // Enter
           trySubmit(false);
         } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
@@ -280,11 +278,11 @@
     } else if (whatIsYN) {
       // What is it? (Required)
       whatIsYN.forEach(group => {
-        if (rate >= 3 || !group.querySelector('mat-button-toggle.mat-button-toggle-checked')) {
+        if (rate < 0 || !group.querySelector('mat-button-toggle.mat-button-toggle-checked')) {
           group.querySelector('mat-button-toggle:nth-child(2) button').click();
         }
       });
-      if (rate >= 0 && rate <= 2) {
+      if (rate >= 0 && rate <= 5) {
         const opts = whatIsYN[rate].querySelectorAll('mat-button-toggle');
         for (let i = 0; i < opts.length; i++) {
           if (!opts[i].classList.contains('mat-button-toggle-checked')) {
@@ -292,7 +290,7 @@
             break;
           }
         }
-      } else if (rate == 3) {
+      } else if (rate == -1) {
         ratingElements[revPosition].querySelector('.review-categorization > button').click();
         const wfinput = ratingElements[revPosition].querySelector('wf-select input');
         if (wfinput) focusWhatIsInput(wfinput);
@@ -630,7 +628,7 @@
     const whatIsSelector = 'div.review-categorization__option > div > div:nth-child(1)::before'
     const whatIsOptions = [...Array(10).keys()].map(e => (`div:nth-child(${e}) > ${whatIsSelector} { content: '[${e}] '; }`)).join('\n');
     const whatIsButtons = [...Array(5).keys()].map(e => (`div.review-categorization > button:nth-child(${e})::before { content: '${e}. '; }`)).join('\n');
-    const whatIsYNLabels = [...Array(4).keys()].map(e => (`div.review-categorization > mat-button-toggle-group:nth-child(${e}) > div::before { content: '[${e}]\u00a0'; }`)).join('\n');
+    const whatIsYNLabels = [...Array(7).keys()].map(e => (`div.review-categorization > mat-button-toggle-group:nth-child(${e}) > div::before { content: '[${e}]\u00a0'; }`)).join('\n');
     const editOptions = [...Array(10).keys()].map(e => (`app-review-edit mat-radio-button:nth-child(${e}) .mat-radio-label-content::before { content: '[${e}]'; }`)).join('\n');
     const photoOptions = [...Array(27).keys()].map(e => {
       const letter = String.fromCharCode(64 + e);
@@ -655,7 +653,7 @@
       div.review-categorization > button:last-child::before { margin-left: -14px; }
 
       app-review-new #categorization-card.wbkb-yesno > div:first-child > div:first-child::after {
-        content: '[4] = Other\\a[5] = Nothing';
+        content: '[Shift+Tab] = Other\\a[Tab] = Nothing';
         margin-top: 10px;
         display: block;
         white-space: pre;
