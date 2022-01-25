@@ -217,6 +217,8 @@
           document.activeElement.blur();
         } else if (e.keyCode === 100 || e.keyCode === 52) {
           suppress = setRating(3, false);
+        } else if (e.keyCode === 101 || e.keyCode === 53) {
+          suppress = setRating(4, false);
         } else if (e.keyCode === 13) { // Enter
           trySubmit(false);
         } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
@@ -262,12 +264,34 @@
   function setRating(rate, advance){
     const starButtons = ratingElements[revPosition].getElementsByClassName("wf-rate__star");
     const whatIsButtons = ratingElements[revPosition].querySelectorAll('.review-categorization > button');
+    const whatIsYN = ratingElements[revPosition].querySelectorAll('.review-categorization > mat-button-toggle-group');
     if (starButtons.length) {
       // Star rating
       starButtons[rate].click();
       if (advance) return updateRevPosition(1, false);
-    } else if (whatIsButtons.length) {
+    } else if (whatIsYN) {
       // What is it? (Required)
+      whatIsYN.forEach(group => {
+        if (rate >= 3 || !group.querySelector('mat-button-toggle.mat-button-toggle-checked')) {
+          group.querySelector('mat-button-toggle:nth-child(2) button').click();
+        }
+      });
+      if (rate >= 0 && rate <= 2) {
+        const opts = whatIsYN[rate].querySelectorAll('mat-button-toggle');
+        for (let i = 0; i < opts.length; i++) {
+          if (!opts[i].classList.contains('mat-button-toggle-checked')) {
+            opts[i].querySelector('button').click();
+            break;
+          }
+        }
+      } else if (rate == 3) {
+        ratingElements[revPosition].querySelector('.review-categorization > button').click();
+        const wfinput = ratingElements[revPosition].querySelector('wf-select input');
+        if (wfinput) focusWhatIsInput(wfinput);
+      }
+      return true;
+    } else if (whatIsButtons.length) {
+      // What is it?
       whatIsButtons[rate].click();
       const wfinput = ratingElements[revPosition].querySelector('wf-select input');
       if (wfinput) focusWhatIsInput(wfinput);
@@ -598,6 +622,7 @@
     const whatIsSelector = 'div.review-categorization__option > div > div:nth-child(1)::before'
     const whatIsOptions = [...Array(10).keys()].map(e => (`div:nth-child(${e}) > ${whatIsSelector} { content: '[${e}] '; }`)).join('\n');
     const whatIsButtons = [...Array(5).keys()].map(e => (`div.review-categorization > button:nth-child(${e})::before { content: '${e}. '; }`)).join('\n');
+    const whatIsYNLabels = [...Array(4).keys()].map(e => (`div.review-categorization > mat-button-toggle-group:nth-child(${e}) > div::before { content: '[${e}]\u00a0'; }`)).join('\n');
     const editOptions = [...Array(10).keys()].map(e => (`app-review-edit mat-radio-button:nth-child(${e}) .mat-radio-label-content::before { content: '[${e}]'; }`)).join('\n');
     const photoOptions = [...Array(27).keys()].map(e => {
       const letter = String.fromCharCode(64 + e);
@@ -611,11 +636,24 @@
     const css = `
       ${whatIsSelector} { font-family: monospace; color: white; }
       ${whatIsOptions}
+      ${whatIsYNLabels}
 
       div.review-categorization > button::before { margin-right: 5px; }
       .dark div.review-categorization > button::before { color: white; }
+      div.review-categorization > mat-button-toggle-group > div::before { font-family: monospace; color: #FF6D38; }
+      div.review-categorization > mat-button-toggle-group > div { color: black !important; }
+      .dark div.review-categorization > mat-button-toggle-group > div { color: white !important; }
       ${whatIsButtons}
       div.review-categorization > button:last-child::before { margin-left: -14px; }
+
+      app-review-new #categorization-card > div:first-child > div:first-child::after {
+        content: '[4] = Other\\a[5] = Nothing';
+        margin-top: 10px;
+        display: block;
+        white-space: pre;
+        font-family: monospace;
+        color: #FF6D38;
+      }
 
       app-review-edit mat-radio-button .mat-radio-label-content::before { color: #FF6D38; font-family: monospace; }
       ${editOptions}
