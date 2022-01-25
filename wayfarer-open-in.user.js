@@ -605,6 +605,10 @@
                 awaitElement(() => document.querySelector('#location-accuracy-card nia-map'))
                 .then(ref => addOpenButtons(ref, result));
                 break;
+            case 'APP-REVIEW-EDIT':
+                awaitElement(() => document.querySelector('.review-edit-info .review-edit-info__info'))
+                .then(ref => addOpenButtons(ref, result));
+                break;
             case 'APP-REVIEW-PHOTO':
                 awaitElement(() => ref.querySelector('.review-photo__info > div > div:nth-child(2)'))
                 .then(ref => addOpenButtons(ref, result));
