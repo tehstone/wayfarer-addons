@@ -144,7 +144,7 @@ These are automatically made available to you in each respective region.
 # Compact View
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-compact-card.user.js)
 
-Condenses the views and rating cards into smaller cards, reduces fluff and blankspace.
+Removes unnecessary sentences, reduced font size for title/descriptions, automatically defaults all three What is it categories to **NO**. Not necessarily compact.
 
 # Review Counter
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
