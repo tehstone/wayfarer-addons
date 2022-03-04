@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.1.2
+// @version      0.2.0
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 /* eslint no-var: "error" */
 
 function init() {
-	'use strict';
+    'use strict';
     let ctrlessZoom = true;
     let nomS2Cell = 14; 
     let nomS2Color = 'red';
@@ -39,13 +39,25 @@ function init() {
 
     const colorMap = {
         "ACCEPTED": "green",
-		"APPEALED": "purple",
+        "APPEALED": "purple",
         "NOMINATED": "blue",
         "WITHDRAWN": "grey",
         "VOTING": "yellow",
         "DUPLICATE": "orange",
         "REJECTED": "red",
     };
+
+    const expectedStatuses = [
+        "ACCEPTED",
+        "APPEALED",
+        "NOMINATED",
+        "WITHDRAWN",
+        "VOTING",
+        "DUPLICATE",
+        "REJECTED",
+        "NIANTIC_REVIEW",
+        "upgraded",
+        "upgradeNext"];
 
     function getIconUrl(nomination) {
         return `https://maps.google.com/mapfiles/ms/icons/${colorMap[nomination.status] || 'blue'}.png`;
@@ -55,51 +67,78 @@ function init() {
     let nominationMap;
     let nominationCluster = null;
 
-	let tryNumber = 10;
-	let nominations;
+    let tryNumber = 10;
+    let nominations;
 
-	/**
-	 * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
-	 */
-	(function (open) {
-		XMLHttpRequest.prototype.open = function (method, url) {
-			if (url == '/api/v1/vault/manage') {
-				if (method == 'GET') {
-					this.addEventListener('load', parseNominations, false);
-				}
-			}
-			open.apply(this, arguments);
-		};
-	})(XMLHttpRequest.prototype.open);
+    let statusSelectionMap = {};
 
-	addCss();
+    /**
+     * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
+     */
+    (function (open) {
+        XMLHttpRequest.prototype.open = function (method, url) {
+            if (url == '/api/v1/vault/manage') {
+                if (method == 'GET') {
+                    this.addEventListener('load', parseNominations, false);
+                }
+            }
+            open.apply(this, arguments);
+        };
+    })(XMLHttpRequest.prototype.open);
 
-	function parseNominations(e) {
-		try {
-			const response = this.response;
-			const json = JSON.parse(response);
-			if (!json) {
-				alert('Failed to parse response from Wayfarer');
-				return;
-			}
-			// ignore if it's related to captchas
-			if (json.captcha)
-				return;
+    addCss();
 
-			nominations = json.result.nominations;
-			if (!nominations) {
-				alert('Wayfarer\'s response didn\'t include nominations.');
-				return;
-			}
-			clickFirst();
+    function parseNominations(e) {
+        try {
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (!json) {
+                alert('Failed to parse response from Wayfarer');
+                return;
+            }
+            // ignore if it's related to captchas
+            if (json.captcha)
+                return;
 
-		} catch (e)	{
-			console.log(e); // eslint-disable-line no-console
-		}
+            nominations = json.result.nominations;
+            if (!nominations) {
+                alert('Wayfarer\'s response didn\'t include nominations.');
+                return;
+            }
+            initSelectorListeners();
+            clickFirst();
 
-	}
+        } catch (e)    {
+            console.log(e); // eslint-disable-line no-console
+        }
 
-	function addMap(nominationList, mapElement) {
+    }
+
+    function nominationsToDraw() {
+        let filtered = Object.keys(statusSelectionMap).reduce(function (filtered, key) {
+            if (statusSelectionMap[key] === true) filtered[key] = nominationStatuses[key];
+            return filtered;
+        }, {});
+        let nominationList = [];
+        if (Object.keys(filtered).length < 1) {
+            for (let i = 0; i < expectedStatuses.length; i++) {
+                let status = expectedStatuses[i];
+                for (let j = 0; j < nominationStatuses[status].length; j++) {
+                    nominationList.push(nominationStatuses[status][j]);
+                }
+            }
+        } else { 
+            for (const [key, value] of Object.entries(filtered)) {
+                for (let j = 0; j < nominationStatuses[key].length; j++) {
+                    nominationList.push(nominationStatuses[key][j]);
+                }
+            }
+        }
+        console.log("a");
+        return nominationList;
+    }
+
+    function addMap(mapElement) {
         const mapSettings = ctrlessZoom ? {
             scrollwheel: true,
             gestureHandling: 'greedy'
@@ -109,14 +148,15 @@ function init() {
             ...mapSettings,
         });
 
-        updateMap(nominationList, mapElement);
+        updateMap();
     }
 
-    function updateMap(nominationList) {
+    function updateMap() {
         if (nominationCluster !== null)
             nominationCluster.clearMarkers();
 
         const bounds = new google.maps.LatLngBounds();
+        let nominationList = nominationsToDraw();
         nominationMarkers = nominationList.map((nomination) => {
             const latLng = {
                 lat: nomination.lat,
@@ -132,11 +172,11 @@ function init() {
             });
 
             marker.addListener('click', () => {
-            	let inputs = document.querySelectorAll('input[type=text]');
-            	let input = inputs[0];
-            	input.value = nomination.title;
-            	input.dispatchEvent(new Event('input'));
-            	setTimeout(clickFirst, 500);
+                let inputs = document.querySelectorAll('input[type=text]');
+                let input = inputs[0];
+                input.value = nomination.title;
+                input.dispatchEvent(new Event('input'));
+                setTimeout(clickFirst, 500);
             });
             bounds.extend(latLng);
             return marker;
@@ -190,17 +230,70 @@ function init() {
         return mapElement;
     }
 
-    let nomList = [];
+    function initSelectorListeners() {
+        const cbParent = document.getElementsByClassName("sort-modal__statuses");
+        const modal = document.getElementsByTagName("app-nominations-sort-modal");
+        if (cbParent[0] === undefined || cbParent[0].children === undefined || cbParent[0].children.length < 1 ||
+        	modal[0] === undefined || modal[0].children === undefined) {
+            setTimeout(initSelectorListeners, 200);
+            return;
+        }
+        let filterCbs = cbParent[0].children;
+        for (let i = 0; i < filterCbs.length; i++) {
+            if (expectedStatuses.indexOf(filterCbs[i]["__ngContext__"][25]) !== -1) {
+                statusSelectionMap[filterCbs[i]["__ngContext__"][25]] = false;
+                initCbListener(filterCbs[i], filterCbs[i]["__ngContext__"][25]);
+            } else if (expectedStatuses.indexOf(filterCbs[i]["attributes"]["value"]["nodeValue"]) !== -1) {
+                statusSelectionMap[filterCbs[i]["attributes"]["value"]["nodeValue"]] = false;
+                initCbListener(filterCbs[i], filterCbs[i]["attributes"]["value"]["nodeValue"]);
+            }
+        }
+        const els = modal[0].getElementsByClassName("wf-button--primary");
+        for (let i = 0; i < els.length; i++) {
+        	els[i].addEventListener('click', function() {
+	            updateMap();
+	        });
+        }
+    }
+
+    function initCbListener(checkboxwrapper, key) {
+        const els = checkboxwrapper.getElementsByClassName("mat-checkbox-input");
+        if (els.length < 1) {
+            return;
+        }
+        let checkbox = els[0];
+        checkbox.addEventListener('click', function() {
+            if (this.checked) {
+                statusSelectionMap[key] = true;
+            } else {
+                statusSelectionMap[key] = false;
+            }
+        });
+    }
+
+       let nominationStatuses = {
+        "ACCEPTED": [],
+        "APPEALED": [],
+        "NOMINATED": [],
+        "WITHDRAWN": [],
+        "VOTING": [],
+        "DUPLICATE": [],
+        "REJECTED": [],
+        "NIANTIC_REVIEW": [],
+        "upgraded": [],
+        "upgradeNext": [],
+        "notFound": []
+    };
 
     function clickFirst() {
-		const listHolder = document.getElementsByClassName("cdk-virtual-scroll-content-wrapper");
-		if (listHolder[0] === undefined || listHolder[0].children === undefined || listHolder[0].children.length < 1) {
-			setTimeout(clickFirst, 200);
+        const listHolder = document.getElementsByClassName("cdk-virtual-scroll-content-wrapper");
+        if (listHolder[0] === undefined || listHolder[0].children === undefined || listHolder[0].children.length < 1) {
+            setTimeout(clickFirst, 200);
             return;
-		}
-		listHolder[0].children[0].click();
-		
-		initNominationMap();
+        }
+        listHolder[0].children[0].click();
+        
+        initNominationMap();
     }
 
     function initNominationMap() {
@@ -213,171 +306,186 @@ function init() {
             let styleElem = document.createElement("STYLE");
             styleElem.innerText = ".customMapButton{display:inline-block;background:white;padding:5pt;border-radius:3pt;position:relative;margin:5pt;color:black;box-shadow:2pt 2pt 3pt grey;transition:box-shadow 0.2s;}.customMapButton:hover{background-color:#F0F0F0;color:black;box-shadow:1pt 1pt 3pt grey;}.wrap-collabsible{margin-bottom:1.2rem;}#collapsible, #collapsed-map{display:none;}.lbl-toggle{display:block;font-weight:bold;font-family:monospace;font-size:1.2rem;text-transform:uppercase;text-align:center;padding:1rem;color:white;background:#DF471C;cursor:pointer;border-radius:7px;transition:all 0.25s ease-out;}.lbl-toggle:hover{color:lightgrey;}.lbl-toggle::before{content:' ';display:inline-block;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:5px solid currentColor;vertical-align:middle;margin-right:.7rem;transform:translateY(-2px);transition:transform .2s ease-out;}.toggle:checked + .lbl-toggle::before{transform:rotate(90deg) translateX(-3px);}.collapsible-content{max-height:0px;overflow:hidden;transition:max-height .25s ease-in-out;}.toggle:checked + .lbl-toggle + .collapsible-content{max-height:9999999pt;}.toggle:checked + .lbl-toggle{border-bottom-right-radius:0;border-bottom-left-radius:0;}.collapsible-content .content-inner{border-bottom:1px solid rgba(0,0,0,1);border-left:1px solid rgba(0,0,0,1);border-right:1px solid rgba(0,0,0,1);border-bottom-left-radius:7px;border-bottom-right-radius:7px;padding:.5rem 1rem;}.content-inner td:last-child{text-align:right;}th, td{border:white solid 1pt;padding:1pt 5pt;}#statReload{float:right;}.dropbtn{background-color:#4CAF50;color:white;padding:16px;font-size:16px;border:none;cursor:pointer;}.mapsDropdown{float:left;background-color:white;border-radius:5px;box-shadow:grey 2px 2px 10px;margin-bottom:.5em;font-size:1.1em;color:black;padding:.25em;width:7em;text-align:center;}.dropdown-content{display:none;position:absolute;transform:translateY(-100%);border-radius:5px;background-color:#f9f9f9;min-width:160px;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);z-index:9001;}.dropdown-content a{color:black;padding:12px 16px;text-decoration:none;display:block;}.dropdown-content a:hover{background-color:#f1f1f1 border-radius:5px;}.mapsDropdown:hover .dropdown-content{display:block;}.mapsDropdown:hover .dropbtn{background-color:#3e8e41;}#statsWidget{float:right;}#wfpNotify{position:absolute;bottom:1em;right:1em;width:30em;z-index:100;}.wfpNotification{border-radius:0.5em;background-color:#3e8e41CC;padding:1em;margin-top:1.5em;color:white;}.wfpNotifyCloseButton{float:right;}.theme--dark .collapsible-content .content-inner{color:white !important;border-bottom:1px solid white !important;border-left:1px solid white !important;border-right:1px solid white !important;}"
             document.getElementsByTagName("head")[0].appendChild(styleElem);
-            nomList = nominations;
-            addMap(nominations, createElements());
-        } else if (nomList.length === 0) {
-            nomList = nominations;
-            updateMap(nominations, nominationMap);
-        } else if (document.getElementById("nomMap") === null){
-            addMap(nominations, createElements());
-
-        }
+            sortNominations(nominations);
+            addMap(createElements());
+        } else {
+            sortNominations(nominations);
+            updateMap();
+        } 
     }
 
-	function insertAfter(newNode, referenceNode) {
-	    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-	}
+    function sortNominations(nominations) {
+        for (let i = 0; i < nominations.length; i++) {
+            const nom = nominations[i];
+            if (nom["status"] in nominationStatuses) {
+                nominationStatuses[nom["status"]].push(nom);
+            } else {
+                nominationStatuses["notFound"].push(nom);
+            }
+            if (nom["nextUpgrade"] === true) {
+                nominationStatuses["upgradeNext"].push(nom);
+            }
+            if (nom["upgraded"] === true) {
+                nominationStatuses["upgraded"].push(nom);    
+            }
+        }
+        console.log("a");
+    }
 
-	function getStatsParent() {
-		var els = document.getElementsByClassName("profile-stats__section-title");
-		for (var i = 0; i < els.length; i++) {
-       		const element = els[i];
-       		if (element.innerHTML === "Agreements") {
-       			return element;
-       		}
-       	}
-       	console.log("element not found");
-       	return null;
-	}
+    function insertAfter(newNode, referenceNode) {
+        referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    }
+
+    function getStatsParent() {
+        var els = document.getElementsByClassName("profile-stats__section-title");
+        for (var i = 0; i < els.length; i++) {
+               const element = els[i];
+               if (element.innerHTML === "Agreements") {
+                   return element;
+               }
+           }
+           console.log("element not found");
+           return null;
+    }
 
 
-	function getUserId() {
-	    var els = document.getElementsByTagName("image");
-	    for (var i = 0; i < els.length; i++) {
-	       const element = els[i];
-	       const attribute = element.getAttribute("href");
-	       let fields = attribute.split('/');
-	       let userId = fields[fields.length-1];
-	       fields = userId.split('=');
-	       userId = fields[0];
-	       return userId;
-	    }
-	    return "temporary_default_userid";
-	  }
+    function getUserId() {
+        var els = document.getElementsByTagName("image");
+        for (var i = 0; i < els.length; i++) {
+           const element = els[i];
+           const attribute = element.getAttribute("href");
+           let fields = attribute.split('/');
+           let userId = fields[fields.length-1];
+           fields = userId.split('=');
+           userId = fields[0];
+           return userId;
+        }
+        return "temporary_default_userid";
+      }
 
-	function addCss() {
-		const css = `
-			.wayfarernd {
-				color: #333;
-				margin: 5px 50px;
-				padding: 5px 20px;
-				text-align: left;
-				font-size: 16px;
-				background-color: #e5e5e5;
-				border: 1px;
-				border-radius: 3px;
-				border-style: double;
-				border-color: #ff4713;
-				height: 25%
-			}
+    function addCss() {
+        const css = `
+            .wayfarernd {
+                color: #333;
+                margin: 5px 50px;
+                padding: 5px 20px;
+                text-align: left;
+                font-size: 16px;
+                background-color: #e5e5e5;
+                border: 1px;
+                border-radius: 3px;
+                border-style: double;
+                border-color: #ff4713;
+                height: 25%
+            }
 
-			.wayfarercc__visible {
-				display: block;
-			}
+            .wayfarercc__visible {
+                display: block;
+            }
 
-			.dark .wayfarernd {
-				color: #000000;
-			}
+            .dark .wayfarernd {
+                color: #000000;
+            }
 
-			.wayfarercc__button {
-				background-color: #e5e5e5;
-				border: none;
-				color: #ff4713;
-				padding: 4px 10px;
-				margin: 1px;
-				text-align: center;
-				text-decoration: none;
-				display: inline-block;
-				font-size: 16px;
-			}
+            .wayfarercc__button {
+                background-color: #e5e5e5;
+                border: none;
+                color: #ff4713;
+                padding: 4px 10px;
+                margin: 1px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+            }
 
-			.wrap-collabsible {
-				margin-bottom: 1.2rem;
-			}
+            .wrap-collabsible {
+                margin-bottom: 1.2rem;
+            }
 
-			#collapsible,
-			#collapsed-stats {
-				display: none;
-			}
+            #collapsible,
+            #collapsed-stats {
+                display: none;
+            }
 
-			.lbl-toggle-ns {
-				display: block;
-				font-weight: bold;
-				font-family: monospace;
-				font-size: 1.2rem;
-				text-transform: uppercase;
-				text-align: center;
-				padding: 1rem;
-				color: white;
-				background: #DF471C;
-				cursor: pointer;
-				border-radius: 7px;
-				transition: all 0.25s ease-out;
-			}
+            .lbl-toggle-ns {
+                display: block;
+                font-weight: bold;
+                font-family: monospace;
+                font-size: 1.2rem;
+                text-transform: uppercase;
+                text-align: center;
+                padding: 1rem;
+                color: white;
+                background: #DF471C;
+                cursor: pointer;
+                border-radius: 7px;
+                transition: all 0.25s ease-out;
+            }
 
-			.lbl-toggle-ns:hover {
-				color: lightgrey;
-			}
+            .lbl-toggle-ns:hover {
+                color: lightgrey;
+            }
 
-			.lbl-toggle-ns::before {
-				content: ' ';
-				display: inline-block;
-				border-top: 5px solid transparent;
-				border-bottom: 5px solid transparent;
-				border-left: 5px solid currentColor;
-				vertical-align: middle;
-				margin-right: .7rem;
-				transform: translateY(-2px);
-				transition: transform .2s ease-out;
-			}
+            .lbl-toggle-ns::before {
+                content: ' ';
+                display: inline-block;
+                border-top: 5px solid transparent;
+                border-bottom: 5px solid transparent;
+                border-left: 5px solid currentColor;
+                vertical-align: middle;
+                margin-right: .7rem;
+                transform: translateY(-2px);
+                transition: transform .2s ease-out;
+            }
 
-			.toggle {
-				display:none;
-			}
+            .toggle {
+                display:none;
+            }
 
-			.toggle:checked+.lbl-toggle-ns::before {
-				transform: rotate(90deg) translateX(-3px);
-			}
+            .toggle:checked+.lbl-toggle-ns::before {
+                transform: rotate(90deg) translateX(-3px);
+            }
 
-			.collapsible-content-ns {
-				max-height: 0px;
-				overflow: hidden;
-				transition: max-height .25s ease-in-out;
-			}
+            .collapsible-content-ns {
+                max-height: 0px;
+                overflow: hidden;
+                transition: max-height .25s ease-in-out;
+            }
 
-			.toggle:checked+.lbl-toggle-ns+.collapsible-content-ns {
-				max-height: 9999999pt;
-			}
+            .toggle:checked+.lbl-toggle-ns+.collapsible-content-ns {
+                max-height: 9999999pt;
+            }
 
-			.toggle:checked+.lbl-toggle-ns {
-				border-bottom-right-radius: 0;
-				border-bottom-left-radius: 0;
-			}
+            .toggle:checked+.lbl-toggle-ns {
+                border-bottom-right-radius: 0;
+                border-bottom-left-radius: 0;
+            }
 
-			.collapsible-content-ns .content-inner {
-				border-bottom: 1px solid rgba(0, 0, 0, 1);
-				border-left: 1px solid rgba(0, 0, 0, 1);
-				border-right: 1px solid rgba(0, 0, 0, 1);
-				border-bottom-left-radius: 7px;
-				border-bottom-right-radius: 7px;
-				padding: .5rem 1rem;
-			}
+            .collapsible-content-ns .content-inner {
+                border-bottom: 1px solid rgba(0, 0, 0, 1);
+                border-left: 1px solid rgba(0, 0, 0, 1);
+                border-right: 1px solid rgba(0, 0, 0, 1);
+                border-bottom-left-radius: 7px;
+                border-bottom-right-radius: 7px;
+                padding: .5rem 1rem;
+            }
 
-			.content-inner td:last-child {
-				text-align: right;
-			}
+            .content-inner td:last-child {
+                text-align: right;
+            }
 
-			th,
-			td {
-				border: white solid 1pt;
-				padding: 1pt 5pt;
-			}
-			`;
-		const style = document.createElement('style');
-		style.type = 'text/css';
-		style.innerHTML = css;
-		document.querySelector('head').appendChild(style);
-	}
+            th,
+            td {
+                border: white solid 1pt;
+                padding: 1pt 5pt;
+            }
+            `;
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.innerHTML = css;
+        document.querySelector('head').appendChild(style);
+    }
 
 
     // Marker Cluster
