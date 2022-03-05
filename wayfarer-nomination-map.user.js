@@ -69,6 +69,7 @@ function init() {
 
     let tryNumber = 10;
     let nominations;
+    let countText;
 
     let statusSelectionMap = {};
 
@@ -105,37 +106,34 @@ function init() {
                 alert('Wayfarer\'s response didn\'t include nominations.');
                 return;
             }
-            initSelectorListeners();
+            addCounter();
+            initPrimaryListener();
             clickFirst();
 
         } catch (e)    {
             console.log(e); // eslint-disable-line no-console
         }
-
     }
 
-    function nominationsToDraw() {
-        let filtered = Object.keys(statusSelectionMap).reduce(function (filtered, key) {
-            if (statusSelectionMap[key] === true) filtered[key] = nominationStatuses[key];
-            return filtered;
-        }, {});
-        let nominationList = [];
-        if (Object.keys(filtered).length < 1) {
-            for (let i = 0; i < expectedStatuses.length; i++) {
-                let status = expectedStatuses[i];
-                for (let j = 0; j < nominationStatuses[status].length; j++) {
-                    nominationList.push(nominationStatuses[status][j]);
-                }
-            }
-        } else { 
-            for (const [key, value] of Object.entries(filtered)) {
-                for (let j = 0; j < nominationStatuses[key].length; j++) {
-                    nominationList.push(nominationStatuses[key][j]);
-                }
-            }
+    function addCounter() {
+        const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+        const insDiv = document.querySelector(".mt-2");
+        if (listEl === undefined || listEl === null || insDiv === undefined) {
+            setTimeout(addCounter, 200);
+            return;
         }
-        console.log("a");
-        return nominationList;
+
+        const searchInput = document.querySelector("input.w-full");
+        if (searchInput !== undefined) {
+            searchInput.addEventListener("keyup", updateMapFilter);
+        }
+        
+        const count = listEl["__ngContext__"][3][26].length;
+
+        countText = document.createElement('div');
+        countText.innerHTML = `Count: ${count}`;
+        countText.classList.add("wayfarernm_text");
+        insDiv.insertBefore(countText, insDiv.children[0]);
     }
 
     function addMap(mapElement) {
@@ -151,13 +149,25 @@ function init() {
         updateMap();
     }
 
+    function updateMapFilter() {
+        function updateCount() {
+            if (countText !== undefined) {
+                const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+                const count = listEl["__ngContext__"][3][26].length;
+                nominations = listEl["__ngContext__"][3][26];
+                countText.innerHTML = `Count: ${count}`;
+                updateMap();
+            }
+        }
+        setTimeout(updateCount, 300);
+    }
+
     function updateMap() {
         if (nominationCluster !== null)
             nominationCluster.clearMarkers();
 
         const bounds = new google.maps.LatLngBounds();
-        let nominationList = nominationsToDraw();
-        nominationMarkers = nominationList.map((nomination) => {
+        nominationMarkers = nominations.map((nomination) => {
             const latLng = {
                 lat: nomination.lat,
                 lng: nomination.lng
@@ -230,60 +240,22 @@ function init() {
         return mapElement;
     }
 
-    function initSelectorListeners() {
-        const cbParent = document.getElementsByClassName("sort-modal__statuses");
-        const modal = document.getElementsByTagName("app-nominations-sort-modal");
-        if (cbParent[0] === undefined || cbParent[0].children === undefined || cbParent[0].children.length < 1 ||
-        	modal[0] === undefined || modal[0].children === undefined) {
-            setTimeout(initSelectorListeners, 200);
+    function initPrimaryListener() {
+        const filterBtn = document.querySelector(".cursor-pointer");
+        if (filterBtn === undefined) {
+            setTimeout(initPrimaryListener, 200);
             return;
         }
-        let filterCbs = cbParent[0].children;
-        for (let i = 0; i < filterCbs.length; i++) {
-            if (expectedStatuses.indexOf(filterCbs[i]["__ngContext__"][25]) !== -1) {
-                statusSelectionMap[filterCbs[i]["__ngContext__"][25]] = false;
-                initCbListener(filterCbs[i], filterCbs[i]["__ngContext__"][25]);
-            } else if (expectedStatuses.indexOf(filterCbs[i]["attributes"]["value"]["nodeValue"]) !== -1) {
-                statusSelectionMap[filterCbs[i]["attributes"]["value"]["nodeValue"]] = false;
-                initCbListener(filterCbs[i], filterCbs[i]["attributes"]["value"]["nodeValue"]);
-            }
-        }
-        const els = modal[0].getElementsByClassName("wf-button--primary");
-        for (let i = 0; i < els.length; i++) {
-        	els[i].addEventListener('click', function() {
-	            updateMap();
-	        });
-        }
-    }
-
-    function initCbListener(checkboxwrapper, key) {
-        const els = checkboxwrapper.getElementsByClassName("mat-checkbox-input");
-        if (els.length < 1) {
-            return;
-        }
-        let checkbox = els[0];
-        checkbox.addEventListener('click', function() {
-            if (this.checked) {
-                statusSelectionMap[key] = true;
-            } else {
-                statusSelectionMap[key] = false;
-            }
+        filterBtn.addEventListener('click', function() {
+        	const modal = document.getElementsByTagName("app-nominations-sort-modal");
+            const els = modal[0].getElementsByClassName("wf-button--primary");
+	        for (let i = 0; i < els.length; i++) {
+	            els[i].addEventListener('click', function() {
+	                updateMapFilter();
+	            });
+	        }
         });
     }
-
-       let nominationStatuses = {
-        "ACCEPTED": [],
-        "APPEALED": [],
-        "NOMINATED": [],
-        "WITHDRAWN": [],
-        "VOTING": [],
-        "DUPLICATE": [],
-        "REJECTED": [],
-        "NIANTIC_REVIEW": [],
-        "upgraded": [],
-        "upgradeNext": [],
-        "notFound": []
-    };
 
     function clickFirst() {
         const listHolder = document.getElementsByClassName("cdk-virtual-scroll-content-wrapper");
@@ -306,30 +278,10 @@ function init() {
             let styleElem = document.createElement("STYLE");
             styleElem.innerText = ".customMapButton{display:inline-block;background:white;padding:5pt;border-radius:3pt;position:relative;margin:5pt;color:black;box-shadow:2pt 2pt 3pt grey;transition:box-shadow 0.2s;}.customMapButton:hover{background-color:#F0F0F0;color:black;box-shadow:1pt 1pt 3pt grey;}.wrap-collabsible{margin-bottom:1.2rem;}#collapsible, #collapsed-map{display:none;}.lbl-toggle{display:block;font-weight:bold;font-family:monospace;font-size:1.2rem;text-transform:uppercase;text-align:center;padding:1rem;color:white;background:#DF471C;cursor:pointer;border-radius:7px;transition:all 0.25s ease-out;}.lbl-toggle:hover{color:lightgrey;}.lbl-toggle::before{content:' ';display:inline-block;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:5px solid currentColor;vertical-align:middle;margin-right:.7rem;transform:translateY(-2px);transition:transform .2s ease-out;}.toggle:checked + .lbl-toggle::before{transform:rotate(90deg) translateX(-3px);}.collapsible-content{max-height:0px;overflow:hidden;transition:max-height .25s ease-in-out;}.toggle:checked + .lbl-toggle + .collapsible-content{max-height:9999999pt;}.toggle:checked + .lbl-toggle{border-bottom-right-radius:0;border-bottom-left-radius:0;}.collapsible-content .content-inner{border-bottom:1px solid rgba(0,0,0,1);border-left:1px solid rgba(0,0,0,1);border-right:1px solid rgba(0,0,0,1);border-bottom-left-radius:7px;border-bottom-right-radius:7px;padding:.5rem 1rem;}.content-inner td:last-child{text-align:right;}th, td{border:white solid 1pt;padding:1pt 5pt;}#statReload{float:right;}.dropbtn{background-color:#4CAF50;color:white;padding:16px;font-size:16px;border:none;cursor:pointer;}.mapsDropdown{float:left;background-color:white;border-radius:5px;box-shadow:grey 2px 2px 10px;margin-bottom:.5em;font-size:1.1em;color:black;padding:.25em;width:7em;text-align:center;}.dropdown-content{display:none;position:absolute;transform:translateY(-100%);border-radius:5px;background-color:#f9f9f9;min-width:160px;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);z-index:9001;}.dropdown-content a{color:black;padding:12px 16px;text-decoration:none;display:block;}.dropdown-content a:hover{background-color:#f1f1f1 border-radius:5px;}.mapsDropdown:hover .dropdown-content{display:block;}.mapsDropdown:hover .dropbtn{background-color:#3e8e41;}#statsWidget{float:right;}#wfpNotify{position:absolute;bottom:1em;right:1em;width:30em;z-index:100;}.wfpNotification{border-radius:0.5em;background-color:#3e8e41CC;padding:1em;margin-top:1.5em;color:white;}.wfpNotifyCloseButton{float:right;}.theme--dark .collapsible-content .content-inner{color:white !important;border-bottom:1px solid white !important;border-left:1px solid white !important;border-right:1px solid white !important;}"
             document.getElementsByTagName("head")[0].appendChild(styleElem);
-            sortNominations(nominations);
             addMap(createElements());
         } else {
-            sortNominations(nominations);
             updateMap();
         } 
-    }
-
-    function sortNominations(nominations) {
-        for (let i = 0; i < nominations.length; i++) {
-            const nom = nominations[i];
-            if (nom["status"] in nominationStatuses) {
-                nominationStatuses[nom["status"]].push(nom);
-            } else {
-                nominationStatuses["notFound"].push(nom);
-            }
-            if (nom["nextUpgrade"] === true) {
-                nominationStatuses["upgradeNext"].push(nom);
-            }
-            if (nom["upgraded"] === true) {
-                nominationStatuses["upgraded"].push(nom);    
-            }
-        }
-        console.log("a");
     }
 
     function insertAfter(newNode, referenceNode) {
@@ -398,6 +350,10 @@ function init() {
                 display: inline-block;
                 font-size: 16px;
             }
+
+            .wayfarernm_text {
+                  font-size: 18px;
+              }
 
             .wrap-collabsible {
                 margin-bottom: 1.2rem;
