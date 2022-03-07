@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.4
+// @version      0.4.5
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -180,6 +180,7 @@ function init() {
 
         let markers = markerDiv.children;
         if (markers.length <=1) {
+            setTimeout(addNearbyTooltips, 500);
             return;
         }
         markers = Array.from(markers).filter(m => window.getComputedStyle(m).width === "32px");
