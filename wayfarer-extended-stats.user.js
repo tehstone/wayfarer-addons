@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.3.5
+// @version      0.3.6
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -132,7 +132,7 @@ function init() {
 		badgeCountInput.value = badgeCount;
 		badgeCountInput.addEventListener('change', function () {
 	        const userId = getUserId();
-	        badgeCount = this.value;
+	        badgeCount = parseInt(this.value);
 	    	localStorage["wfcc_badge_count_" + userId] = badgeCount;
 	    	updateAgreementDisplay();
 	    });
@@ -324,7 +324,9 @@ function init() {
       let badgeCount = localStorage["wfcc_badge_count_" + userId];
       if (badgeCount === undefined || badgeCount === null || badgeCount === "" || badgeCount === "false"){
 	    badgeCount = 0;
-	  }
+	  } else {
+        badgeCount = parseInt(badgeCount);
+      }
 
 	  const exportData = {
 	  	"current_rating": performance,
