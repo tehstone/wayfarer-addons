@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History
-// @version      0.1.6
+// @version      0.1.7
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js
@@ -311,6 +311,10 @@ function init() {
         statement,
         supportingImageUrl,
         ts: +new Date(),
+      }
+      console.log(`t1: ${candidate["t1"]}`);
+      if (candidate["t1"] !== 0.5) {
+        alert("t1 is not 0.5");
       }
     }
 
