@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.3.3
+// @version      0.4.0
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -9,7 +9,7 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.min.js
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
