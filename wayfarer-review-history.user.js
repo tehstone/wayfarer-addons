@@ -327,7 +327,8 @@ function init() {
         description,
         descriptionEdits,
         titleEdits,
-        locationEdits
+        locationEdits,
+        ts: +new Date(),
       }
     }
 
@@ -340,7 +341,8 @@ function init() {
         description,
         lat,
         lng,
-        newPhotos
+        newPhotos,
+        ts: +new Date(),
       }
     }
 
