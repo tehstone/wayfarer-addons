@@ -605,7 +605,6 @@
                 awaitElement(() => document.querySelector('#location-accuracy-card nia-map'))
                 .then((ref) => {
                     addOpenButtons(ref, result);
-                    addNearbyClickListeners();
                 });
                 break;
             case 'APP-REVIEW-EDIT':
@@ -619,40 +618,6 @@
         }
     });
 
-    const addNearbyClickListeners = () => {
-        awaitElement(() => document.querySelector('div.w-full'))
-        .then(() => {
-            document.querySelectorAll('img.cursor-pointer').forEach((el) => {
-                el.addEventListener('click', (el) => {
-                    const nearbyWaySpots = el.target.parentElement['__ngContext__'][23];
-                    if (nearbyWaySpots !== null && nearbyWaySpots !== undefined) {
-                        const output = nearbyWaySpots.filter(function(obj) {
-                          return obj['infoWindowComponentData']['title'] === el.target.alt;
-                        });
-                        if (output.length === 1) {
-                            const guid = output[0].id;
-                            const lat = output[0].latitude;
-                            const lng = output[0].longitude;
-                            let nearbyBox = document.querySelector('.gm-style-iw-d > div:nth-child(1) > div:nth-child(1)');
-                            if (nearbyBox !== null && nearbyBox !== undefined) {
-                                const linkDiv = document.createElement('div');
-                                linkDiv.classList.add('wayfareropenin__linkspan');
-                                const link = document.createElement('a');
-                                link.href = `https://link.ingress.com/?link=https%3a%2f%2fintel.ingress.com%2Fportal%2f${guid}&apn=com.nianticproject.ingress&isi=576505181&ibi=com.google.ingress&ifl=https%3a%2f%2fapps.apple.com%2fapp%2fingress%2fid576505181&ofl=https%3a%2f%2fintel.ingress.com%2fintel%3fpll%3d${lat}%2c${lng}`;
-                                link.target = 'wayfareropenin';
-                                link.textContent = el.target.alt;
-                                linkDiv.appendChild(link);
-                                nearbyBox.insertBefore(linkDiv, nearbyBox.children[0]);
-                                nearbyBox.removeChild(nearbyBox.children[1]);
-                                console.log(nearbyBox);
-                            }
-                        }
-                    }
-                });
-            });
-        });
-    }
-
     const awaitElement = get => new Promise((resolve, reject) => {
         let triesLeft = 10;
         const queryLoop = () => {
@@ -665,7 +630,7 @@
         queryLoop();
     });
 
-    const addOpenButtons = (before, { lat, lng, title, description }) => {
+    const addOpenButtons = (before, { lat, lng, title, description, guid }) => {
         const box = document.createElement('div');
         box.classList.add('wayfareropenin__container');
 
@@ -730,6 +695,17 @@
                 globalBox.appendChild(linkSpan);
             }
         });
+
+        if (guid !== null && guid !== undefined) {
+            const linkSpan = document.createElement('span');
+            linkSpan.classList.add('wayfareropenin__linkspan');
+            const link = document.createElement('a');
+            link.href = `https://link.ingress.com/?link=https%3a%2f%2fintel.ingress.com%2Fportal%2f${guid}&apn=com.nianticproject.ingress&isi=576505181&ibi=com.google.ingress&ifl=https%3a%2f%2fapps.apple.com%2fapp%2fingress%2fid576505181&ofl=https%3a%2f%2fintel.ingress.com%2fintel%3fpll%3d${lat}%2c${lng}`;
+            link.target = 'wayfareropenin';
+            link.textContent = 'Ingress Prime';
+            linkSpan.appendChild(link);
+            globalBox.appendChild(linkSpan);
+        }
 
         box.appendChild(globalBox);
         Object.keys(regionBoxes).forEach(region => { box.appendChild(regionBoxes[region]); });
