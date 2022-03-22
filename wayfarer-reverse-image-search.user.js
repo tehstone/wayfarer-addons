@@ -84,10 +84,12 @@
             //     awaitElement(() => document.querySelector('.review-edit-info .review-edit-info__info'))
             //     .then(ref => addOpenButtons(ref, result));
             //     break;
-            // case 'APP-REVIEW-PHOTO':
-            //     awaitElement(() => ref.querySelector('.review-photo__info > div > div:nth-child(2)'))
-            //     .then(ref => addOpenButtons(ref, result));
-            //     break;
+            case 'APP-REVIEW-PHOTO':
+                awaitElement(() => ref.querySelector('.review-photo__info > div > div:nth-child(2)'))
+                .then((ref) => {
+                    addPhotoReviewLinks(ref, result);
+                });
+                break;
         }
     });
 
@@ -114,8 +116,27 @@
     }
   }
 
-  const insertAfter = (newNode, referenceNode) => {
-        referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+  const addPhotoReviewLinks = (before, data) => {
+    for (let i = 1; i < 27; i++) {
+      const photoEl = document.querySelector(`app-photo-card.ng-star-inserted:nth-child(${i}) > div:nth-child(1) > div:nth-child(2)`);
+      if (photoEl === null || photoEl === undefined) {
+        break;
+      }
+      const url = encodeURI(`${data['newPhotos'][i-1]['value']}`);
+      const searchUrl = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl:${url}&idpbck=1&selectedindex=0`
+      const linkSpan = document.createElement('span');
+      const link = document.createElement('a');
+      link.href = searchUrl;
+      link.target = 'wayfareropenin';
+      link.textContent = 'Reverse Image Search';
+      linkSpan.appendChild(link);
+      photoEl.insertBefore(linkSpan, photoEl.children[0]);
     }
+    console.log("a");
+  }
+
+  const insertAfter = (newNode, referenceNode) => {
+      referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+  }
 
 })();
