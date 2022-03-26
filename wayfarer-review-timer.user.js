@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.3.8
+// @version      0.4.0
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -79,7 +79,7 @@
                     console.log(e);
                 }
                 addSettings();
-                setTimeout(addSmartSubmitButton, 500);
+                addSmartSubmitButton();
             });
     }
 
@@ -250,6 +250,7 @@
             return;
         }
 
+        userId = getUserId();
         let smartSubmitEnabled = localStorage["wfrt_smart_submit_enabled_" + userId];
         if (smartSubmitEnabled === undefined || smartSubmitEnabled === null || smartSubmitEnabled === ""){
             smartSubmitEnabled = false;
