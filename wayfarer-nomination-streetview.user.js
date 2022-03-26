@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.3.6
+// @version      0.3.7
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -47,17 +47,18 @@
 	})(XMLHttpRequest.prototype.open);
 
     function parseNominations() {
+        tryNumber = 10;
         const response = this.response;
         const json = JSON.parse(response);
         if (!json) {
-            alert('Failed to parse response from Wayfarer');
+            console.log('Failed to parse response from Wayfarer');
             return;
         }
         // ignore if it's related to captchas
         if (json.captcha) return;
 
         if (!json.result) {
-            alert('Wayfarer\'s response didn\'t include candidates.');
+            console.log('Wayfarer\'s response didn\'t include candidates.');
             return;
         }
 
@@ -66,34 +67,44 @@
         list.addEventListener('click', handleNominationClick);
     }
 
-    function handleNominationClick(e) {
-        const item = e.target.closest('app-nominations-list-item');
-        if (item) {
-            const nom = nomCache[item.querySelector('img').src];
-            tryNumber = 10;
-            
-            addCoordinates(nom);
-            addStreetView(nom);
+    const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
         }
+        queryLoop();
+    });
+
+    function handleNominationClick(e) {
+        awaitElement(() => e.target.closest('app-nominations-list-item'))
+            .then((ref) => {
+                const nom = nomCache[ref.querySelector('img').src];
+                addStreetView(nom);
+                addCoordinates(nom);
+            });
     }
 
 	function addCoordinates(selected) {
         const { lat, lng, city, state } = selected;
-        const locationP = document.querySelector("app-nominations app-details-pane p");
-        if (locationP) {
-	    	const coordinates = `${lat},${lng}`;
-	    	const newText = `${city} ${state} (${coordinates})`;
-	    	locationP.innerText = newText;
-            locationP.style.cursor = 'pointer';
-            locationP.title = 'Copy coordinates to clipboard';
-	    	locationP.onclick = function() {
-				navigator.clipboard.writeText(coordinates);
-			}
-		}
+        awaitElement(() => document.querySelector("app-nominations app-details-pane p"))
+            .then((locationP) => {
+                const coordinates = `${lat},${lng}`;
+                const newText = `${city} ${state} (${coordinates})`;
+                locationP.innerText = newText;
+                locationP.style.cursor = 'pointer';
+                locationP.title = 'Copy coordinates to clipboard';
+                locationP.onclick = function() {
+                    navigator.clipboard.writeText(coordinates);
+                }
+            });
 
-        const titleP = document.querySelector("app-nominations app-details-pane h4");
-        if (titleP) {
-            if (intelLink === null) {
+        awaitElement(() => document.querySelector("app-nominations app-details-pane h4"))
+            .then((titleP) => {
+                if (intelLink === null) {
                 intelLink = document.createElement('a');
                 intelLink.id = 'intelLink';
                 intelLink.className = 'anchor-link';
@@ -107,7 +118,7 @@
             
             insertAfter(intelLink, titleP);
             titleP.style.display = "none";
-        }        
+        });     
 	}
 
     function insertAfter(newNode, referenceNode) {
@@ -126,7 +137,7 @@
                 alert('Nomination Street View initialization failed, please refresh the page');
 				return;
 			}
-			setTimeout(addStreetView, 1000, selected);
+			setTimeout(addStreetView, 300, selected);
 			tryNumber--;
 			return;
 		}
