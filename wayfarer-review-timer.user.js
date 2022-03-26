@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -50,66 +50,69 @@
         };
     })(XMLHttpRequest.prototype.open);
 
+    const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
+        }
+        queryLoop();
+    });
+
     function injectTimer() {
         tryNumber = 10;
-        const ref = document.querySelector('wf-logo');
-        if (!ref) {
-            setTimeout(injectTimer, 200);
-            return;
-        }
+        awaitElement(() => document.querySelector('wf-logo'))
+            .then((ref) => {
+                try {
+                    const response = this.response;
+                    const json = JSON.parse(response);
+                    if (!json) return;
+                    const candidate = json.result;
+                    if (json.captcha || !candidate) return;
 
-        try {
-            const response = this.response;
-            const json = JSON.parse(response);
-            if (!json) return;
-            const candidate = json.result;
-            if (json.captcha || !candidate) return;
-
-            expireTime = candidate.expires;
-            initTimer(ref.parentNode.parentNode, candidate.expires);
-        } catch (e) {
-            console.log(e);
-        }
-        addSettings();
-        addSmartSubmitButton();
+                    expireTime = candidate.expires;
+                    initTimer(ref.parentNode.parentNode, candidate.expires);
+                } catch (e) {
+                    console.log(e);
+                }
+                addSettings();
+                setTimeout(addSmartSubmitButton, 500);
+            });
     }
 
     function initTimer(container, expiry) {
-        const ref =
-          document.querySelector('app-should-be-wayspot') ||
-          document.querySelector('app-review-edit') ||
-          document.querySelector('app-review-photo');
+        awaitElement(() => (
+            document.querySelector('app-should-be-wayspot') ||
+            document.querySelector('app-review-edit') ||
+            document.querySelector('app-review-photo')
+            )).then(ref => {
+                let counter = document.getElementById("wayfarerrtmr_counter");
+                if (!counter) {
+                    const div = document.createElement('div');
+                    div.className = 'wayfarerrtmr';
 
-        if (!ref) {
-            setTimeout(function() {
-                initTimer(container, expiry);
-            }, 400);
-            return;
-        }
+                    let countLabel = document.createElement('p');
+                    countLabel.id = "wayfarerrtmr_counterlabel";
+                    countLabel.textContent = 'Time remaining: ';
+                    counter = document.createElement('p');
+                    counter.id = "wayfarerrtmr_counter"
+                    counter.classList.add("wftmr_counter");
+                    
+                    div.appendChild(countLabel);
+                    div.appendChild(counter);
+                    container.appendChild(div);
 
-        let counter = document.getElementById("wayfarerrtmr_counter");
-        if (!counter) {
-            const div = document.createElement('div');
-            div.className = 'wayfarerrtmr';
+                    let timer = setInterval(() => {
+                        updateTime(counter, expiry);
+                    }, 1000);
 
-            let countLabel = document.createElement('p');
-            countLabel.id = "wayfarerrtmr_counterlabel";
-            countLabel.textContent = 'Time remaining: ';
-            counter = document.createElement('p');
-            counter.id = "wayfarerrtmr_counter"
-            counter.classList.add("wftmr_counter");
-            
-            div.appendChild(countLabel);
-            div.appendChild(counter);
-            container.appendChild(div);
-
-            let timer = setInterval(() => {
-                updateTime(counter, expiry);
-            }, 1000);
-
-        } else {
-            counter.style.display = 'block';
-        }
+                } else {
+                    counter.style.display = 'block';
+                }
+            });
     }
 
     function updateTime(counter, expiry) {
@@ -126,135 +129,124 @@
     }
 
     function addSettings() {
-        const ref = document.querySelector("body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div.flex.justify-center.mt-8.ng-star-inserted");
+        awaitElement(() => document.querySelector("body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div.flex.justify-center.mt-8.ng-star-inserted"))
+            .then((ref) => {
+                if (document.getElementById("wayfarerrtsettings") !== null) {
+                  return;
+                }
 
-        if (!ref) {
-            if (tryNumber === 0) {
-                document.querySelector('body')
-                    .insertAdjacentHTML('afterBegin', '<div class="alert alert-danger"><strong><span class="glyphicon glyphicon-remove"></span> Wayfarer Clippy Copy initialization failed, refresh page</strong></div>');
-                return;
-            }
-            setTimeout(addSettings, 1000);
-            tryNumber--;
-            return;
-        }
+                userId = getUserId();
+                const settingsDiv = document.createElement('div');
+                settingsDiv.id = "wayfarerrtsettings";
 
-        const testelem = document.getElementById("wayfarerrtsettings");
-        if (testelem !== null) {
-          return;
-        }
+                let smartSubmitEnabledInput = document.createElement('input');
+                smartSubmitEnabledInput.setAttribute("type", "checkbox");
+                let smartSubmitEnabled = localStorage["wfrt_smart_submit_enabled_" + userId];
+                if (smartSubmitEnabled === undefined || smartSubmitEnabled === null || smartSubmitEnabled === ""){
+                    smartSubmitEnabled = false;
+                }
+                smartSubmitEnabledInput.checked = smartSubmitEnabled === "true";
+                smartSubmitEnabledInput.addEventListener('change', function () {
+                    smartSubmitEnabled = this.checked;
+                    localStorage["wfrt_smart_submit_enabled_" + userId] = smartSubmitEnabled;
+                });
+                smartSubmitEnabledInput.id = "wayfarerrtsmartsubmitenabled";
+                smartSubmitEnabledInput.classList.add('wayfarercc_input');
 
-        userId = getUserId();
-        const settingsDiv = document.createElement('div');
-        settingsDiv.id = "wayfarerrtsettings";
+                const smartSubmitEnabledLabel = document.createElement("label");
+                smartSubmitEnabledLabel.innerText = "Enable Smart Submit:";
+                smartSubmitEnabledLabel.setAttribute("for", "wayfarerrtsmartsubmitenabled");
+                smartSubmitEnabledLabel.classList.add('wayfareres_settings_label');
 
-        let smartSubmitEnabledInput = document.createElement('input');
-        smartSubmitEnabledInput.setAttribute("type", "checkbox");
-        let smartSubmitEnabled = localStorage["wfrt_smart_submit_enabled_" + userId];
-        if (smartSubmitEnabled === undefined || smartSubmitEnabled === null || smartSubmitEnabled === ""){
-            smartSubmitEnabled = false;
-        }
-        smartSubmitEnabledInput.checked = smartSubmitEnabled === "true";
-        smartSubmitEnabledInput.addEventListener('change', function () {
-            smartSubmitEnabled = this.checked;
-            localStorage["wfrt_smart_submit_enabled_" + userId] = smartSubmitEnabled;
-        });
-        smartSubmitEnabledInput.id = "wayfarerrtsmartsubmitenabled";
-        smartSubmitEnabledInput.classList.add('wayfarercc_input');
+                let minDelayInput = document.createElement('input');
+                minDelayInput.setAttribute("type", "number");
+                minDelayInput.setAttribute("size", '2');
+                let minDelay = localStorage["wfrt_min_delay_" + userId];
+                if (minDelay === undefined || minDelay === null || minDelay === "false"){
+                    minDelay = 20;
+                    localStorage["wfrt_min_delay_" + userId] = minDelay;
+                }
+                if (minDelay === "") {
+                    minDelay = 0;
+                }
+                minDelayInput.value = minDelay;
+                minDelayInput.addEventListener('change', function () {
+                    minDelay = this.value;
+                    localStorage["wfrt_min_delay_" + userId] = minDelay;
+                });
+                minDelayInput.id = "wayfarerrtmindelay";
+                minDelayInput.classList.add('wayfarercc_input');
 
-        const smartSubmitEnabledLabel = document.createElement("label");
-        smartSubmitEnabledLabel.innerText = "Enable Smart Submit:";
-        smartSubmitEnabledLabel.setAttribute("for", "wayfarerrtsmartsubmitenabled");
-        smartSubmitEnabledLabel.classList.add('wayfareres_settings_label');
+                const minDelayLabel = document.createElement("label");
+                minDelayLabel.innerText = "Smart Submit Minimum Delay:";
+                minDelayLabel.setAttribute("for", "wayfarerrtmindelay");
+                minDelayLabel.classList.add('wayfareres_settings_label');
 
-        let minDelayInput = document.createElement('input');
-        minDelayInput.setAttribute("type", "number");
-        minDelayInput.setAttribute("size", '2');
-        let minDelay = localStorage["wfrt_min_delay_" + userId];
-        if (minDelay === undefined || minDelay === null || minDelay === "false"){
-            minDelay = 20;
-            localStorage["wfrt_min_delay_" + userId] = minDelay;
-        }
-        if (minDelay === "") {
-            minDelay = 0;
-        }
-        minDelayInput.value = minDelay;
-        minDelayInput.addEventListener('change', function () {
-            minDelay = this.value;
-            localStorage["wfrt_min_delay_" + userId] = minDelay;
-        });
-        minDelayInput.id = "wayfarerrtmindelay";
-        minDelayInput.classList.add('wayfarercc_input');
+                let maxDelayInput = document.createElement('input');
+                maxDelayInput.setAttribute("type", "number");
+                maxDelayInput.setAttribute("size", '2');
+                let maxDelay = localStorage["wfrt_max_delay_" + userId];
+                if (maxDelay === undefined || maxDelay === null || maxDelay === "false"){
+                    maxDelay = 30;
+                    localStorage["wfrt_max_delay_" + userId] = maxDelay;
+                }
+                if (maxDelay === "") {
+                    maxDelay = 0;
+                }
+                maxDelayInput.value = maxDelay;
+                maxDelayInput.addEventListener('change', function () {
+                    maxDelay = this.value;
+                    localStorage["wfrt_max_delay_" + userId] = maxDelay;
+                });
+                maxDelayInput.id = "wayfarerrtmaxdelay";
+                maxDelayInput.classList.add('wayfarercc_input');
 
-        const minDelayLabel = document.createElement("label");
-        minDelayLabel.innerText = "Smart Submit Minimum Delay:";
-        minDelayLabel.setAttribute("for", "wayfarerrtmindelay");
-        minDelayLabel.classList.add('wayfareres_settings_label');
+                const maxDelayLabel = document.createElement("label");
+                maxDelayLabel.innerText = "Smart Submit Maximum Delay:";
+                maxDelayLabel.setAttribute("for", "wayfarerrtmaxdelay");
+                maxDelayLabel.classList.add('wayfareres_settings_label');
 
-        let maxDelayInput = document.createElement('input');
-        maxDelayInput.setAttribute("type", "number");
-        maxDelayInput.setAttribute("size", '2');
-        let maxDelay = localStorage["wfrt_max_delay_" + userId];
-        if (maxDelay === undefined || maxDelay === null || maxDelay === "false"){
-            maxDelay = 30;
-            localStorage["wfrt_max_delay_" + userId] = maxDelay;
-        }
-        if (maxDelay === "") {
-            maxDelay = 0;
-        }
-        maxDelayInput.value = maxDelay;
-        maxDelayInput.addEventListener('change', function () {
-            maxDelay = this.value;
-            localStorage["wfrt_max_delay_" + userId] = maxDelay;
-        });
-        maxDelayInput.id = "wayfarerrtmaxdelay";
-        maxDelayInput.classList.add('wayfarercc_input');
+                settingsDiv.appendChild(smartSubmitEnabledLabel);
+                settingsDiv.appendChild(smartSubmitEnabledInput);
+                settingsDiv.appendChild(document.createElement('br'));
+                settingsDiv.appendChild(minDelayLabel);
+                settingsDiv.appendChild(minDelayInput);
+                settingsDiv.appendChild(document.createElement('br'));
+                settingsDiv.appendChild(maxDelayLabel);
+                settingsDiv.appendChild(maxDelayInput);
+                settingsDiv.classList.add('wayfarerrh__visible');
 
-        const maxDelayLabel = document.createElement("label");
-        maxDelayLabel.innerText = "Smart Submit Maximum Delay:";
-        maxDelayLabel.setAttribute("for", "wayfarerrtmaxdelay");
-        maxDelayLabel.classList.add('wayfareres_settings_label');
+                const settingsContainer = document.createElement('div');
+                settingsContainer.setAttribute('class', 'wrap-collabsible')
+                settingsContainer.id = "nomStats";
 
-        settingsDiv.appendChild(smartSubmitEnabledLabel);
-        settingsDiv.appendChild(smartSubmitEnabledInput);
-        settingsDiv.appendChild(document.createElement('br'));
-        settingsDiv.appendChild(minDelayLabel);
-        settingsDiv.appendChild(minDelayInput);
-        settingsDiv.appendChild(document.createElement('br'));
-        settingsDiv.appendChild(maxDelayLabel);
-        settingsDiv.appendChild(maxDelayInput);
-        settingsDiv.classList.add('wayfarerrh__visible');
+                const collapsibleInput = document.createElement("input");
+                collapsibleInput.id = "collapsed-settings";
+                collapsibleInput.setAttribute("class", "toggle");
+                collapsibleInput.type = "checkbox";
 
-        const settingsContainer = document.createElement('div');
-        settingsContainer.setAttribute('class', 'wrap-collabsible')
-        settingsContainer.id = "nomStats";
+                const collapsibleLabel = document.createElement("label");
+                collapsibleLabel.setAttribute("class", "lbl-toggle-es");
+                collapsibleLabel.innerText = "Add-on Settings";
+                collapsibleLabel.setAttribute("for", "collapsed-settings");
 
-        const collapsibleInput = document.createElement("input");
-        collapsibleInput.id = "collapsed-settings";
-        collapsibleInput.setAttribute("class", "toggle");
-        collapsibleInput.type = "checkbox";
+                const collapsibleContent = document.createElement("div");
+                collapsibleContent.setAttribute("class", "collapsible-content-es");
 
-        const collapsibleLabel = document.createElement("label");
-        collapsibleLabel.setAttribute("class", "lbl-toggle-es");
-        collapsibleLabel.innerText = "Add-on Settings";
-        collapsibleLabel.setAttribute("for", "collapsed-settings");
+                collapsibleContent.appendChild(settingsDiv);
+                settingsContainer.appendChild(collapsibleInput);
+                settingsContainer.appendChild(collapsibleLabel);
+                settingsContainer.appendChild(collapsibleContent);
 
-        const collapsibleContent = document.createElement("div");
-        collapsibleContent.setAttribute("class", "collapsible-content-es");
-
-        collapsibleContent.appendChild(settingsDiv);
-        settingsContainer.appendChild(collapsibleInput);
-        settingsContainer.appendChild(collapsibleLabel);
-        settingsContainer.appendChild(collapsibleContent);
-
-        insertAfter(settingsContainer, ref)
+                insertAfter(settingsContainer, ref)
+            });
     }
 
     function addSmartSubmitButton() {
-        const parentCollection = document.getElementsByClassName("wf-page-header__actions");
+        const buttons = document.getElementsByClassName("wf-split-button");
 
-        if (parentCollection.length < 1) {
-            setTimeout(addSmartSubmitButton, 1000);
+        if (buttons.length < 1) {
+            setTimeout(addSmartSubmitButton, 400);
             return;
         }
 
@@ -269,8 +261,7 @@
             return;
         }
 
-        const buttons = document.getElementsByTagName("wf-split-button");
-        for(let i=0; i < buttons.length;i++) {
+        for(let i=0; i < buttons.length; i++) {
             let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_${i}`);
 
             if (!smartSubmitEnabled) {
@@ -414,7 +405,6 @@
         }
 
         let delay = randomIntFromInterval(parseInt(minDelay), parseInt(maxDelay));
-        //console.log(`minDelay of ${minDelay}, maxDelay of ${maxDelay}, diff of ${diff}, delay of ${delay}`);
         if (diff + delay > 1200) {
             updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)}`, `${Math.abs(1200 - delay - diff)}`);
         }
