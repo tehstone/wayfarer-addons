@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.3.5
+// @version      0.3.6
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -47,14 +47,12 @@ function init() {
 		};
 	})(XMLHttpRequest.prototype.open);
 
-	addCss();
-
 	function parseNominations(e) {
 		try {
 			const response = this.response;
 			const json = JSON.parse(response);
 			if (!json) {
-				alert('Failed to parse response from Wayfarer');
+				console.log('Failed to parse response from Wayfarer');
 				return;
 			}
 			// ignore if it's related to captchas
@@ -63,124 +61,143 @@ function init() {
 
 			nominations = json.result.nominations;
 			if (!nominations) {
-				alert('Wayfarer\'s response didn\'t include nominations.');
+				console.log('Wayfarer\'s response didn\'t include nominations.');
 				return;
 			}
-			addNominationDetails();
-			addExportButtons();
-			if ("canAppeal" in json.result) {
-				checkAppealStatus(json.result["canAppeal"]);
-			}
+			setTimeout(() => {
+				addNominationDetails();
+				addExportButtons();
+				if ("canAppeal" in json.result) {
+					checkAppealStatus(json.result["canAppeal"]);
+				}
+			}, 300);
+			
 
 		} catch (e)	{
 			console.log(e); // eslint-disable-line no-console
 		}
 	}
 
+	const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
+        }
+        queryLoop();
+    });
+
 	function addNominationDetails() {
 		const ref = document.querySelector('app-nominations-list');
 
-		if (!ref) {
-			if (tryNumber === 0) {
-				document.querySelector('body')
-					.insertAdjacentHTML('afterBegin', '<div class="alert alert-danger"><strong><span class="glyphicon glyphicon-remove"></span> Wayfarer Clippy Copy initialization failed, refresh page</strong></div>');
-				return;
-			}
-			setTimeout(addSettings, 1000);
-			tryNumber--;
-			return;
-		}
+		awaitElement(() => document.querySelector('app-nominations-list'))
+            .then((ref) => {
+            	addNotificationDiv();
+            	addCss();
+                const nomCount = nominations.length;
+				let acceptedCount = 0;
+				let appealedCount = 0;
+			    let deniedCount = 0;
+			    let inVoteCount = 0;
+		        let inVoteUpgradeCount = 0;
+			    let inQueueCount = 0;
+		        let inQueueUpgradeCount = 0;
+			    let dupeCount = 0;
+			    let withdrawnCount = 0;
+			    let niaReviewCount = 0;
+			    let nextUpgradeSet = false;
 
-		const nomCount = nominations.length;
-		let acceptedCount = 0;
-		let appealedCount = 0;
-	    let deniedCount = 0;
-	    let inVoteCount = 0;
-        let inVoteUpgradeCount = 0;
-	    let inQueueCount = 0;
-        let inQueueUpgradeCount = 0;
-	    let dupeCount = 0;
-	    let withdrawnCount = 0;
-	    let niaReviewCount = 0;
+			    for(let i = 0; i < nomCount; i++){
+			    	if (nominations[i]["nextUpgrade"] === true) {
+			    		nextUpgradeSet = true;
+			    	}
+					switch (nominations[i].status){
+			            case "NOMINATED":
+			                inQueueCount++;
+			                if (nominations[i].upgraded)
+			                    inQueueUpgradeCount++;
+			                break;
+			            case "VOTING":
+			                inVoteCount++;
+			                if (nominations[i].upgraded)
+			                    inVoteUpgradeCount++;
+			                break;
+			            case "REJECTED":
+			                deniedCount++;
+			                break;
+						case "APPEALED":
+							appealedCount++;
+							break;
+			            case "ACCEPTED":
+			                acceptedCount++;
+			                break;
+			            case "DUPLICATE":
+			                dupeCount++;
+			                break;
+			            case "WITHDRAWN":
+			                withdrawnCount++;
+			                break;
+			            case "NIANTIC_REVIEW":
+			            	niaReviewCount++;
+			            	break;
+			            default:
+			                console.log("Wayfarer Nomination Stats encountered unknown status: " + nominations[i].status);
+			                break;
+				    }
+				}
 
-	    for(var i = 0; i < nomCount; i++){
-			switch (nominations[i].status){
-	            case "NOMINATED":
-	                inQueueCount++;
-	                if (nominations[i].upgraded)
-	                    inQueueUpgradeCount++;
-	                break;
-	            case "VOTING":
-	                inVoteCount++;
-	                if (nominations[i].upgraded)
-	                    inVoteUpgradeCount++;
-	                break;
-	            case "REJECTED":
-	                deniedCount++;
-	                break;
-				case "APPEALED":
-					appealedCount++;
-					break;
-	            case "ACCEPTED":
-	                acceptedCount++;
-	                break;
-	            case "DUPLICATE":
-	                dupeCount++;
-	                break;
-	            case "WITHDRAWN":
-	                withdrawnCount++;
-	                break;
-	            case "NIANTIC_REVIEW":
-	            	niaReviewCount++;
-	            	break;
-	            default:
-	                console.log("[WayFarer+] Encountered unknown status: " + nominations[i].status);
-	                break;
-		    }
-		}
+			    const statsContainer = document.createElement('div');
+		        statsContainer.setAttribute('class', 'wrap-collabsible')
+		        statsContainer.id = "nomStats";
 
-	    const statsContainer = document.createElement('div');
-        statsContainer.setAttribute('class', 'wrap-collabsible')
-        statsContainer.id = "nomStats";
+		        const collapsibleInput = document.createElement("input");
+		        collapsibleInput.id = "collapsed-stats";
+		        collapsibleInput.setAttribute("class", "toggle");
+		        collapsibleInput.type = "checkbox";
 
-        const collapsibleInput = document.createElement("input");
-        collapsibleInput.id = "collapsed-stats";
-        collapsibleInput.setAttribute("class", "toggle");
-        collapsibleInput.type = "checkbox";
+		        const collapsibleLabel = document.createElement("label");
+		        collapsibleLabel.setAttribute("class", "lbl-toggle-ns");
+		        collapsibleLabel.innerText = "View Nomination Stats";
+		        collapsibleLabel.setAttribute("for", "collapsed-stats");
 
-        const collapsibleLabel = document.createElement("label");
-        collapsibleLabel.setAttribute("class", "lbl-toggle-ns");
-        collapsibleLabel.innerText = "View Nomination Stats";
-        collapsibleLabel.setAttribute("for", "collapsed-stats");
+		        const collapsibleContent = document.createElement("div");
+		        collapsibleContent.setAttribute("class", "collapsible-content-ns");
 
-        const collapsibleContent = document.createElement("div");
-        collapsibleContent.setAttribute("class", "collapsible-content-ns");
-
-	    let html = "";
-	    html += "Total Nominations: " + parseInt(nomCount) +
-            "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round(acceptedCount/nomCount*100)) + "%)" +
-            "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round(deniedCount/nomCount*100)) + "%)" +
-            "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
-            "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round(dupeCount/nomCount*100)) + "%)" +
-            "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
-            "<br/>NIA Review: " + parseInt(niaReviewCount) +
-            "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
-			"<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
-            "<br/>Accepted ratio: 1:" + Math.round(10*(1/(acceptedCount/(deniedCount+appealedCount+dupeCount))))/10 + "<br/>";
+		        const baseCount = nomCount - withdrawnCount - appealedCount - inVoteCount - inQueueCount - niaReviewCount;
+			    let html = "";
+			    html += "Total Nominations: " + parseInt(nomCount) +
+		            "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round(acceptedCount/baseCount*100)) + "%)" +
+		            "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round(deniedCount/baseCount*100)) + "%)" +
+		            "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
+		            "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round(dupeCount/baseCount*100)) + "%)" +
+		            "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
+		            "<br/>NIA Review: " + parseInt(niaReviewCount) +
+		            "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
+					"<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
+		            "<br/>Accepted ratio: " + Math.round(10*(1/(acceptedCount/(deniedCount+appealedCount+dupeCount))))/10 + "<br/>";
 
 
 
-        const div = document.createElement('div');
-        div.classList.add('wayfarernd');
-        div.innerHTML = html;
-        collapsibleContent.appendChild(div);
+		        const div = document.createElement('div');
+		        div.classList.add('wayfarernd');
+		        div.innerHTML = html;
+		        collapsibleContent.appendChild(div);
 
-        statsContainer.appendChild(collapsibleInput);
-        statsContainer.appendChild(collapsibleLabel);
-        statsContainer.appendChild(collapsibleContent);
+		        statsContainer.appendChild(collapsibleInput);
+		        statsContainer.appendChild(collapsibleLabel);
+		        statsContainer.appendChild(collapsibleContent);
 
-        const container = ref.parentNode;
-        container.appendChild(statsContainer);
+		        const container = ref.parentNode;
+		        container.appendChild(statsContainer);
+
+		        if (!nextUpgradeSet) {
+		        	createNotification("No Upgrade Next is set!");
+		        }
+            });
+		
 	}
 
 	function addExportButtons() {
@@ -292,8 +309,61 @@ function init() {
 		}
 	}
 
+	function addNotificationDiv() {
+        if (document.getElementById("wfnsNotify") === null) {
+            let container = document.createElement("div");
+            container.id = "wfnsNotify";
+            document.getElementsByTagName("body")[0].appendChild(container);
+        }
+    }
+
+    function createNotification(message, color = 'red'){
+        let notification = document.createElement("div");
+        switch (color) {
+            case 'red':
+                notification.setAttribute("class", "wfnsNoUpgradeNextNotification wfnsBgRed");
+                break;
+        }
+        notification.onclick = function(){
+            notification.remove();
+        };
+
+        let content = document.createElement("p");
+        content.innerText = message;
+
+        // Purely aesthetic (The whole div closes the notification)
+        let closeButton = document.createElement("div");
+        closeButton.innerText = "X";
+        closeButton.setAttribute("class", "wfnsNotifyCloseButton");
+        closeButton.setAttribute("style", "cursor: pointer;");
+
+        notification.appendChild(closeButton);
+        notification.appendChild(content);
+
+        document.getElementById("wfnsNotify").appendChild(notification);
+    }
+
 	function addCss() {
 		const css = `
+			#wfnsNotify{
+                position: absolute;
+                bottom: 1em;
+                right: 1em;
+                width: 30em;
+                z-index: 100;
+                }
+                .wfnsNoUpgradeNextNotification{
+                border-radius: 0.5em;
+                padding: 1em;
+                margin-top: 1.5em;
+                color: white;
+                }
+                .wfnsBgRed{
+                background-color: #CC0000B0;
+                }
+                .wfnsNotifyCloseButton{
+                float: right;
+                }
 			.wayfarernost {
 				color: #333;
 				margin-left: 2em;
