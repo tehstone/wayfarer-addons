@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Reverse Image Search
-// @version      0.0.1
+// @version      0.2.0
 // @description  Add reverse image search links to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-reverse-image-search.user.js
@@ -70,7 +70,6 @@
 
   const checkReviewType = result => awaitElement(() => (
         document.querySelector('app-should-be-wayspot') ||
-        document.querySelector('app-review-edit') ||
         document.querySelector('app-review-photo')
     )).then(ref => {
         switch (ref.tagName) {
@@ -80,10 +79,6 @@
                     addImageSearchLinks(ref, result);
                 });
                 break;
-            // case 'APP-REVIEW-EDIT':
-            //     awaitElement(() => document.querySelector('.review-edit-info .review-edit-info__info'))
-            //     .then(ref => addOpenButtons(ref, result));
-            //     break;
             case 'APP-REVIEW-PHOTO':
                 awaitElement(() => ref.querySelector('.review-photo__info > div > div:nth-child(2)'))
                 .then((ref) => {
@@ -129,10 +124,10 @@
       link.href = searchUrl;
       link.target = 'wayfareropenin';
       link.textContent = 'Reverse Image Search';
+      link.preventDefault();
       linkSpan.appendChild(link);
       photoEl.insertBefore(linkSpan, photoEl.children[0]);
     }
-    console.log("a");
   }
 
   const insertAfter = (newNode, referenceNode) => {
