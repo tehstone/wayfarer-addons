@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.3.7
+// @version      0.4.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -22,7 +22,7 @@
 // GNU General Public License for more details.
 
 // You can find a copy of the GNU General Public License in the root
-// directory of this script's GitHub repository: 
+// directory of this script's GitHub repository:
 // <https://github.com/tehstone/wayfarer-addons/blob/main/LICENSE>
 // If not, see <https://www.gnu.org/licenses/>.
 
@@ -35,7 +35,7 @@ function init() {
 
     let selection = localStorage['wfcc_count_type_dropdown'];
       if (!selection) {
-        selection = 'upgradecount';
+        selection = 'simple';
         localStorage['wfcc_count_type_dropdown'] = selection;
       }
 
@@ -105,7 +105,8 @@ function init() {
         select.title = "Select count type";
         const reviewTypes = [
           {name: "badgestat", title: "Medal Stat"},
-          {name: "upgradecount", title: "Upgrade Count"}
+          {name: "upgradecount", title: "Upgrade Count"},
+          {name: "simple", title: "Simple"}
         ];
         select.innerHTML = reviewTypes.map(item => `<option value="${item.name}" ${item.name == selection ? 'selected' : ''}>${item.title}</option>`).join('');
         select.addEventListener('change', function () {
@@ -134,6 +135,7 @@ function init() {
             const userId = getUserId();
             badgeCount = parseInt(this.value);
             localStorage["wfcc_badge_count_" + userId] = badgeCount;
+            updateOtherCount(badgeCount);
             updateAgreementDisplay();
         });
         badgeCountInput.id - "wayfarerccbadgecount";
@@ -203,11 +205,18 @@ function init() {
         container.appendChild(settingsContainer);
     }
 
+    function updateOtherCount(badgeCount) {
+        const {accepted, rejected, duplicated} = stats;
+        const otherCount = badgeCount - accepted - rejected - duplicated;
+        const userId = getUserId();
+        localStorage["wfcc_other_count_" + userId] = otherCount;
+    }
+
     function updateAgreementDisplay() {
         let countDiv = document.getElementById("totalcountnumber");
         if (countDiv !== null) {
             const {finished, total, available, progress} = stats;
-            const newCount = getTotalAgreementCount(total, available, progress);
+            const newCount = getTotalAgreementCount(stats);
             const percent = ((newCount / finished)*100).toFixed(1);
             countDiv.innerHTML = newCount + " (" + percent + "%)";
         }
@@ -230,12 +239,13 @@ function init() {
         const container = ref.parentNode;
         container.appendChild(div);
 
-        CCButton = div;
+        let CCButton = div;
         CCButton.classList.add('wayfarercc__visible');
 
         awaitElement(() => document.getElementsByClassName("wf-profile-stats__section-title"))
-            .then((ref) => {
-            	const parentRef = ref[0];
+            .then((ref) => setTimeout(() =>
+            {
+                const parentRef = ref[0];
                 const totalparent = document.createElement('div');
                 let totaltext = document.createElement('div');
                 totaltext.innerHTML = "Processed & Agreement";
@@ -244,7 +254,7 @@ function init() {
                 let totalcount = document.createElement('div');
                 totalcount.id = "totalcountnumber"
                 const {accepted, rejected, duplicated, finished, available, progress, total} = stats;
-                allAgreements = getTotalAgreementCount(total, available, progress);
+                let allAgreements = getTotalAgreementCount(stats);
                 if (allAgreements === 0 ) {
                     allAgreements = accepted + rejected + duplicated;
                 }
@@ -257,10 +267,11 @@ function init() {
                 insertAfter(totalparent, parentRef);
                 totalparent.classList.add("profile-stats__stat");
                 totalparent.classList.add("wayfareres_parent");
-            });
+            }, 500));
     }
 
-    function getTotalAgreementCount(total, available, progress) {
+    function getTotalAgreementCount(stats) {
+        const {accepted, rejected, duplicated, finished, available, progress, total} = stats;
         const countType = localStorage['wfcc_count_type_dropdown'];
         if (countType === "badgestat") {
             const userId = getUserId();
@@ -268,14 +279,21 @@ function init() {
             if (badgeCount === undefined || badgeCount === null || badgeCount === "" || badgeCount === "false" || isNaN(badgeCount)){
                 badgeCount = 0;
             }
-            return badgeCount;
-        } else {
+            let otherCount = localStorage["wfcc_other_count_" + userId];
+            if (otherCount === undefined || otherCount === null || otherCount === "" || otherCount === "false" || isNaN(otherCount)){
+                return badgeCount;
+            }
+            otherCount = parseInt(otherCount);
+            return accepted + rejected + duplicated + otherCount;
+        } else if (countType === "upgradecount" ) {
             const userId = getUserId();
             let bonusUpgrade = parseInt(localStorage["wfcc_bonus_upgrade_" + userId]);
             if (bonusUpgrade === undefined || bonusUpgrade === null || bonusUpgrade === "" || bonusUpgrade === "false" || isNaN(bonusUpgrade)){
                 bonusUpgrade = 0;
             }
             return (total + available - bonusUpgrade) * 100 + progress;
+        } else {//"simple"
+            return accepted + rejected + duplicated;
         }
     }
 
