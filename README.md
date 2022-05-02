@@ -86,6 +86,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
     - **South Australia:** Location SA Viewer
     - **Western Australia:** Landgate Map Viewer Plus
 - 🇦🇽 **Åland Islands:** Maanmittauslaitos, Paikkatietoikkuna
+- 🇧🇦 **Bosnia and Herzegovina:** Kadastar.ba\*
 - 🇧🇪 **Belgium:** NGI/IGN
 - 🇧🇱 **Saint Barthélemy:** Mappy
 - 🇨🇭 **Switzerland:** Admin.ch
@@ -111,6 +112,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇬🇫 **French Guiana:** Mappy
 - 🇬🇮 **Gibraltar:** Fototeca Digital, Iberpix
 - 🇬🇵 **Guadeloupe:** Mappy
+- 🇭🇷 **Croatia:** Geoportal DGU
 - 🇮🇨 **Canary Islands:** Fototeca Digital, Iberpix
 - 🇮🇱 **Israel:** Govmap
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
@@ -129,6 +131,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇵🇸 **Palestinian Territories:**
     - **West Bank:** Govmap
 - 🇷🇪 **Réunion:** Mappy
+- 🇷🇸 **Serbia:** МРЕ Србије
 - 🇸🇪 **Sweden:** Eniro, Lantmäteriet
 - 🇸🇯 **Svalbard and Jan Mayen:**
     - **Svalbard:** TopoSvalbard
@@ -136,6 +139,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇸🇽 **Sint Maarten:** Mappy
 - 🇼🇫 **Wallis and Futuna:** Mappy
 - 🇾🇹 **Mayotte:** Mappy
+- 🇽🇰 **Kosovo:** МРЕ Србије
 
 </details>
 
