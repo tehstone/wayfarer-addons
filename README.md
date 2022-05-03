@@ -81,6 +81,9 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 <details>
     <summary>List of regional map providers</summary>
 
+*Map providers marked with \* are experimental*
+
+- 🇦🇹 **Austria:** eBOD, Geoland\*
 - 🇦🇺 **Australia:** NSW Imagery
     - **New South Wales:** NSW Imagery
     - **South Australia:** Location SA Viewer
@@ -92,6 +95,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇨🇭 **Switzerland:** Admin.ch
 - 🇨🇿 **Czech Republic:** Mapy.cz
 - 🇩🇪 **Germany:**
+    - **Baden-Württemberg:** Geoportal BW\*
     - **Bavaria:** BayernAtlas
     - **Berlin:** FIS-Broker
     - **Bremen:** GeoPortal Bremen, Geoportal der Metropolregion Hamburg, Hamburg Geo-Online
@@ -116,6 +120,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇮🇨 **Canary Islands:** Fototeca Digital, Iberpix
 - 🇮🇱 **Israel:** Govmap
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
+- 🇮🇹 **Italy:** Geoportale Nazionale\*
 - 🇰🇷 **South Korea:** Kakao, Naver
 - 🇱🇮 **Liechtenstein:** Admin.ch, Geodatenportal der LLV
 - 🇱🇹 **Lithuania:** Geoportal.lt, Maps.lt
@@ -124,6 +129,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇲🇨 **Monaco:** Mappy
 - 🇲🇫 **Saint Martin:** Mappy
 - 🇲🇶 **Martinique:** Mappy
+- 🇲🇹 **Malta:** Planning Authority\*
 - 🇳🇱 **Netherlands:** Kaarten van Nederland, Map5 NLTopo
 - 🇳🇴 **Norway:** Gule Sider, Kommunekart, Norge i bilder, Norgeskart, UT.no
 - 🇵🇱 **Poland:** Geoportal
@@ -132,11 +138,14 @@ In addition to these providers, the plugin adds support for 52 regional map prov
     - **West Bank:** Govmap
 - 🇷🇪 **Réunion:** Mappy
 - 🇷🇸 **Serbia:** МРЕ Србије
+- 🇸🇨 **Seychelles:** MHILT WebGIS\*
 - 🇸🇪 **Sweden:** Eniro, Lantmäteriet
 - 🇸🇯 **Svalbard and Jan Mayen:**
     - **Svalbard:** TopoSvalbard
 - 🇸🇰 **Slovakia:** Mapy.cz
+- 🇸🇲 **San Marino:** Geoportale Nazionale\*
 - 🇸🇽 **Sint Maarten:** Mappy
+- 🇻🇦 **Vatican City:** Geoportale Nazionale\*
 - 🇼🇫 **Wallis and Futuna:** Mappy
 - 🇾🇹 **Mayotte:** Mappy
 - 🇽🇰 **Kosovo:** МРЕ Србије
