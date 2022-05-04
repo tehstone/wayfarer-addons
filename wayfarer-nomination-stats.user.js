@@ -70,6 +70,7 @@ function init() {
                 if ("canAppeal" in json.result) {
                     checkAppealStatus(json.result["canAppeal"]);
                 }
+                addUpgradeSetting();
             }, 300);
             
 
@@ -193,8 +194,15 @@ function init() {
                 const container = ref.parentNode;
                 container.appendChild(statsContainer);
 
-                if (!nextUpgradeSet) {
-                    createNotification("No Upgrade Next is set!");
+                const userId = getUserId();
+                let upgradeNotify = localStorage.getItem(`wfns_upgrade_notify_${userId}`);
+                if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === ""){
+                    upgradeNotify = false;
+                }
+                if (upgradeNotify) {
+                    if (!nextUpgradeSet) {
+                        createNotification("No Upgrade Next is set!");
+                    }
                 }
             });
         
@@ -309,6 +317,40 @@ function init() {
         }
     }
 
+    function addUpgradeSetting() {
+        const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+        const insDiv = document.querySelector(".mt-2");
+        if (listEl === undefined || listEl === null || insDiv === undefined) {
+            setTimeout(addCounter, 200);
+            return;
+        }
+
+        const userId = getUserId();
+
+        let upgradeNotifyChkbox = document.createElement("INPUT");
+        upgradeNotifyChkbox.setAttribute("type", "checkbox");
+
+        upgradeNotifyChkbox.id = 'wayfarernsupgradenotifychkbox';
+
+        const upgradeNotifyChkboxLabel = document.createElement("label");
+        upgradeNotifyChkboxLabel.innerText = "Notify when no Upgrade Next set:";
+        upgradeNotifyChkboxLabel.setAttribute("for", "wayfarernsupgradenotifychkbox");
+
+        insDiv.insertBefore(upgradeNotifyChkbox, insDiv.children[0]);
+        insDiv.insertBefore(upgradeNotifyChkboxLabel, insDiv.children[0]);
+
+        let upgradeNotify = localStorage.getItem(`wfns_upgrade_notify_${userId}`);
+        if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === ""){
+            upgradeNotify = false;
+        }
+        upgradeNotifyChkbox.checked = upgradeNotify === "true";
+
+        upgradeNotifyChkbox.addEventListener('click', e => {
+            localStorage.setItem(`wfns_upgrade_notify_${userId}`, e.target.checked);
+            console.log(e.target.checked);
+        });
+    }
+
     function addNotificationDiv() {
         if (document.getElementById("wfnsNotify") === null) {
             let container = document.createElement("div");
@@ -341,6 +383,20 @@ function init() {
         notification.appendChild(content);
 
         document.getElementById("wfnsNotify").appendChild(notification);
+    }
+
+    function getUserId() {
+        var els = document.getElementsByTagName("image");
+        for (var i = 0; i < els.length; i++) {
+           const element = els[i];
+           const attribute = element.getAttribute("href");
+           let fields = attribute.split('/');
+           let userId = fields[fields.length-1];
+           fields = userId.split('=');
+           userId = fields[0];
+           return userId;
+        }
+        return "temporary_default_userid";
     }
 
     function addCss() {
@@ -510,10 +566,10 @@ function init() {
 
     function saveAs (data,filename,dataType) {
       if (!(data instanceof Array)) { data = [data]; }
-      var file = new Blob(data, {type: dataType});
-      var objectURL = URL.createObjectURL(file);
+      let file = new Blob(data, {type: dataType});
+      let objectURL = URL.createObjectURL(file);
 
-      var link = document.createElement('a');
+      let link = document.createElement('a');
       link.href = objectURL;
       link.download = filename;
       link.style.display = 'none';
