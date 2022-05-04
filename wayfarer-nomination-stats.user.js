@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.4.1
+// @version      0.4.2
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -345,7 +345,7 @@ function init() {
         if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === ""){
             upgradeNotify = false;
         }
-        upgradeNotifyChkbox.checked = upgradeNotify === "true";
+        upgradeNotify = upgradeNotify === "true";
 
         upgradeNotifyChkbox.addEventListener('click', e => {
             localStorage.setItem(`wfns_upgrade_notify_${userId}`, e.target.checked);
