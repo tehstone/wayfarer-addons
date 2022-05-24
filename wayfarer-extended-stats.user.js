@@ -291,7 +291,7 @@ function init() {
             if (bonusUpgrade === undefined || bonusUpgrade === null || bonusUpgrade === "" || bonusUpgrade === "false" || isNaN(bonusUpgrade)){
                 bonusUpgrade = 0;
             }
-            return (total + available - bonusUpgrade) * 100 + progress;
+            return (total + available + bonusUpgrade) * 100 + progress;
         } else {//"simple"
             return accepted + rejected + duplicated;
         }
