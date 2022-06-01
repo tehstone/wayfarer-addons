@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         Wayfarer LocalStorage Check
-// @version      0.0.1
-// @description  Add LocalStorage contents size
+// @name         Wayfarer LocalStorage Manager
+// @version      0.2.0
+// @description  Adds a manager to let you manage your localStorage easily.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-localstoragecheck.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2022 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -29,130 +29,313 @@
 /* eslint-env es6 */
 /* eslint no-var: "error" */
 
-function init() {
-    let tryNumber = 10;
-    let stats;
+(() => {
+    const getCurrentStorageUsage = () => {
+        let total = 0;
+        for (const x in localStorage) {
+            if (localStorage.hasOwnProperty(x)) {
+                const size = localStorage[x].length + x.length;
+                if (!isNaN(size)) total += size * 2; // UTF-16 = 2 Bpc
+            }
+        }
+        return total;
+    }
 
-    /**
-     * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
-     */
-    (function (open) {
-        XMLHttpRequest.prototype.open = function (method, url) {
-            if (url == '/api/v1/vault/profile') {
-                if (method == 'GET') {
-                    this.addEventListener('load', parseProfile, false);
+    const totalCapacity = (() => {
+        const testStart = new Date();
+        let maxCapacity = 0;
+        let testSize = 0;
+        const testKey = 'wfLSM-test';
+        localStorage.setItem(testKey, '');
+        for (let step = 6; step >= 0; step--) {
+            try {
+                for (let i = 0; i < 10; i++) {
+                    testSize += Math.pow(10, step);
+                    localStorage.removeItem(testKey);
+                    localStorage.setItem(testKey, '0'.repeat(testSize));
+                    maxCapacity = getCurrentStorageUsage();
+                }
+            } catch (e) {
+                localStorage.removeItem(testKey);
+                testSize -= Math.pow(10, step);
+            }
+        }
+
+        const timeTaken = new Date() - testStart;
+        console.log(`Found max localStorage capacity of ${maxCapacity} (testing took ${timeTaken} ms)`);
+        return maxCapacity;
+    })();
+
+    const humanSize = size => {
+        const prefixes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+        let tmp = size;
+        let index = 0;
+        while (tmp > 1024) {
+            index++;
+            tmp /= 1024;
+        }
+        return (index == 0 ? tmp : tmp.toFixed(tmp < 100 ? 2 : 1)) + ' ' + prefixes[index];
+    }
+
+    const createPopup = () => {
+        const outer = document.createElement('div');
+        outer.classList.add('wfLSM-bg');
+        document.querySelector('body').appendChild(outer);
+
+        const inner = document.createElement('div');
+        inner.classList.add('wfLSM-popup');
+        outer.appendChild(inner);
+
+        const header = document.createElement('h1');
+        header.textContent = 'localStorage manager';
+        inner.appendChild(header);
+
+        const closeBtn = document.createElement('div');
+        closeBtn.textContent = '❌';
+        closeBtn.classList.add('wfLSM-close');
+        closeBtn.addEventListener('click', () => {
+            outer.parentNode.removeChild(outer);
+        });
+        inner.appendChild(closeBtn);
+
+        const subtitle = document.createElement('p');
+        subtitle.classList.add('wfLSM-popup-subtitle');
+        inner.appendChild(subtitle);
+
+        const updateSubtitle = () => {
+            for (let i = subtitle.childNodes.length - 1; i >= 0; i--) subtitle.removeChild(subtitle.childNodes[i]);
+            const curUsage = getCurrentStorageUsage();
+            const elems = {
+                'Total': humanSize(totalCapacity),
+                'Used': humanSize(curUsage) + ' (' + percentage(curUsage / totalCapacity) + ')',
+                'Free': humanSize(totalCapacity - curUsage) + ' (' + percentage((totalCapacity - curUsage) / totalCapacity) + ')'
+            };
+            let first = true;
+            for (const k in elems) {
+                if (elems.hasOwnProperty(k)) {
+                    const subK = document.createElement('span');
+                    subK.textContent = (first ? '' : '; ') + k + ': ';
+                    subtitle.appendChild(subK);
+                    const subV = document.createElement('span');
+                    subV.classList.add('wfLSM-usage-label');
+                    subV.textContent = elems[k];
+                    subtitle.appendChild(subV);
+                    first = false;
                 }
             }
-            open.apply(this, arguments);
-        };
-    })(XMLHttpRequest.prototype.open);
+        }
+        updateSubtitle();
 
-    addCss();
+        const table = document.createElement('table');
+        inner.appendChild(table);
+        const headerTr = document.createElement('tr');
+        table.appendChild(headerTr);
+        const headerTh1 = document.createElement('th');
+        headerTh1.textContent = 'Key';
+        headerTr.appendChild(headerTh1);
+        const headerTh2 = document.createElement('th');
+        headerTh2.textContent = 'Gross size';
+        headerTr.appendChild(headerTh2);
+        const headerTh3 = document.createElement('th');
+        headerTh3.textContent = 'Actions';
+        headerTr.appendChild(headerTh3);
 
-    function parseProfile(e) {
-        try {
-            const response = this.response;
-            const json = JSON.parse(response);
-            if (!json) {
-                console.warn('Failed to parse response from Wayfarer');
-                return;
+        const lssm = [];
+        for (const x in localStorage) {
+            if (localStorage.hasOwnProperty(x)) {
+                const length = localStorage[x].length + x.length;
+                if (!isNaN(length)) {
+                    lssm.push([ x, length * 2 ]); // UTF-16 = 2 Bpc
+                }
             }
-            // ignore if it's related to captchas
-            if (json.captcha)
-                return;
+        }
 
-            stats = json.result;
-            if (!stats) {
-                console.warn('Wayfarer\'s response didn\'t include nominations.');
-                return;
+        lssm.sort((a, b) => b[1] - a[1]);
+        for (let i = 0; i < lssm.length; i++) {
+            const [ key, size ] = lssm[i];
+            const hSize = humanSize(size);
+            const row = document.createElement('tr');
+            table.appendChild(row);
+            const keyCell = document.createElement('td');
+            keyCell.textContent = key;
+            keyCell.title = key;
+            row.appendChild(keyCell);
+            const sizeCell = document.createElement('td');
+            sizeCell.textContent = hSize;
+            row.appendChild(sizeCell);
+            const actionCell = document.createElement('td');
+            row.appendChild(actionCell);
+
+            const actions = {
+                '🗑️': {
+                    title: 'Delete',
+                    action: () => {
+                        if (confirm(`Are you sure you wish to delete ${key}?`)) {
+                            localStorage.removeItem(key);
+                            calculateStorage();
+                            updateSubtitle();
+                            table.removeChild(row);
+                        }
+                    }
+                },
+                '💾': {
+                    title: 'Export to file',
+                    action: () => {
+                        const blob = new Blob([localStorage.getItem(key)], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const anchor = document.createElement('a');
+                        anchor.setAttribute("href", url);
+                        anchor.setAttribute("download", key + ".txt");
+                        anchor.style.display = 'hidden';
+                        document.querySelector('body').appendChild(anchor);
+                        anchor.click();
+                        anchor.parentNode.removeChild(anchor);
+                    }
+                }
+            };
+
+            for (const k in actions) {
+                if (actions.hasOwnProperty(k)) {
+                    const btn = document.createElement('span');
+                    btn.textContent = k;
+                    btn.title = actions[k].title;
+                    btn.addEventListener('click', actions[k].action);
+                    btn.classList.add('wfLSM-action');
+                    actionCell.appendChild(btn);
+                }
             }
-            awaitElement(() => document.querySelector('wf-rating-bar'))
-            .then((ref) => {
-                checkLocalStorageSize();
-            });
-            
-
-        } catch (e)    {
-            console.log(e); // eslint-disable-line no-console
         }
     }
 
+    const percentage = decimal => (decimal * 100).toFixed(2) + '%';
 
-    function checkLocalStorageSize() {
-        const ref = document.querySelector('wf-logo');
-        if (!ref) {
-            setTimeout(checkLocalStorageSize, 200);
-            return;
-        }
-
-        const div = document.createElement('div');
-        div.className = 'wayfarercls';
-
-        let storageSizeLabel = document.createElement('p');
-        storageSizeLabel.textContent = 'LocalStorage: ';
-        let storageSizeText = document.createElement('p');
-
-        const storageSize = getLocalStorageSize();
-
-        
-        storageSizeText.textContent = `${storageSize} MB`;
-
-        div.appendChild(storageSizeLabel);
-        div.appendChild(storageSizeText);
-
-        const container = ref.parentNode.parentNode;
-        console.log(document.querySelector('.wayfarercls'));
-        if (document.querySelector('.wayfarercls') === null) {
-            container.appendChild(div);
+    let valueBox = null;
+    const calculateStorage = () => {
+        if (valueBox) {
+            const cutoff = 0.9;
+            const used = getCurrentStorageUsage() / totalCapacity;
+            valueBox.textContent = percentage(used);
+            if (used >= cutoff && !valueBox.classList.contains('wfLSM-warn')) valueBox.classList.add('wfLSM-warn');
+            else if (used < cutoff && valueBox.classList.contains('wfLSM-warn')) valueBox.classList.remove('wfLSM-warn');
         }
     }
 
-    function getLocalStorageSize() {
-        let total = 0;
-        for (let x in localStorage) {
-            // Value is multiplied by 2 due to data being stored in `utf-16` format, which requires twice the space.
-            let amount = (localStorage[x].length * 2) / 1024 / 1024;
-            if (!isNaN(amount) && localStorage.hasOwnProperty(x)) {
-                total += amount;
+    // Recalculate storage every 10 seconds
+    const calcLoop = setInterval(calculateStorage, 10000);
+    // Check that the localStorage box in the header is actually there every half seconf
+    const setupLoop = setInterval(() => {
+        const boxes = document.getElementsByClassName('wfLSM-box');
+        if (!boxes.length) {
+            const logo = document.querySelector('wf-logo');
+            if (logo) {
+                const div = document.createElement('div');
+                div.classList.add('wfLSM-box');
+
+                const label = document.createElement('p');
+                label.textContent = 'LocalStorage usage:';
+                div.appendChild(label);
+
+                valueBox = document.createElement('p');
+                valueBox.addEventListener('click', createPopup);
+                calculateStorage();
+                div.appendChild(valueBox);
+
+                logo.parentNode.parentNode.appendChild(div);
             }
         }
-        return total.toFixed(2);
-    };
+    }, 500);
 
-    const awaitElement = get => new Promise((resolve, reject) => {
-        let triesLeft = 10;
-        const queryLoop = () => {
-            const ref = get();
-            if (ref) resolve(ref);
-            else if (!triesLeft) reject();
-            else setTimeout(queryLoop, 100);
-            triesLeft--;
-        }
-        queryLoop();
-    });
 
-    function addCss() {
+
+    (() => {
         const css = `
-            .wayfarercls {
+            .wfLSM-box {
                 color: #333;
                 margin-left: 2em;
                 padding-top: 0.3em;
                 text-align: center;
                 display: block;
             }
-            .dark .wayfarercls {
+            .dark .wfLSM-box {
                 color: #ddd;
             }
-            .wayfarercls p:nth-child(2) {
+            .wfLSM-box p:nth-child(2) {
                 font-size: 20px;
                 color: #20B8E3;
+                cursor: pointer;
+            }
+            .wfLSM-warn {
+                color: #f00 !important;
+            }
+            .wfLSM-bg {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 100vw;
+                background: rgba(0,0,0,0.5);
+                z-index: 100000;
+            }
+            .wfLSM-popup {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translateX(-50%) translateY(-50%);
+                width: 500px;
+                height: 500px;
+                padding: 10px;
+                max-width: calc(100vw - 20px);
+                max-height: calc(100vh - 20px);
+                overflow-x: hidden;
+                overflow-y: scroll;
+            }
+            .dark .wfLSM-popup {
+                background: #333;
+            }
+            .wfLSM-popup-subtitle {
+                margin: 10px 0;
+            }
+            .wfLSM-usage-label {
+                color: #20B8E3;
+            }
+            .wfLSM-popup table {
+                width: 100%;
+                max-width: 100%;
+            }
+            .wfLSM-popup tr td:nth-child(1) {
+                overflow-x: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 0;
+            }
+            .wfLSM-popup tr td:nth-child(2) {
+                width: 20%;
+                text-align: right;
+            }
+            .wfLSM-popup tr td:nth-child(3) {
+                width: 15%;
+            }
+            .wfLSM-action {
+                cursor: pointer;
+                margin-right: 2px;
+                opacity: 0.7;
+            }
+            .wfLSM-close {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 2;
+                font-size: 2em;
+                cursor: pointer;
+                opacity: 0.5;
+            }
+            .wfLSM-action:hover, .wfLSM-close:hover {
+                opacity: 1;
             }
             `;
         const style = document.createElement('style');
         style.type = 'text/css';
         style.innerHTML = css;
         document.querySelector('head').appendChild(style);
-    }
-    }
-
-    init();
+    })();
+})();
