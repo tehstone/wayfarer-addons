@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer LocalStorage Manager
-// @version      0.2.0
+// @version      0.2.1
 // @description  Adds a manager to let you manage your localStorage easily.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-localstoragecheck.user.js
@@ -30,6 +30,75 @@
 /* eslint no-var: "error" */
 
 (() => {
+    const wfColor = '#FF6D38';
+
+    const originMap = [
+        {
+            regex: /^@transloco/,
+            label: 'Part of vanilla Wayfarer',
+            color: wfColor
+        },
+        {
+            regex: /^heroVideoShown$/,
+            label: 'Part of vanilla Wayfarer',
+            color: wfColor
+        },
+        {
+            regex: /^_grecaptcha$/,
+            label: 'Part of vanilla Wayfarer',
+            color: wfColor
+        },
+        {
+            regex: /^_wfTheme$/,
+            label: 'Part of vanilla Wayfarer',
+            color: wfColor
+        },
+        {
+            regex: /^wfes_AppealData_/,
+            label: 'Set by WFES Appeal Data addon'
+        },
+        {
+            regex: /^wfesNomList/,
+            label: 'Set by WFES Nomination Notify addon'
+        },
+        {
+            regex: /^wfes_CurrentAppealState_/,
+            label: 'Set by WFES Nomination Notify addon'
+        },
+        {
+            regex: /^wfpNominationTypes$/,
+            label: 'Used by Wayfarer Nomination Types addon'
+        },
+        {
+            regex: /^wfrh(Saved|_)/,
+            label: 'Set by Wayfarer Review History addon'
+        },
+        {
+            regex: /^wfrcc_cache$/,
+            label: 'Set by Wayfarer Rejections Plus addon'
+        },
+        {
+            regex: /^wfrt_/,
+            label: 'Set by Wayfarer Review Timer addon'
+        },
+        {
+            regex: /^wfmm_/,
+            label: 'Set by Wayfarer Review Map Mods addon'
+        },
+        {
+            regex: /^wfcc_/,
+            label: 'Set by Wayfarer Extended Stats addon'
+        },
+        {
+            regex: /^wfpSaved/,
+            label: 'Stored WayFarer+ review history; now deprecated'
+        },
+        {
+            regex: /^wfpVersion$/,
+            label: 'Set by WayFarer+; now deprecated'
+        },
+    ];
+
     const getCurrentStorageUsage = () => {
         let total = 0;
         for (const x in localStorage) {
@@ -157,8 +226,27 @@
             const row = document.createElement('tr');
             table.appendChild(row);
             const keyCell = document.createElement('td');
-            keyCell.textContent = key;
             keyCell.title = key;
+            const keyName = document.createElement('span');
+            keyName.textContent = key;
+            keyCell.appendChild(keyName);
+            const keyOrigin = document.createElement('span');
+            keyOrigin.textContent = '<unknown origin>';
+            keyOrigin.classList.add('wfLSM-origin');
+            keyOrigin.style.opacity = 0.6;
+            for (let i = 0; i < originMap.length; i++) {
+                if (key.match(originMap[i].regex)) {
+                    keyOrigin.textContent = originMap[i].label;
+                    if (originMap[i].hasOwnProperty('color')) {
+                        keyOrigin.style.color = originMap[i].color;
+                        keyOrigin.style.opacity = 1;
+                    } else {
+                        //keyOrigin.style.color = '#20B8E3';
+                    }
+                    break;
+                }
+            }
+            keyCell.appendChild(keyOrigin);
             row.appendChild(keyCell);
             const sizeCell = document.createElement('td');
             sizeCell.textContent = hSize;
@@ -319,6 +407,15 @@
                 cursor: pointer;
                 margin-right: 2px;
                 opacity: 0.7;
+                font-size: 1.2em;
+            }
+            .wfLSM-origin {
+                font-size: 0.8em;
+                display: block;
+                margin-top: -4px;
+                overflow-x: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
             .wfLSM-close {
                 position: absolute;
