@@ -231,9 +231,9 @@ function init() {
     }
 
     function addNotificationDiv() {
-        if (document.getElementById("wfnsNotify") === null) {
+        if (document.getElementById("wfnshNotify") === null) {
             let container = document.createElement("div");
-            container.id = "wfnsNotify";
+            container.id = "wfnshNotify";
             document.getElementsByTagName("body")[0].appendChild(container);
         }
     }
@@ -242,16 +242,16 @@ function init() {
         let notification = document.createElement("div");
         switch (color) {
             case 'red':
-                notification.setAttribute("class", "wfnsNotification wfnsBgRed");
+                notification.setAttribute("class", "wfnshNotification wfnshBgRed");
                 break;
             case 'green':
-                notification.setAttribute("class", "wfnsNotification wfnsBgGreen");
+                notification.setAttribute("class", "wfnshNotification wfnshBgGreen");
                 break;
             case 'blue':
-                notification.setAttribute("class", "wfnsNotification wfnsBgBlue");
+                notification.setAttribute("class", "wfnshNotification wfnshBgBlue");
                 break;
             case 'gold':
-                notification.setAttribute("class", "wfnsNotification wfnsBgGold");
+                notification.setAttribute("class", "wfnshNotification wfnshBgGold");
                 break;
         }
         notification.onclick = function(){
@@ -263,7 +263,7 @@ function init() {
 
         notification.appendChild(content);
 
-        document.getElementById("wfnsNotify").appendChild(notification);
+        document.getElementById("wfnshNotify").appendChild(notification);
     }
 
     function getUserId() {
@@ -282,168 +282,31 @@ function init() {
 
     function addCss() {
         const css = `
-            #wfnsNotify{
+            #wfnshNotify{
                 position: absolute;
                 bottom: 1em;
                 right: 1em;
                 width: 30em;
                 z-index: 100;
             }
-            .wfnsNotification{
+            .wfnshNotification{
                 font-weight: bold;
                 border-radius: 1em;
                 padding: 1em;
                 margin-top: 1.5em;
                 color: white;
             }
-            .wfnsBgRed{
+            .wfnshBgRed{
                 background-color: #CC0000B0;
             }
-            .wfnsBgGreen{
+            .wfnshBgGreen{
                 background-color: #09b065;
             }
-            .wfnsBgBlue{
+            .wfnshBgBlue{
                 background-color: #1a3aad;
             }
-            .wfnsBgGold{
+            .wfnshBgGold{
                 background-color: #f5da42;
-            }
-            .wayfarernost {
-                color: #333;
-                margin-left: 2em;
-                padding-top: 0.3em;
-                text-align: center;
-                display: block;
-            }
-
-            .dark .wayfarernost {
-                color: #ddd;
-            }
-
-            .wayfarernost p:nth-child(2) {
-                font-size: 20px;
-                color: #20B8E3;
-            }
-
-            .wayfarernd {
-                color: #333;
-                margin: 20px 50px;
-                padding: 20px 20px;
-                text-align: left;
-                font-size: 16px;
-                background-color: #e5e5e5;
-                border: 1px;
-                border-radius: 3px;
-                border-style: double;
-                border-color: #ff4713;
-                height: 25%
-            }
-
-            .wayfarerns__visible {
-                display: block;
-            }
-
-            .dark .wayfarernd {
-                color: #000000;
-            }
-
-            .wayfarerns__button {
-                background-color: #e5e5e5;
-                border: none;
-                color: #ff4713;
-                padding: 10px 10px;
-                margin: 10px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 16px;
-            }
-
-            .dark .wayfarerns__button {
-                background-color: #404040;
-                color: #20B8E3;
-            }
-
-            .wrap-collabsible {
-                margin-bottom: 1.2rem;
-            }
-
-            #collapsible,
-            #collapsed-stats {
-                display: none;
-            }
-
-            .lbl-toggle-ns {
-                display: block;
-                font-weight: bold;
-                font-family: monospace;
-                font-size: 1.2rem;
-                text-transform: uppercase;
-                text-align: center;
-                padding: 1rem;
-                color: white;
-                background: #DF471C;
-                cursor: pointer;
-                border-radius: 7px;
-                transition: all 0.25s ease-out;
-            }
-
-            .lbl-toggle-ns:hover {
-                color: lightgrey;
-            }
-
-            .lbl-toggle-ns::before {
-                content: ' ';
-                display: inline-block;
-                border-top: 5px solid transparent;
-                border-bottom: 5px solid transparent;
-                border-left: 5px solid currentColor;
-                vertical-align: middle;
-                margin-right: .7rem;
-                transform: translateY(-2px);
-                transition: transform .2s ease-out;
-            }
-
-            .toggle {
-                display:none;
-            }
-
-            .toggle:checked+.lbl-toggle-ns::before {
-                transform: rotate(90deg) translateX(-3px);
-            }
-
-            .collapsible-content-ns {
-                max-height: 0px;
-                overflow: hidden;
-                transition: max-height .25s ease-in-out;
-            }
-
-            .toggle:checked+.lbl-toggle-ns+.collapsible-content-ns {
-                max-height: 9999999pt;
-            }
-
-            .toggle:checked+.lbl-toggle-ns {
-                border-bottom-right-radius: 0;
-                border-bottom-left-radius: 0;
-            }
-
-            .collapsible-content-ns .content-inner {
-                border-bottom: 1px solid rgba(0, 0, 0, 1);
-                border-left: 1px solid rgba(0, 0, 0, 1);
-                border-right: 1px solid rgba(0, 0, 0, 1);
-                border-bottom-left-radius: 7px;
-                border-bottom-right-radius: 7px;
-                padding: .5rem 1rem;
-            }
-
-            .content-inner td:last-child {
-                text-align: right;
-            }
-
-            th,
-            td {
-                border: white solid 1pt;
-                padding: 1pt 5pt;
             }
             `;
         const style = document.createElement('style');
