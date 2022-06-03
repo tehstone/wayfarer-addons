@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.0.1
+// @version      0.0.2
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -150,14 +150,14 @@ function init() {
                         if (nominations[i]["id"] in savedNominations) {
                             const nid = nominations[i]["id"];
                             statusHistory = savedNominations[nid]["statusHistory"];
+                            const currentStatus = nominations[i]["status"];
                             if (nominations[i]["isNianticControlled"] && !savedNominations[nid]["isNianticControlled"]) {
                                 statusHistory.push({"timestamp": Date.now(), "status": "NIA_VOTING"});
                                 createNotification(`${nominations[i]["title"]} went into Niantic review!`, "blue")
-                            } else if (nominations[i]["status"] !== savedNominations[nid]["status"] &&
+                            } else if (currentStatus !== savedNominations[nid]["status"] &&
                                 currentStatus !== "HELD" && savedNominations[nid]["status"] !== "HELD") {
                                 let stateText;
                                 let color = "red";
-                                const currentStatus = nominations[i]["status"];
                                 if (currentStatus === "ACCEPTED") {
                                     stateText = "was accepted!";
                                     color = "green";
@@ -168,11 +168,15 @@ function init() {
                                 else if (currentStatus === "DUPLICATE") {
                                     stateText = "was rejected as duplicate!";
                                 }
-                                else {
-                                    stateText = `: unknown status: ${nominations[i]["status"]}`;
+                                else if (currentStatus === "VOTING") {
+                                    stateText = "entered voting!";
+                                    color = "gold";
                                 }
-                                savedNominations[nid]["status"] = nominations[i]["status"];
-                                statusHistory.push({"timestamp": Date.now(), "status": nominations[i]["status"]});
+                                else {
+                                    stateText = `: unknown status: ${currentStatus}`;
+                                }
+                                savedNominations[nid]["status"] = currentStatus;
+                                statusHistory.push({"timestamp": Date.now(), "status": currentStatus});
                                 createNotification(`${nominations[i]["title"]} ${stateText}`, color);
                                 
                             } else if (nominations[i]["upgraded"] && !savedNominations[nid]["upgraded"]) {
@@ -246,6 +250,9 @@ function init() {
             case 'blue':
                 notification.setAttribute("class", "wfnsNotification wfnsBgBlue");
                 break;
+            case 'gold':
+                notification.setAttribute("class", "wfnsNotification wfnsBgGold");
+                break;
         }
         notification.onclick = function(){
             notification.remove();
@@ -254,12 +261,6 @@ function init() {
         let content = document.createElement("p");
         content.innerText = message;
 
-        let closeButton = document.createElement("div");
-        closeButton.innerText = "X";
-        closeButton.setAttribute("class", "wfnsNotifyCloseButton");
-        closeButton.setAttribute("style", "cursor: pointer;");
-
-        notification.appendChild(closeButton);
         notification.appendChild(content);
 
         document.getElementById("wfnsNotify").appendChild(notification);
@@ -289,7 +290,8 @@ function init() {
                 z-index: 100;
             }
             .wfnsNotification{
-                border-radius: 0.5em;
+                font-weight: bold;
+                border-radius: 1em;
                 padding: 1em;
                 margin-top: 1.5em;
                 color: white;
@@ -298,13 +300,13 @@ function init() {
                 background-color: #CC0000B0;
             }
             .wfnsBgGreen{
-                background-color: #00CC00B0;
+                background-color: #09b065;
             }
             .wfnsBgBlue{
-                background-color: #0000CCB0;
+                background-color: #1a3aad;
             }
-            .wfnsNotifyCloseButton{
-                float: right;
+            .wfnsBgGold{
+                background-color: #f5da42;
             }
             .wayfarernost {
                 color: #333;
