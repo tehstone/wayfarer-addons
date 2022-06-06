@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.3.0
+// @version      0.3.1
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -208,10 +208,14 @@
             });
             tx.commit();
             if (newCount > 0) {
+                let suffix = "";
+                if (newCount > 1) {
+                    suffix = "s";
+                }
                 if (importCount > 0) {
-                    createNotification(`Found ${newCount} new nominations in the list, of which ${importCount} had its history imported from WFES Nomination Notify.`, 'green');
+                    createNotification(`Found ${newCount} new nomination${suffix} in the list, of which ${importCount} had its history imported from WFES Nomination Notify.`, 'green');
                 } else {
-                    createNotification(`Found ${newCount} new nominations in the list!`, 'green');
+                    createNotification(`Found ${newCount} new nomination${suffix} in the list!`, 'green');
                 }
             }
         }
@@ -324,7 +328,7 @@
                 background-color: #1a3aad;
             }
             .wfnshBg-gold {
-                background-color: #f5da42;
+                background-color: #DAA520;
             }
             .dark .wfnshDropdown {
                 background-color: #262626;
