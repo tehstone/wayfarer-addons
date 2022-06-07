@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.5.0
+// @version      0.5.2
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -123,7 +123,7 @@
     const handleUnhold = ({ id }, result) => { if (result === 'DONE') addManualStatusChange(id, 'NOMINATED'); };
     const handleWithdraw = ({ id }, result) => { if (result === 'DONE') addManualStatusChange(id, 'WITHDRAWN'); };
 
-    const addManualStatusChange = (id, status, historyOnly = false) => new Promise((resolve, reject) => getIDBInstance().then(db => {
+    const addManualStatusChange = (id, status, historyOnly = false, extras = {}) => new Promise((resolve, reject) => getIDBInstance().then(db => {
         const tx = db.transaction(['nominationHistory'], "readwrite");
         // Close DB when we're done with it
         tx.oncomplete = event => db.close();
@@ -133,10 +133,10 @@
             const { result } = getNom;
             const history = result.statusHistory;
             const timestamp = Date.now();
-            const newStatus = historyOnly ? getNom.status : status;
+            const newStatus = historyOnly ? result.status : status;
             // Add the change in hold status to the nomination's history.
             history.push({ timestamp, status });
-            objectStore.put({ ...result, status: newStatus, statusHistory: history });
+            objectStore.put({ ...result, ...extras, status: newStatus, statusHistory: history });
             tx.commit();
             awaitElement(() => document.querySelector('select.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status));
             resolve();
@@ -149,7 +149,7 @@
         for (const id in result) {
             if (result.hasOwnProperty(id)) {
                 if (result[id].result === 'DONE') {
-                    await addManualStatusChange(id, 'UPGRADE', true);
+                    await addManualStatusChange(id, 'UPGRADE', true, { upgraded: true });
                 }
             }
         }
