@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.5.2
+// @version      0.5.3
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -138,7 +138,7 @@
             history.push({ timestamp, status });
             objectStore.put({ ...result, ...extras, status: newStatus, statusHistory: history });
             tx.commit();
-            awaitElement(() => document.querySelector('select.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status));
+            awaitElement(() => document.querySelector('.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status));
             resolve();
         }
         getNom.onerror = reject;
@@ -153,6 +153,7 @@
                 }
             }
         }
+        resolve();
     });
 
     // Get a user ID to properly handle browsers shared between several users. Store a hash only, for privacy.
@@ -168,7 +169,7 @@
         awaitElement(() => document.querySelector('app-nominations-list')).then(ref => {
             // Each item in the list only has the image URL for unique identification. Map these to nomination IDs.
             const nomCache = {};
-            let select = null;
+            let box = null;
             nominations.forEach(nom => { nomCache[nom.imageUrl] = nom.id; });
             ref.addEventListener('click', e => {
                 const item = e.target.closest('app-nominations-list-item');
@@ -177,10 +178,22 @@
                     const nomId = nomCache[item.querySelector('img').src];
                     awaitElement(() => document.querySelector(nomDateSelector)).then(ref => {
                         // Ensure there is only one selection box.
-                        if (select) select.parentElement.removeChild(select);
-                        select = document.createElement('select');
-                        select.classList.add('wfnshDropdown');
-                        ref.parentNode.appendChild(select);
+                        if (box) box.parentElement.removeChild(box);
+                        box = document.createElement('div');
+                        box.classList.add('wfnshDropdown');
+                        const select = document.createElement('select');
+                        select.title = 'Right click to expand full history';
+                        box.appendChild(select);
+                        const textbox = document.createElement('div');
+                        textbox.classList.add('wfnshInner');
+                        box.appendChild(textbox);
+                        select.addEventListener('contextmenu', e => {
+                            e.preventDefault();
+                            select.style.display = 'none';
+                            textbox.style.display = 'block';
+                            return false;
+                        });
+                        ref.parentNode.appendChild(box);
                         // Don't populate the dropdown until the nomination change detection has run successfully.
                         // That process sets ready = true when done. If it was already ready, then this will
                         // continue immediately. When ready, that means the previous connection was closed, so we
@@ -195,8 +208,11 @@
                                 const nomDateOpt = document.createElement('option');
                                 nomDateOpt.textContent = result.day + ' - Nominated';
                                 select.appendChild(nomDateOpt);
+                                const nomDateLine = document.createElement('p');
+                                nomDateLine.textContent = result.day + ' - Nominated';
+                                textbox.appendChild(nomDateLine);
                                 // Then, add options for each entry in the history.
-                                result.statusHistory.forEach(({ timestamp, status }) => addEventToHistoryDisplay(select, timestamp, status));
+                                result.statusHistory.forEach(({ timestamp, status }) => addEventToHistoryDisplay(box, timestamp, status));
                                 // Clean up when we're done.
                                 db.close();
                             }
@@ -208,18 +224,26 @@
     };
 
     // Adds a nomination history entry to the given history display <select>.
-    const addEventToHistoryDisplay = (select, timestamp, status) => {
+    const addEventToHistoryDisplay = (box, timestamp, status) => {
         // Format the date as UTC as this is what Wayfarer uses to display the nomination date.
         // Maybe make this configurable to user's local time later?
         const date = new Date(timestamp);
         const dateString = `${date.getUTCFullYear()}-${('0'+(date.getUTCMonth()+1)).slice(-2)}-${('0'+date.getUTCDate()).slice(-2)}`;
+        const text = `${dateString} - ${stateMap.hasOwnProperty(status) ? stateMap[status] : status}`;
+
         const opt = document.createElement('option');
-        opt.textContent = `${dateString} - ${stateMap.hasOwnProperty(status) ? stateMap[status] : status}`;
+        opt.textContent = text;
         // Create a random "value" for our option, so we can select it from the dropdown after it's added.
         opt.value = 'n' + Math.random();
+        const select = box.querySelector('select');
         select.appendChild(opt);
         // Select it by its random value.
         select.value = opt.value;
+
+        const line = document.createElement('p');
+        line.textContent = text;
+        const textbox = box.querySelector('.wfnshInner');
+        textbox.appendChild(line);
     }
 
     const awaitElement = get => new Promise((resolve, reject) => {
@@ -352,7 +376,7 @@
         // Build an importCache ONCE, so we don't spend a lot of time unnecessarily
         // parsing JSON for each new nomination in the list.
         for (const key in localStorage) {
-            if (key.startsWith('wfesNomList_') && !importCache.hasOwnProperty(key)) {
+            if (key.startsWith('wfesNomList') && !importCache.hasOwnProperty(key)) {
                 importCache[key] = JSON.parse(localStorage[key]);
             }
         }
@@ -461,11 +485,17 @@
             .wfnshBg-gold {
                 background-color: goldenrod;
             }
-            .dark .wfnshDropdown {
+            .dark .wfnshDropdown select {
                 background-color: #262626;
             }
-            .wfnshDropdown {
+            .wfnshDropdown select {
                 text-align: right;
+            }
+            .wfnshDropdown select option {
+                text-align: left;
+            }
+            .wfnshDropdown .wfnshInner {
+                display: none;
             }
             ${nomDateSelector} {
                 display: none;
