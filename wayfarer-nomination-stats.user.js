@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.4.3
+// @version      0.4.4
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -110,6 +110,7 @@ function init() {
                 let withdrawnCount = 0;
                 let niaReviewCount = 0;
                 let nextUpgradeSet = false;
+                let heldCount = 0;
 
                 for(let i = 0; i < nomCount; i++){
                     if (nominations[i]["nextUpgrade"] === true) {
@@ -143,6 +144,9 @@ function init() {
                             break;
                         case "NIANTIC_REVIEW":
                             niaReviewCount++;
+                            break;
+                        case "HELD":
+                            heldCount++;
                             break;
                         default:
                             console.log("Wayfarer Nomination Stats encountered unknown status: " + nominations[i].status);
@@ -178,6 +182,7 @@ function init() {
                     "<br/>NIA Review: " + parseInt(niaReviewCount) +
                     "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
                     "<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
+                    "<br/>On Hold: " + parseInt(heldCount) +
                     "<br/>Accepted ratio: " + Math.round(10*(1/(acceptedCount/(deniedCount+appealedCount+dupeCount))))/10 + "<br/>";
 
 
