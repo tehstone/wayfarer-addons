@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.4.4
+// @version      0.4.5
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -178,8 +178,8 @@ function init() {
                     "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round(deniedCount/baseCount*100)) + "%)" +
                     "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
                     "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round(dupeCount/baseCount*100)) + "%)" +
-                    "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
                     "<br/>NIA Review: " + parseInt(niaReviewCount) +
+                    "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
                     "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
                     "<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
                     "<br/>On Hold: " + parseInt(heldCount) +
