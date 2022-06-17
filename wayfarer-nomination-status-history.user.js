@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.5.3
+// @version      0.5.4
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -31,6 +31,7 @@
 /* eslint no-var: "error" */
 
 (() => {
+    const OBJECT_STORE_NAME = 'nominationHistory';
     const stateMap = {
         ACCEPTED: 'Accepted',
         REJECTED: 'Rejected',
@@ -124,10 +125,10 @@
     const handleWithdraw = ({ id }, result) => { if (result === 'DONE') addManualStatusChange(id, 'WITHDRAWN'); };
 
     const addManualStatusChange = (id, status, historyOnly = false, extras = {}) => new Promise((resolve, reject) => getIDBInstance().then(db => {
-        const tx = db.transaction(['nominationHistory'], "readwrite");
+        const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
         // Close DB when we're done with it
         tx.oncomplete = event => db.close();
-        const objectStore = tx.objectStore('nominationHistory');
+        const objectStore = tx.objectStore(OBJECT_STORE_NAME);
         const getNom = objectStore.get(id);
         getNom.onsuccess = () => {
             const { result } = getNom;
@@ -199,7 +200,7 @@
                         // continue immediately. When ready, that means the previous connection was closed, so we
                         // open a new connection here to fetch data for the selected nomination.
                         awaitElement(() => ready).then(() => getIDBInstance()).then(db => {
-                            const objectStore = db.transaction(['nominationHistory'], "readonly").objectStore('nominationHistory');
+                            const objectStore = db.transaction([OBJECT_STORE_NAME], "readonly").objectStore(OBJECT_STORE_NAME);
                             const getNom = objectStore.get(nomId);
                             getNom.onsuccess = () => {
                                 const { result } = getNom;
@@ -261,7 +262,7 @@
     // Opens an IDB database connection.
     // IT IS YOUR RESPONSIBILITY TO CLOSE THE RETURNED DATABASE CONNECTION WHEN YOU ARE DONE WITH IT.
     // THIS FUNCTION DOES NOT DO THIS FOR YOU - YOU HAVE TO CALL db.close()!
-    const getIDBInstance = () => new Promise((resolve, reject) => {
+    const getIDBInstance = version => new Promise((resolve, reject) => {
         'use strict';
 
         if (!window.indexedDB) {
@@ -269,15 +270,24 @@
             return;
         }
 
-        const openRequest = indexedDB.open('wayfarer-tools-db', 3);
+        const openRequest = indexedDB.open('wayfarer-tools-db', version);
         openRequest.onsuccess = event => {
-            console.log('IndexedDB initialization complete.');
-            resolve(event.target.result);
+            const db = event.target.result;
+            const dbVer = db.version;
+            console.log(`IndexedDB initialization complete (database version ${dbVer}).`);
+            if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+                db.close();
+                console.log(`Database does not contain column ${OBJECT_STORE_NAME}. Closing and incrementing version.`);
+                getIDBInstance(dbVer + 1).then(resolve);
+            } else {
+                resolve(db);
+            }
         };
-        openRequest.onupgradeneeded = (event) => {
-            let db1 = event.target.result;
-            if (!db1.objectStoreNames.contains('nominationHistory')) {
-                db1.createObjectStore('nominationHistory', { keyPath: 'id' });
+        openRequest.onupgradeneeded = event => {
+            console.log('Upgrading database...');
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+                db.createObjectStore(OBJECT_STORE_NAME, { keyPath: 'id' });
             }
         };
     });
@@ -286,7 +296,7 @@
     const checkNominationChanges = (db, nominations) => {
         console.log("Checking for nomination changes...");
 
-        const tx = db.transaction(['nominationHistory'], "readwrite");
+        const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
         const start = Date.now();
         // Clean up when we're done (we'll commit later with tx.commit();)
         tx.oncomplete = event => {
@@ -295,7 +305,7 @@
             ready = true;
         }
 
-        const objectStore = tx.objectStore('nominationHistory');
+        const objectStore = tx.objectStore(OBJECT_STORE_NAME);
         const getList = objectStore.getAll();
         getList.onsuccess = () => {
             // Create an ID->nomination map for easy lookups.
