@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Types
-// @version      0.1.0
+// @version      0.2.0
 // @description  Shows an indicator for which game you submitted nominations in.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-types.user.js
@@ -78,6 +78,12 @@
 
     const injectNominations = result => {
         urlMap = Object.assign({}, ...result.nominations.map(e => ({[e.id]: e.imageUrl})));
+        // awaitElement(() => document.querySelector('input.w-full')).then(searchInput => {
+        //     if (searchInput !== undefined) {
+                
+        //     }
+        // });
+        window.addEventListener("WFNM_MapFilterChange", renderNominationMapIntegration);
         addNominationListIcons();
         renderNominationMapIntegration();
         setupDetailsPaneInput(result.nominations);
@@ -123,7 +129,15 @@
             const counters = Object.assign({}, ...Object.keys(games).map(e => ({[e]: 0})));
             const existing = document.getElementsByClassName('wfpNT__nmIntegration');
             for (let i = existing.length - 1; i >= 0; i--) existing[i].parentNode.removeChild(existing[i]);
-            Object.keys(types).forEach(k => { counters[types[k]]++ });
+            const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+            nominations = listEl["__ngContext__"][3][26];
+            let nominationIds = {};
+            nominations.forEach(n => nominationIds[n.id] = 1);
+            Object.keys(types).forEach(k => { 
+                if (nominationIds[k]) {
+                    counters[types[k]]++ 
+                }
+            });
             Object.keys(games).forEach(game => {
                 if (counters[game] > 0) {
                     const outer = document.createElement('span');
