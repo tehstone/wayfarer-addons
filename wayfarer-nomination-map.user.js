@@ -125,15 +125,19 @@ function init() {
 
         const searchInput = document.querySelector("input.w-full");
         if (searchInput !== undefined) {
-            searchInput.addEventListener("keyup", updateMapFilter);
+            searchInput.addEventListener("keyup", debounce( () => {
+                updateMapFilter();
+            }, 1000))
         }
-        
-        const count = listEl["__ngContext__"][3][26].length;
 
-        countText = document.createElement('div');
-        countText.innerHTML = `Count: ${count}`;
-        countText.classList.add("wayfarernm_text");
-        insDiv.insertBefore(countText, insDiv.children[0]);
+        setTimeout(() => {
+            const count = listEl["__ngContext__"][3][26].length;
+
+            countText = document.createElement('div');
+            countText.innerHTML = `Count: ${count}`;
+            countText.classList.add("wayfarernm_text");
+            insDiv.insertBefore(countText, insDiv.children[0]);
+        }, 1000);
     }
 
     function addMap(mapElement) {
@@ -149,17 +153,23 @@ function init() {
         updateMap();
     }
 
+    function debounce(callback, wait) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(function () { callback.apply(this, args); }, wait);
+        };
+    }
+
     function updateMapFilter() {
-        function updateCount() {
-            if (countText !== undefined) {
-                const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
-                const count = listEl["__ngContext__"][3][26].length;
-                nominations = listEl["__ngContext__"][3][26];
-                countText.innerHTML = `Count: ${count}`;
-                updateMap();
-            }
+        if (countText !== undefined) {
+            const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+            const count = listEl["__ngContext__"][3][26].length;
+            nominations = listEl["__ngContext__"][3][26];
+            countText.innerHTML = `Count: ${count}`;
+            updateMap();
         }
-        setTimeout(updateCount, 300);
+        window.dispatchEvent(new Event("WFNM_MapFilterChange"));
     }
 
     function updateMap() {
