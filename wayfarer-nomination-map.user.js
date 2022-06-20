@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.4.0
+// @version      0.4.1
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
@@ -261,7 +261,7 @@ function init() {
             const els = modal[0].getElementsByClassName("wf-button--primary");
 	        for (let i = 0; i < els.length; i++) {
 	            els[i].addEventListener('click', function() {
-	                updateMapFilter();
+                    setTimeout(updateMapFilter, 250);
 	            });
 	        }
         });
