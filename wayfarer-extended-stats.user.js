@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.4.1
+// @version      0.5.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -121,6 +121,7 @@ function init() {
         selectLabel.innerText = "Agreement Count Type:";
         selectLabel.setAttribute("for", "wayfarercccounttype");
         selectLabel.classList.add('wayfareres_settings_label');
+        selectLabel.title = "Count total agreements based on:\n - The number shown on your Pokemon Go Medal\n - Multiplying your earned upgrade total by 100 and adding your current progress\n - Simply adding Accepted + Rejected + Duplicated";
 
         let badgeCountInput = document.createElement('input');
         badgeCountInput.setAttribute("type", "number");
@@ -145,6 +146,7 @@ function init() {
         badgeCountLabel.innerText = "Pokemon Go Medal Count:";
         badgeCountLabel.setAttribute("for", "wayfarerccbadgecount");
         badgeCountLabel.classList.add('wayfareres_settings_label');
+        badgeCountLabel.title = "You can also use the number on your Ingress Recon badge but it may be inflated due to past events where agreements earned double badge credit."
 
         let bonusUpgradeInput = document.createElement('input');
         bonusUpgradeInput.setAttribute("type", "number");
@@ -167,15 +169,48 @@ function init() {
         bonusUpgradeLabel.innerText = "Bonus Upgrades Earned:";
         bonusUpgradeLabel.setAttribute("for", "wayfarerccbonusupgrade");
         bonusUpgradeLabel.classList.add('wayfareres_settings_label');
+        bonusUpgradeLabel.title = "Enter the total number of upgrades earned in past events, without this number your total agreement count may be inflated."
+
+        let offsetAgreementsInput = document.createElement('input');
+        offsetAgreementsInput.setAttribute("type", "number");
+        offsetAgreementsInput.setAttribute("size", '2');
+        let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
+        if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false"){
+            offsetAgreements = 0;
+        }
+        offsetAgreementsInput.value = offsetAgreements;
+        offsetAgreementsInput.addEventListener('change', function () {
+            const userId = getUserId();
+            offsetAgreements = this.value;
+            localStorage["wfcc_offset_agreements_" + userId] = offsetAgreements;
+            updateAgreementDisplay();
+        });
+        offsetAgreementsInput.id - "wayfarerccoffsetagreements";
+        offsetAgreementsInput.classList.add('wayfarercc_input');
+
+        const offsetAgreementsLabel = document.createElement("label");
+        offsetAgreementsLabel.innerText = "Agreements Offset:";
+        offsetAgreementsLabel.setAttribute("for", "wayfarerccoffsetagreements");
+        offsetAgreementsLabel.classList.add('wayfareres_settings_label');
+        offsetAgreementsLabel.title = "If you earned agreements prior to the release of Upgrades or have other cases where your agreement count is off by a known amount enter that amount here."
+
+        const helpLabel = document.createElement("label");
+        helpLabel.innerText = "Hover mouse over each item for an explanation.";
+        helpLabel.classList.add('wayfareres_settings_label');
 
         div.appendChild(selectLabel);
         div.appendChild(select);
-        div.appendChild(document.createElement('br'))
+        div.appendChild(document.createElement('br'));
         div.appendChild(badgeCountLabel);
         div.appendChild(badgeCountInput);
-        div.appendChild(document.createElement('br'))
+        div.appendChild(document.createElement('br'));
         div.appendChild(bonusUpgradeLabel);
         div.appendChild(bonusUpgradeInput);
+        div.appendChild(document.createElement('br'));
+        div.appendChild(offsetAgreementsLabel);
+        div.appendChild(offsetAgreementsInput);
+        div.appendChild(document.createElement('br'));
+        div.appendChild(helpLabel);
         div.classList.add('wayfarerrh__visible');
 
         const settingsContainer = document.createElement('div');
@@ -213,12 +248,23 @@ function init() {
     }
 
     function updateAgreementDisplay() {
+        const {accepted, rejected, duplicated, finished, total, available, progress} = stats;
+        const newCount = getTotalAgreementCount(stats);
+
         let countDiv = document.getElementById("totalcountnumber");
         if (countDiv !== null) {
-            const {finished, total, available, progress} = stats;
-            const newCount = getTotalAgreementCount(stats);
             const percent = ((newCount / finished)*100).toFixed(1);
             countDiv.innerHTML = newCount + " (" + percent + "%)";
+        }
+
+        let otherDiv = document.getElementById("othercountnumber");
+        if (otherDiv !== null) {
+            let other = 0;
+            let count_type = localStorage['wfcc_count_type_dropdown'];
+            if (count_type !== "simple") {
+                other = newCount - (accepted + rejected + duplicated);
+            }
+            otherDiv.innerHTML = other;
         }
     }
 
@@ -267,6 +313,28 @@ function init() {
                 insertAfter(totalparent, parentRef);
                 totalparent.classList.add("profile-stats__stat");
                 totalparent.classList.add("wayfareres_parent");
+
+                const otherparent = document.createElement('div');
+                let othertext = document.createElement('div');
+                othertext.innerHTML = "Other Agreements";
+                othertext.classList.add("wayfareres_text");
+
+                let other = 0;
+                let count_type = localStorage['wfcc_count_type_dropdown'];
+                if (count_type !== "simple") {
+                    other = allAgreements - (accepted + rejected + duplicated);
+                }
+
+                let othercount = document.createElement('div');
+                othercount.id = "othercountnumber"
+                othercount.innerHTML = other;
+                othercount.classList.add("wayfareres_count");
+
+                otherparent.appendChild(othertext);
+                otherparent.appendChild(othercount);
+                insertAfter(otherparent, parentRef.parentElement.lastChild );
+                otherparent.classList.add("profile-stats__stat");
+                otherparent.classList.add("wayfareres_parent");
             }, 500));
     }
 
@@ -291,7 +359,11 @@ function init() {
             if (bonusUpgrade === undefined || bonusUpgrade === null || bonusUpgrade === "" || bonusUpgrade === "false" || isNaN(bonusUpgrade)){
                 bonusUpgrade = 0;
             }
-            return (total + available + bonusUpgrade) * 100 + progress;
+            let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
+            if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false"){
+                offsetAgreements = 0;
+            }
+            return (total + available - bonusUpgrade) * 100 + progress + offsetAgreements;
         } else {//"simple"
             return accepted + rejected + duplicated;
         }
@@ -304,21 +376,18 @@ function init() {
     function exportStats() {
       const {performance, finished, accepted, rejected, duplicated, available, progress, total} = stats;
       let other = 0;
-      let total_agreements = 0;
+      let total_agreements = getTotalAgreementCount(stats);
       const base_agreements = accepted + rejected + duplicated;
 
       let count_type = localStorage['wfcc_count_type_dropdown'];
       if (count_type === "badgestat") {
           count_type = "facts";
-          total_agreements = base_agreements;
-          other = total_agreements - (accepted + rejected + duplicated);
+          other = total_agreements - base_agreements;
       } else if (count_type === "upgradecount" ) {
           count_type = "aprox";
-          total_agreements = (total * 100) + progress;
           other = total_agreements - base_agreements;
       } else {
           count_type = "simple";
-          total_agreements = accepted + rejected + duplicated;
       }
 
       const userId = getUserId();
