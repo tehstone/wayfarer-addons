@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.4.0
+// @version      0.4.1
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -311,10 +311,14 @@ function init() {
       if (count_type === "badgestat") {
           count_type = "facts";
           total_agreements = base_agreements;
-      } else {
+          other = total_agreements - (accepted + rejected + duplicated);
+      } else if (count_type === "upgradecount" ) {
           count_type = "aprox";
           total_agreements = (total * 100) + progress;
           other = total_agreements - base_agreements;
+      } else {
+          count_type = "simple";
+          total_agreements = accepted + rejected + duplicated;
       }
 
       const userId = getUserId();
@@ -335,7 +339,7 @@ function init() {
         "other": other,
         "upgrades_available": available,
         "current_progress": progress,
-        "upgrades_redeemed": total - available,
+        "upgrades_redeemed": total,
         "extended_type": count_type,
         "badge_count": badgeCount
       }
