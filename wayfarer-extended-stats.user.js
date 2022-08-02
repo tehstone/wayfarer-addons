@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.5.0
+// @version      0.5.1
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -360,7 +360,7 @@ function init() {
                 bonusUpgrade = 0;
             }
             let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
-            if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false"){
+            if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false" || isNaN(offsetAgreements)){
                 offsetAgreements = 0;
             }
             return (total + available - bonusUpgrade) * 100 + progress + offsetAgreements;
@@ -375,19 +375,18 @@ function init() {
 
     function exportStats() {
       const {performance, finished, accepted, rejected, duplicated, available, progress, total} = stats;
-      let other = 0;
       let total_agreements = getTotalAgreementCount(stats);
       const base_agreements = accepted + rejected + duplicated;
+      let other = total_agreements - base_agreements;
 
       let count_type = localStorage['wfcc_count_type_dropdown'];
       if (count_type === "badgestat") {
           count_type = "facts";
-          other = total_agreements - base_agreements;
       } else if (count_type === "upgradecount" ) {
           count_type = "aprox";
-          other = total_agreements - base_agreements;
       } else {
           count_type = "simple";
+          other = 0;
       }
 
       const userId = getUserId();
@@ -396,6 +395,14 @@ function init() {
         badgeCount = 0;
       } else {
         badgeCount = parseInt(badgeCount);
+      }
+      let bonusUpgrade = parseInt(localStorage["wfcc_bonus_upgrade_" + userId]);
+      if (bonusUpgrade === undefined || bonusUpgrade === null || bonusUpgrade === "" || bonusUpgrade === "false" || isNaN(bonusUpgrade)){
+          bonusUpgrade = 0;
+      }
+      let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
+      if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false" || isNaN(offsetAgreements)){
+          offsetAgreements = 0;
       }
 
       const exportData = {
@@ -410,7 +417,9 @@ function init() {
         "current_progress": progress,
         "upgrades_redeemed": total,
         "extended_type": count_type,
-        "badge_count": badgeCount
+        "badge_count": badgeCount,
+        "bonus_upgrades": bonusUpgrade,
+        "agreement_offset": offsetAgreements
       }
 
       navigator.clipboard.writeText(JSON.stringify(exportData));
