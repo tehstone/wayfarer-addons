@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.5.1
+// @version      0.5.2
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -175,7 +175,7 @@ function init() {
         offsetAgreementsInput.setAttribute("type", "number");
         offsetAgreementsInput.setAttribute("size", '2');
         let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
-        if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false"){
+        if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false" || isNaN(offsetAgreements)){
             offsetAgreements = 0;
         }
         offsetAgreementsInput.value = offsetAgreements;
