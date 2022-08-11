@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.5
+// @version      0.4.6
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -289,6 +289,7 @@ function init() {
         });
         cellColorInput.id = "wayfarermmcellcolorone";
         cellColorInput.classList.add('wayfarercc_input');
+        cellColorInput.type = "color";
 
         const cellColorLabel = document.createElement("label");
         cellColorLabel.innerText = "Review Map Grid Color:";
@@ -352,6 +353,7 @@ function init() {
             localStorage["wfmm_cell_color_two_" + userId] = cellColor;
         });
         cellColorInputTwo.id = "wayfarermmcellcolortwo";
+        cellColorInputTwo.type = "color";
         cellColorInputTwo.classList.add('wayfarercc_input');
 
         const cellColorLabelTwo = document.createElement("label");
