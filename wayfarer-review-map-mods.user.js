@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.6
+// @version      0.4.7
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -59,7 +59,7 @@ function init() {
             const response = this.response;
             const json = JSON.parse(response);
             if (!json) {
-                alert('Failed to parse response from Wayfarer');
+                console.warn('Failed to parse response from Wayfarer');
                 return;
             }
             // ignore if it's related to captchas
@@ -68,7 +68,7 @@ function init() {
 
             candidate = json.result;
             if (!candidate) {
-                alert('Wayfarer\'s response didn\'t include a candidate.');
+                console.warn('Wayfarer\'s response didn\'t include a candidate.');
                 return;
             }
             checkPageType();
