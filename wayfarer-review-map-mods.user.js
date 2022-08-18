@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.7
+// @version      0.4.8
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -123,6 +123,9 @@ function init() {
         addS2Highlight(map, candidate['lat'], candidate['lng']);
         locationChangeBtnListener();
         locationResetChangeBtnListener();
+        setTimeout(() => {
+          document.querySelector('.wf-page-header__title > div:nth-child(1)').scrollIntoView();
+        }, 250);
     }
 
     function locationChangeBtnListener() {
