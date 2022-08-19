@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Ticket Saver
-// @version      0.1.4
+// @version      0.1.5
 // @description  Saves interactions with Niantic Support initiated through Wayfarer.
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-ticket-saver.user.js
@@ -39,7 +39,7 @@
     const ORIGIN_WAYFARER = 'https://wayfarer.nianticlabs.com';
     const ORIGIN_HELPSHIFT = 'https://webchat.helpshift.com';
     const OBJECT_STORE_NAME = 'supportTickets';
-    const { uuid } = GM_info.script;
+    const uuid = 'eacd4454-eb3a-420d-a1bd-4948f7429a5a'; // randomly generated, unique to this userscript, please don't re-use in other scripts
 
     const initHelp = () => {
         const send = msg => {
