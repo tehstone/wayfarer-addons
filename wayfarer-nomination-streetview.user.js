@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.3.8
+// @version      0.3.9
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
@@ -85,9 +85,12 @@
                 const nom = nomCache[ref.querySelector('img').src];
                 addStreetView(nom);
                 addCoordinates(nom);
-                setTimeout(() => {
-                  document.querySelector('.wf-page-header__title > div:nth-child(1)').scrollIntoView();
-                }, 500);
+                const matCnt = document.querySelector('mat-sidenav-content');
+                const evtFunc= () => {
+                    document.querySelector('.wf-page-header__title > div:nth-child(1)').scrollIntoView();
+                    matCnt.removeEventListener('scroll',evtFunc);
+                };
+                matCnt.addEventListener('scroll', evtFunc);
             });
     }
 
