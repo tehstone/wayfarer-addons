@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.7.4
+// @version      0.7.5
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -492,13 +492,19 @@
     function modifyRejectionPanel() {
         awaitElement(() => document.querySelector("app-rejection-reason-selection.ng-star-inserted"))
             .then((ref) => {
+                const cancelButton = document.querySelector(".mat-dialog-actions > button:nth-child(1)");
+                cancelButton.addEventListener('click', function(e) {
+                  isReject = false;
+                  rejectDepth = 0;
+                });
+          
                 const els = document.getElementsByClassName("mat-expansion-panel");
                 if (els.length > 0) {
                     const first = els[0];
                     const categories = first.children[1].children[0].children[0].children;
                     for (let i = 0; i < categories.length; i++) {
                         menuPosition[i] = {"children": {}};
-                        const text = categories[i].getElementsByTagName("mat-panel-title")[0].innerText;
+                        const text = categories[i].getElementsByTagName("mat-panel-title")[0].innerText.trim();
                         if (isNaN(text[0])) {
                             const newText = i + 1 + ". " + text;
                             categories[i].getElementsByTagName("mat-panel-title")[0].innerText = newText;
@@ -507,7 +513,7 @@
 
                         const childSelections = categories[i].getElementsByTagName("mat-list-option");
                         for (let j = 0; j < childSelections.length; j++) {
-                            const text = childSelections[j].getElementsByClassName("mat-list-text")[0].innerHTML;
+                            const text = childSelections[j].getElementsByClassName("mat-list-text")[0].innerHTML.trim();
                             if (isNaN(text[0])) {
                                 const newText = j + 1 + ". " + text;
                                 childSelections[j].getElementsByClassName("mat-list-text")[0].innerText = newText;
@@ -657,7 +663,7 @@
             const buttonParts = submitWrapper[0].getElementsByTagName("button");
             if (finish) {
                 buttonParts[1].click();
-		document.querySelector("button.mat-focus-indicator.mat-menu-item").click()
+                document.querySelector("button.mat-focus-indicator.mat-menu-item").click()
             } else {
                 buttonParts[0].click();
             }
@@ -724,15 +730,15 @@
             }
             ${photoOptions}
 
-	    .card.kbdActiveElement {
-		    border-width: 1px;
-	    }
-	    .kbdActiveElement {
-		    border-color: #df471c;
-	    }
-	    .dark .kbdActiveElement {
-		    border-color: #20B8E3;
-	    }
+        .card.kbdActiveElement {
+            border-width: 1px;
+        }
+        .kbdActiveElement {
+            border-color: #df471c;
+        }
+        .dark .kbdActiveElement {
+            border-color: #20B8E3;
+        }
             `;
         const style = document.createElement('style');
         style.type = 'text/css';
