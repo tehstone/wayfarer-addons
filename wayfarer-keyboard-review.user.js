@@ -280,7 +280,7 @@
                 suppress = updateRevPosition(-1, true);
             } else if (e.keyCode === 39) { //Right arrow key
                 suppress = updateRevPosition(1, true);
-            } else if ((revPosition == 0) && e.keyCode === 97 || e.keyCode === 49) {
+            } else if ((revPosition == 0) && (e.keyCode === 97 || e.keyCode === 49)) {
                 suppress = setRating(0, false);
                 isReject = true;
                 modifyRejectionPanel();
