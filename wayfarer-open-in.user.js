@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.6.3
+// @version      0.6.4
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -643,6 +643,7 @@
     }
 
     const wfOrigin = 'https://wayfarer.nianticlabs.com';
+    const scriptUUID = 'cf6076cf-aa3f-4e29-ad55-2751d4a0d0bc'; // randomly generated, unique to this userscript, please don't re-use in other scripts
 
     const geofences = {
         // Austria
@@ -770,13 +771,13 @@
             if (prov) {
                 try {
                     const { type, executor, id } = event.data;
-                    if (executor === GM_info.script.uuid) {
+                    if (executor === scriptUUID) {
                         switch (type) {
                             case 'getData':
                                 if (dataCache) event.source.postMessage({
                                     type,
                                     id,
-                                    executor: GM_info.script.uuid,
+                                    executor: scriptUUID,
                                     response: dataCache
                                 }, event.origin);
                                 break;
@@ -1091,7 +1092,7 @@
                 if (event.origin === wfOrigin) {
                     try {
                         const { type, executor, id, response } = event.data;
-                        if (executor === GM_info.script.uuid && id === reqId) {
+                        if (executor === scriptUUID && id === reqId) {
                             if (type == 'getData') {
                                 const prov = getProviderByOrigin(window.origin);
                                 if (prov && prov.hasOwnProperty('onload')) prov.onload(response);
@@ -1104,7 +1105,7 @@
             }, false);
             window.opener.postMessage({
                 type: 'getData',
-                executor: GM_info.script.uuid,
+                executor: scriptUUID,
                 id: reqId
             }, wfOrigin);
         }
