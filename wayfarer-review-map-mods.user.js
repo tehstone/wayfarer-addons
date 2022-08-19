@@ -104,13 +104,13 @@ function init() {
         let gmap;
         if (document.querySelector('app-location-accuracy nia-map')) {
             gmap = document.querySelector('app-location-accuracy nia-map');
-            mapCtx = gmap.__ngContext__.at(-1);
+            mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1];
             map = mapCtx.componentRef.map;
             map.setZoom(17);
             addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
-            mapCtx = gmap.__ngContext__.at(-1).niaMap;
+            mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1].niaMap;
             map = mapCtx.componentRef.map;
         }
         else {
