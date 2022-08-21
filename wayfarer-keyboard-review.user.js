@@ -421,7 +421,10 @@
     }
 
     function showFullSupportingInfo() {
-        if (document.getElementsByTagName('mat-dialog-container').length) return;
+        if (document.getElementsByTagName('mat-dialog-container').length) {
+            document.querySelector('div.cdk-overlay-backdrop.cdk-overlay-dark-backdrop.cdk-overlay-backdrop-showing').click();
+            return;
+        }
         const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200 .cursor-pointer');
         if (supportingText) supportingText.click();
     }
