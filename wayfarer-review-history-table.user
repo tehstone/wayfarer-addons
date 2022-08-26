@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.0
+// @version      0.1.1
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -241,7 +241,7 @@
                   </div>
                 </dl>
                 <br>
-                <div class="col-xs-12 col-sm-8" style="float: right; padding: 5px;">
+                <div class="col-xs-12 col-sm-8" style="float: left; padding: 5px;">
                   <dl class="dl-horizontal">
                     ${getDD("Title", title)}
                     ${getDD("Description", description)}
