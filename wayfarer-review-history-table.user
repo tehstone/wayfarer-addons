@@ -65,6 +65,17 @@
         }
     };
 
+    const emptyArray = Array(5).fill(0);
+    function getStarRating(score) {
+        return `<span style="white-space:nowrap">${emptyArray
+        .map((_, i) =>
+            i + 1 <= score
+                ? `<span class="glyphicon glyphicon-star"></span>`
+                : `<span class="glyphicon glyphicon-star-empty"></span>`
+        )
+        .join("")}</span>`;
+    }
+
     const renderReviewHistory = result => new Promise((resolve, reject) => {
         getIDBInstance().then(db => {
             const toSave = [];
@@ -77,30 +88,6 @@
                 for (let i = 0; i < result.length; i++) {
                     if (result[i]["type"] === "NEW") {
                       toSave.push(result[i]);
-                        // let r = {
-                        //     description: result[i]["description"],
-                        //     id: result[i]["id"],
-                        //     imageUrl: result[i]["imageUrl"],
-                        //     lat: result[i]["lat"],
-                        //     lng: result[i]["lng"],
-                        //     statement: result[i]["statement"],
-                        //     supportingImageUrl: result[i]["supportingImageUrl"],
-                        //     title: result[i]["title"],
-                        //     ts: result[i]["ts"],
-                        //     type: result[i]["type"]
-                        // }
-                        // if (result[i].hasOwnProperty('review') && result[i]["review"] !== null) {
-                        //     r["comment"] = result[i]["review"]["comment"]
-                        //     r["cultural"] = result[i]["review"]["cultural"]
-                        //     r["description"] = result[i]["review"]["description"]
-                        //     r["location"] = result[i]["review"]["location"]
-                        //     r["photo"] = result[i]["review"]["photo"]
-                        //     r["quality"] = result[i]["review"]["quality"]
-                        //     r["safety"] = result[i]["review"]["safety"]
-                        //     r["type"] = result[i]["review"]["type"]
-                        //     r["uniqueness"] = result[i]["review"]["uniqueness"]
-                        // }
-                        // toSave.push(r);
                     }
                 }
                 renderTable(toSave);
@@ -122,67 +109,70 @@
       const container = ratingNarRef.parentNode.parentNode;
       container.appendChild(tableContainer);
 
+      const l10n = getL10N();
       $(document).ready(function () {
       const table = $('#review-history').DataTable({
           data: reviewData,
           deferRender: true,
+          order: [[0, 'desc']],
           columns: [
-            { data: 'ts',
-          	  render: (ts, type) => {
-                        if (type === "display") {
-                            return getFormattedDate(ts);
-                        }
-                        return ts;
-                    },
-              defaultContent: '',
-              title: "Date"
+            { 
+            	data: 'ts',
+            	defaultContent: '',
+                title: "Date",
+                width: "7%",
+          	    render: (ts, type) => {
+                    if (type === "display") {
+                        return getFormattedDate(ts);
+                    }
+                    return ts;
+                }                
             },
-	        { data: 'title',
-	          title: 'Title'
+	        { 
+	        	data: 'title',
+	            title: 'Title',
+	            width: "16%"
 	        },
-	        { data: 'description',
-	          title: 'Description',
-	          defaultContent: ''
+	        { 
+	        	data: 'description',
+	            title: 'Description',
+	            defaultContent: '',
+	            width: "47%"
 	        },
 	        {
-	          data: 'review',
-	          defaultContent: '',
-	          title: 'Review',
-	          render: (...review) => {
-	            if (review[0] !== null && review[0] !== undefined) {
-	                if (review[0].quality !== undefined ) {
-	                    return `${review[0].quality}`;
-	                } else if (review[0].rejectReason != undefined) {
-	                	return review[0].rejectReason
-	                } else if (review[0].duplicate != undefined) {
-	                	return "Duplicate";
-	                } else {
-	                	console.log(review[0]);
-	                }
-		        } else {
-		            return 'skipped';
-		        }
-	          }
+	            data: 'review',
+	            defaultContent: '',
+	            title: 'Review',
+	            width: "15%",
+	            render: (...review) => {
+  		            if (review[0] !== null && review[0] !== undefined) {
+		                if (review[0].quality !== undefined ) {
+	    	                return `${review[0].quality}`;
+	        	        } else if (review[0].rejectReason != undefined) {
+	        	        	return l10n[`reject.reason.${review[0].rejectReason.toLowerCase()}.short`];
+	                	} else if (review[0].duplicate != undefined) {
+		                	return "Duplicate";
+	                	} else {
+		                	console.log(review[0]);
+	                	}
+		        	} else {
+			            return 'Skipped/Timed Out';
+		        	}
+	            }
 	        },
-	        { data: 'review',
-	          defaultContent: '',
-	          title: 'Location',
-	          render: (...review) => {
-	          	return `${review[2].lat}, ${review[2].lng}`
-	          }
+	        { 
+	        	data: 'review',
+	            defaultContent: '',
+	            title: 'Location',
+	            width: "15%",
+	            render: (...review) => {
+	          	    return `<a href="https://intel.ingress.com/?ll=${review[2].lat},${review[2].lng}&z=16" "target="_blank">${review[2].lat},${review[2].lng}</a>`;
+	            }
+            },
+	        { 
+	        	data: 'id',
+	          	visible: false 
 	        },
-	        // { data: 'imageUrl',
-	        //   render: (imageUrl) => {
-	        //       return '<a href="' + imageUrl + '"target="_blank">click</a>';
-	        //   }
-	        //   },
-	        // { data: 'supportingImageUrl',
-	        //   render: (imageUrl) => {
-	        //       return '<a href="' + imageUrl + '"target="_blank">click</a>';
-	        //     }
-	        // },
-	        { data: 'id',
-	          visible: false },
           ],
       });
 
@@ -289,10 +279,6 @@
 
     const getTarget = (target) => {
     	return "_blank";
-        // if (!settings["keepTab"]) {
-        //     return "_blank";
-        // }
-        // return getStringHash(target);
     };
 
     const getIntelLink = (lat, lng, content) =>
@@ -375,17 +361,6 @@
         return mainButton;
     }
 
-    const emptyArray = Array(5).fill(0);
-    function getStarRating(score) {
-        return `<span style="white-space:nowrap">${emptyArray
-        .map((_, i) =>
-            i + 1 <= score
-                ? `<span class="glyphicon glyphicon-star"></span>`
-                : `<span class="glyphicon glyphicon-star-empty"></span>`
-        )
-        .join("")}</span>`;
-    }
-
     //NON-SECURE (But good enough for uniqueID on URLs)
     function getStringHash(str) {
         var hash = 0;
@@ -398,6 +373,11 @@
             hash = hash & hash; // Convert to 32bit integer
         }
         return hash;
+    }
+
+    const getL10N = () => {
+        const i18n = JSON.parse(localStorage['@transloco/translations']);
+        return i18n[Object.keys(i18n)[0]];
     }
 
     // Opens an IDB database connection.
