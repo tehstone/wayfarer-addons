@@ -232,15 +232,16 @@
           <div class="panel-body">
               <div class="row">
                 <dl class="dl-horizontal">
-                  <div class="col-xs-8 col-sm-2"><a target="${getTarget(
+                  <div class="col-xs-4"><a target="${getTarget(
                       "images"
-                  )}" href="${imageUrl}=s0"><img style="max-width: 50%; max-height: 300px;" src="${imageUrl}" class="img-responsive" alt="${title}"></a>
+                  )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${imageUrl}" class="img-responsive" alt="${title}"></a>
                   <a target="${getTarget(
                       "images"
-                  )}" href="${imageUrl}=s0"><img style="max-width: 50%; max-height: 300px;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
+                  )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
                   </div>
                 </dl>
-                <div class="col-xs-12 col-sm-8">
+                <br>
+                <div class="col-xs-12 col-sm-8" style="float: right; padding: 5px;">
                   <dl class="dl-horizontal">
                     ${getDD("Title", title)}
                     ${getDD("Description", description)}
