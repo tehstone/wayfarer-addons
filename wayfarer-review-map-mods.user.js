@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.9
+// @version      0.4.10
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -550,7 +550,7 @@ function init() {
         new google.maps.Circle({
             map: map,
             center: latLng,
-            radius: 3,
+            radius: 2,
             strokeColor: 'red',
             fillColor: 'red',
             strokeOpacity: 0.8,
