@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer LocalStorage Manager
-// @version      0.2.1
+// @version      0.2.2
 // @description  Adds a manager to let you manage your localStorage easily.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-localstoragecheck.user.js
@@ -376,6 +376,7 @@
                 max-height: calc(100vh - 20px);
                 overflow-x: hidden;
                 overflow-y: scroll;
+                background: #fff;
             }
             .dark .wfLSM-popup {
                 background: #333;
