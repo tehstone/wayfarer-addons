@@ -36,6 +36,16 @@ Adds a Smart Submit button that will wait to submit the nomination until a certa
 
 Smart Submit button can be disabled if desired, a toggle for the button as well as the min and max delays mentioned previously are all found within a new settings panel at the bottom of the review page.
 
+# Review Counter
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
+
+Adds a counter to the top of the page which increments for each review completed during the current session.
+
+# Edits Diff
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-edits-diff.user.js)
+
+Highlights the differences in text for title and description edits that are similar to the original.
+
 # Extended Stats
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js)
 
@@ -44,16 +54,22 @@ Smart Submit button can be disabled if desired, a toggle for the button as well 
 - Includes settings for current Badge Count and Bonus Upgrades Earned count
 
 # Review History
-[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js)
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js)
+~~[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js)~~
 
 - Stores review history in 3 separate datasets for New Nominations, Edit Nominations, and Photo Reviews per user
 - Includes Export and Remove options
-- Currently there is no visualizer for this data
+* Note: there is a newer implementation of this script than what was previously available which will no longer run out of story. Use the first link above unless you have a good reason to use the older version.
+
+# Review History Table
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-table.user.js)
+
+Adds a searchable and sortable table to the Profile page with all review history stored by the Review History IDB add on.
 
 # Nomination Map 
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js)
 
-Places a map of all player nominations at the top of the Nominations Page
+Places a map of all player nominations at the top of the Nominations Page. Also places a counter of the currently listed nominations above the list, this counter updates whenever the search or filter is updated.
 
 # Nomination Streetview
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js)
@@ -64,6 +80,26 @@ Adds a Streetview panel to the selected nomination, also makes the Nomination Ti
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js)
 
 Basic stats about nominations. Export in JSON or CSV for all nominations.
+
+# Nomination Status History
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js)
+
+Tracks all changes to the status of each nomination. Changes are only detected when the Contributions page is loaded and no history is available prior to the installation of this add on.
+
+# Nomination Types
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-types.user.js)
+
+Provides a selector to indicate which game a nomination was made with. This data is not available so selection must be done manually.
+
+# Rejections Plus
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-rejections-plus.user.js)
+
+Stores all rejection reasons for each nomination. This is to overcome a bug that causes only 2 of the rejection reasons to load each time the page is refreshed. All previously detected reasons will be displayed along with the full text description of that rejection reason.
+
+# Ticket Saver
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-ticket-saver.user.js)
+
+Stores all previously opened help chat tickets and adds a tab to the left nav to view these tickets.
 
 # Open In
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js)
@@ -159,10 +195,16 @@ These are automatically made available to you in each respective region.
 
 Removes unnecessary sentences, reduced font size for title/descriptions, automatically defaults all three What is it categories to **NO**. Not necessarily compact.
 
-# Review Counter
-[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
+# Version Display
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-version-display.user.js)
 
-Adds a counter to the top of the page which increments for each review completed during the current session.
+Displays the current Wayfarer code version in the upper left of the page.
+
+
+# Localstorage Check
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-localstoragecheck.user.js)
+
+On each page load, checks the current amount of data in localstorage and warns if full. For older versions of several add ons that use localstorage this is useful to determine if silent errors are caused by localstorage filling up.
 
 # Upgrade Percentage
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-upgrade-percent.user.js)
