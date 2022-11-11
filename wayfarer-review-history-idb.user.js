@@ -180,7 +180,7 @@
                         toSave.push({ ...result[i], userHash: undefined });
                     }
                 }
-                const blob = new Blob([JSON.stringify(toSave)], { type: 'application/jsonm' });
+                const blob = new Blob([JSON.stringify(toSave)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const anchor = document.createElement('a');
                 anchor.setAttribute('href', url);
