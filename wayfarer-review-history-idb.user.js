@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History IDB
-// @version      0.1.1
+// @version      0.1.2
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -183,12 +183,11 @@
                 const blob = new Blob([JSON.stringify(toSave)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const anchor = document.createElement('a');
-                anchor.setAttribute('href', url);
                 anchor.setAttribute('download', `reviewHistory-${userHash}.json`);
-                anchor.style.display = 'hidden';
-                document.querySelector('body').appendChild(anchor);
+                anchor.href = url;
+                anchor.setAttribute('target', '_blank');
                 anchor.click();
-                anchor.parentNode.removeChild(anchor);
+                URL.revokeObjectURL(url);
             };
         }));
         outer.appendChild(label);
