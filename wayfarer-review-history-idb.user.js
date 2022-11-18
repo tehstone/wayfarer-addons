@@ -1,10 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History IDB
-<<<<<<< HEAD
 // @version      0.1.3
-=======
-// @version      0.1.2
->>>>>>> 93ca6e4d0abfdcf2f583eacf793457a4fe05c02b
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
