@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History IDB
-// @version      0.1.0
+// @version      0.1.3
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -157,7 +157,7 @@
         queryLoop();
     });
 
-    const addRHButtons = () => awaitElement(() => document.querySelector('wf-logo')).then(ref => {
+    const addRHButtons = () => awaitElement(() => document.querySelector('body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div.flex.justify-center.mt-8.ng-star-inserted')).then(ref => {
         console.log('ädding');
         if (document.getElementById('wfrh-idb-topbar')) return;
         const outer = document.createElement('div');
@@ -180,21 +180,39 @@
                         toSave.push({ ...result[i], userHash: undefined });
                     }
                 }
-                const blob = new Blob([JSON.stringify(toSave)], { type: 'application/jsonm' });
+                const blob = new Blob([JSON.stringify(toSave)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const anchor = document.createElement('a');
-                anchor.setAttribute('href', url);
                 anchor.setAttribute('download', `reviewHistory-${userHash}.json`);
-                anchor.style.display = 'hidden';
-                document.querySelector('body').appendChild(anchor);
+                anchor.href = url;
+                anchor.setAttribute('target', '_blank');
                 anchor.click();
-                anchor.parentNode.removeChild(anchor);
+                URL.revokeObjectURL(url);
             };
+        }));
+        const clearBtn = document.createElement('button');
+        clearBtn.textContent = 'Clear';
+        clearBtn.addEventListener('click', () => getIDBInstance().then(db => {
+            if (confirm('Are you sure you want to clear your review history?')) {
+                const tx = db.transaction([OBJECT_STORE_NAME], 'readwrite');
+                tx.oncomplete = event => db.close();
+                const objectStore = tx.objectStore(OBJECT_STORE_NAME);
+                const clearReviewHistory = objectStore.clear();
+                clearReviewHistory.onsuccess = () => {
+                    alert("Cleared all saved review history.")
+                }
+            }
         }));
         outer.appendChild(label);
         outer.appendChild(exportBtn);
-        ref.parentNode.parentNode.appendChild(outer);
+        outer.appendChild(clearBtn);
+        insertAfter(outer, ref);
+        //ref.parentNode.parentNode.appendChild(outer);
     });
+
+    function insertAfter(newNode, referenceNode) {
+        referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    }
 
     // Returns an copy of obj containing only the keys specified in the keys array.
     const filterObject = (obj, keys) => Object
