@@ -37,6 +37,7 @@
     let checkTimer = null;
     let rejectCheckTimer = null;
     let dupeModalCheckTimer = null;
+    let submitButtonClicked = false;
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -63,6 +64,7 @@
     });
 
     function injectTimer() {
+        submitButtonClicked = false;
         tryNumber = 10;
         awaitElement(() => document.querySelector('wf-logo'))
             .then((ref) => {
@@ -393,6 +395,8 @@
     }
 
     function checkSubmitReview() {
+        if (submitButtonClicked) { return; }
+        submitButtonClicked = true;
         let diff = Math.ceil((expireTime - new Date().getTime()) / 1000);
 
         let minDelay = localStorage["wfrt_min_delay_" + userId];
