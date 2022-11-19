@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.7.5
+// @version      0.7.6
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -337,9 +337,7 @@
                     }
                 }
             } else if (rate == -1) {
-                ratingElements[revPosition].querySelector('.review-categorization > button').click();
-                const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-                if (wfinput) focusWhatIsInput(wfinput);
+                activateOtherTextBox();
             }
             return true;
         } else if (whatIsButtons.length) {
@@ -350,6 +348,17 @@
             return true;
         }
         return false;
+    }
+
+    function activateOtherTextBox() {
+        let otherBtn = ratingElements[revPosition].querySelector('.review-categorization > button');
+        if (otherBtn === null) {
+            setTimeout(activateOtherTextBox, 50);
+            return;
+        }
+        otherBtn.click();
+        const wfinput = ratingElements[revPosition].querySelector('wf-select input');
+        if (wfinput) focusWhatIsInput(wfinput);
     }
 
     function setEditOption(option) {
@@ -421,10 +430,7 @@
     }
 
     function showFullSupportingInfo() {
-        if (document.getElementsByTagName('mat-dialog-container').length) {
-            document.querySelector('div.cdk-overlay-backdrop.cdk-overlay-dark-backdrop.cdk-overlay-backdrop-showing').click();
-            return;
-        }
+        if (document.getElementsByTagName('mat-dialog-container').length) return;
         const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200 .cursor-pointer');
         if (supportingText) supportingText.click();
     }
