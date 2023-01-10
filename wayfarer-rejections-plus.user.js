@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Wayfarer Rejections Plus
-// @version      0.1.0
+// @version      0.2.3
 // @description  Improves the display of criteria on rejected nominations, allows displaying more than two rejection reasons, and more.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-rejections-plus.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
+// @run-at       document-start
 // ==/UserScript==
 
 // Copyright 2022 tehstone
@@ -42,17 +43,45 @@
 
     const idMap = {};
     let refreshHandler = null;
+    let wfGlobalLanguage = 'en';
 
+    // Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
     (open => {
         XMLHttpRequest.prototype.open = function (method, url) {
             if (url == '/api/v1/vault/manage/detail' && method == 'POST') {
                 this.addEventListener('load', interceptDetail, false);
             } else if (url == '/api/v1/vault/manage' && method == 'GET') {
                 this.addEventListener('load', interceptManage, false);
+            } else if (url == '/api/v1/vault/properties' && method == 'GET') {
+                // NOTE: Requires @run-at document-start.
+                this.addEventListener('load', interceptProperties, false);
             }
             open.apply(this, arguments);
         };
     })(XMLHttpRequest.prototype.open);
+
+    // Overwrite the send method of the XMLHttpRequest.prototype to intercept POST data
+    (send => {
+        XMLHttpRequest.prototype.send = function(dataText) {
+            try {
+                const data = JSON.parse(dataText);
+                const xhr = this;
+                this.addEventListener('load', () => {
+                    if (xhr.responseURL == window.origin + '/api/v1/vault/settings') {
+                        const response = xhr.response;
+                        const json = JSON.parse(response);
+                        if (!json) return;
+                        if (json.captcha) return;
+                        if (!json.code || json.code !== 'OK') return;
+                        if (!data.hasOwnProperty('language')) return;
+                        wfGlobalLanguage = data.language;
+                        console.log('Detected change in Wayfarer language to:', wfGlobalLanguage);
+                    }
+                }, false);
+            } catch (err) {}
+            send.apply(this, arguments);
+        };
+    })(XMLHttpRequest.prototype.send);
 
     function interceptDetail() {
         try {
@@ -77,8 +106,21 @@
                         break;
                 }
             }
-        } catch (e)    {
-            console.err(e);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function interceptProperties() {
+        try {
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (!json) return;
+            if (!json.result || !json.result.language) return;
+            wfGlobalLanguage = json.result.language;
+            console.log('Detected Wayfarer language:', wfGlobalLanguage);
+        } catch (e) {
+            console.error(e);
         }
     }
 
@@ -125,7 +167,7 @@
             try {
                 localStorage.wfrcc_cache = JSON.stringify(data);
             } catch (e) {
-                console.err(e);
+                console.error(e);
                 alert('Your localStorage is full! Please clear data from it.');
             }
             return data[id];
@@ -242,14 +284,14 @@
                 xhr.send(JSON.stringify({ id }));
                 label.textContent = 'refreshing...';
             } catch (e) {
-                console.err(e);
+                console.error(e);
             }
         }
     }
 
     const getL10N = () => {
         const i18n = JSON.parse(localStorage['@transloco/translations']);
-        return i18n[Object.keys(i18n)[0]];
+        return i18n[wfGlobalLanguage];
     }
 
     const awaitElement = get => new Promise((resolve, reject) => {
