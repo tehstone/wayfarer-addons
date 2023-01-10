@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Ticket Saver
-// @version      0.1.5
+// @version      0.2.2
 // @description  Saves interactions with Niantic Support initiated through Wayfarer.
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-ticket-saver.user.js
@@ -36,10 +36,12 @@
 /* eslint indent: ['error', 4] */
 
 (() => {
+
+    const uuid = 'eacd4454-eb3a-420d-a1bd-4948f7429a5a'; // randomly generated, unique to this userscript, please don't re-use in other scripts
+
     const ORIGIN_WAYFARER = 'https://wayfarer.nianticlabs.com';
     const ORIGIN_HELPSHIFT = 'https://webchat.helpshift.com';
     const OBJECT_STORE_NAME = 'supportTickets';
-    const uuid = 'eacd4454-eb3a-420d-a1bd-4948f7429a5a'; // randomly generated, unique to this userscript, please don't re-use in other scripts
 
     const initHelp = () => {
         const send = msg => {
@@ -176,6 +178,28 @@
             queryLoop();
         });
 
+        const getHTMLSearchRegex = query => {
+            // Generate a regex that ensures our match (query) is not part
+            // of an XML start tag or entity using a negative lookahead.
+            // Adapted from the spec at https://www.w3.org/TR/xml/
+            // (but not guaranteed to be accurate).
+            const nameStartChars =
+                  ':A-Za-z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF' +
+                  '\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F' +
+                  '\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD';
+            const nameChars = nameStartChars +
+                  '\\-\\.0-9\u00B7\u0300-\u036F\u203F-\u2040';
+
+            const name = `([${nameStartChars}][${nameChars}]*)`;
+            const entityFragment = `&(${name}|#([Xx]?(0-9A-Fa-f)*|(0-9)*))?`;
+            const attrFragmentDQ = `"([^<&"]|${entityFragment};)*`;
+            const attrFragmentSQ = `'([^<&']|${entityFragment};)*`;
+            const attribute = `${name}\\s*=\\s*(${attrFragmentDQ}"|${attrFragmentSQ}')`;
+            const attrFragment = `${name}?\\s*=?\\s*(${attrFragmentDQ}|${attrFragmentSQ})?`;
+            const sTagFragment = `<${name}(\\s*${attribute})*(\\s*${attrFragment})?`;
+            return new RegExp(`(?<!(${entityFragment}|${sTagFragment}))` + query.replaceAll(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+        }
+
         const showTicketHistoryModal = () => {
             const outer = document.createElement('div');
             outer.classList.add('wfSTH-bg');
@@ -191,11 +215,56 @@
 
             const closeBtn = document.createElement('div');
             closeBtn.textContent = '❌';
+            closeBtn.title = 'Close';
             closeBtn.classList.add('wfSTH-close');
             closeBtn.addEventListener('click', () => {
                 outer.parentNode.removeChild(outer);
             });
             inner.appendChild(closeBtn);
+
+            const searchBtn = document.createElement('div');
+            const searchBox = document.createElement('input');
+            searchBtn.textContent = '🔍';
+            searchBtn.title = 'Search';
+            searchBtn.classList.add('wfSTH-close');
+            searchBtn.addEventListener('click', () => {
+                inner.removeChild(searchBtn);
+                searchBox.style.display = 'block';
+                searchBox.focus();
+            });
+            inner.appendChild(searchBtn);
+
+            const searchCache = [];
+            searchBox.placeholder = 'Search...';
+            searchBox.classList.add('wfSTH-search');
+            searchBox.addEventListener('input', () => {
+                const query = searchBox.value.toLowerCase();
+                const dummy = document.createElement('div');
+                searchCache.forEach(({ issue, e, refresh }) => {
+                    if (!query.length) {
+                        e.style.display = 'block';
+                    } else {
+                        let matches = false;
+                        for (let i = 0; i < issue.messages.length; i++) {
+                            if ([
+                                'Bot Started',
+                                'Bot Ended',
+                                'Confirmation Accepted'
+                            ].includes(issue.messages[i].type)) continue;
+                            dummy.textContent = query;
+                            const queryHTML = dummy.innerHTML;
+                            dummy.innerHTML = issue.messages[i].body.toLowerCase();
+                            if (dummy.innerHTML.match(getHTMLSearchRegex(queryHTML))) {
+                                matches = true;
+                                break;
+                            };
+                        }
+                        e.style.display = matches ? 'block' : 'none';
+                    }
+                    if ([...e.classList].includes('wfSTH-selected')) refresh();
+                });
+            });
+            inner.appendChild(searchBox);
 
             const box = document.createElement('div');
             box.classList.add('wfSTH-box');
@@ -208,10 +277,10 @@
             chat.classList.add('wfSTH-chat');
             box.appendChild(chat);
 
-            const showTicket = (listItem, issue) => {
+            const showTicket = (listItem, issue, refresh) => {
                 document.querySelectorAll('.wfSTH-selected').forEach(e => e.classList.remove('wfSTH-selected'));
                 listItem.classList.add('wfSTH-selected');
-                chat.scrollTop = 0;
+                if (!refresh) chat.scrollTop = 0;
                 chat.innerHTML = '';
                 console.log('Displaying issue ticket', issue);
 
@@ -238,16 +307,25 @@
                     const bubble = document.createElement('div');
                     bubble.classList.add('wfSTH-chatBubble');
 
+                    const highlightSearch = html => {
+                        if (!searchBox.value.length) return html;
+                        const dummy = document.createElement('div');
+                        dummy.textContent = searchBox.value.toLowerCase();
+                        const query = dummy.innerHTML;
+                        dummy.innerHTML = html;
+                        return dummy.innerHTML.replaceAll(getHTMLSearchRegex(query), '<span class="wfSTH-searchMatch">$&</span>');
+                    }
+
                     switch (msg.type) {
                         case 'Option Input Response':
                         case 'Text Input Response':
                         case 'Text Message with Text Input':
                         case 'Text':
-                            bubble.innerHTML = msg.body;
+                            bubble.innerHTML = highlightSearch(msg.body);
                             break;
 
                         case 'Text Message with Option Input':
-                            bubble.innerHTML = msg.body;
+                            bubble.innerHTML = highlightSearch(msg.body);
                             if (msg.input && msg.input.options) {
                                 msg.input.options.forEach(opt => {
                                     const eOpt = document.createElement('div');
@@ -279,7 +357,7 @@
                             break;
 
                         default:
-                            bubble.innerHTML = msg.body;
+                            bubble.innerHTML = highlightSearch(msg.body);
                             const errMsg = document.createElement('p');
                             errMsg.style.color = 'red';
                             errMsg.textContent = `Unknown message type ${msg.type}, please report to addon developer!`;
@@ -312,7 +390,8 @@
                             timeStyle: 'long'
                         });
                         listItem.appendChild(timestamp);
-                        listItem.addEventListener('click', () => showTicket(listItem, issue));
+                        listItem.addEventListener('click', () => showTicket(listItem, issue, false));
+                        searchCache.push({ issue, e: listItem, refresh: () => showTicket(listItem, issue, true) });
                     });
                 }
             });
@@ -387,15 +466,34 @@
             }
             .wfSTH-popup h1 {
                 margin-bottom: 20px;
+                width: calc(70% - 70px);
+                float: left;
+            }
+            .wfSTH-search {
+                width: 30%;
+                padding: 0.7em;
+                font-size: 1.1em;
+                background-color: #ddd;
+                float: right;
+                display: none;
+            }
+            .dark .wfSTH-search {
+                background-color: #222;
+            }
+            .wfSTH-searchMatch {
+                background-color: yellow;
+                color: black;
+                display: inline-block;
+                box-shadow: 0 0 4px rgba(0,0,0,0.5);
+                white-space: pre;
             }
             .wfSTH-close {
-                position: absolute;
-                top: 10px;
-                right: 10px;
                 z-index: 2;
                 font-size: 2em;
                 cursor: pointer;
                 opacity: 0.5;
+                float: right;
+                margin-left: 14px;
             }
             .wfSTH-close:hover {
                 opacity: 1;
@@ -404,6 +502,7 @@
                 height: calc(100% - 60px);
                 display: flex;
                 background-color: #ddd;
+                clear: both;
             }
             .dark .wfSTH-box {
                 background-color: #222;
