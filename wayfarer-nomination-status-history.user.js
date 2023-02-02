@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.6.9
+// @version      0.7.0
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -143,7 +143,7 @@
             history.push({ timestamp, status });
             objectStore.put({ ...result, ...extras, status: newStatus, statusHistory: history });
             tx.commit();
-            awaitElement(() => document.querySelector('.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status));
+            awaitElement(() => document.querySelector('.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status, false, 1));
             resolve();
         }
         getNom.onerror = reject;
@@ -220,7 +220,7 @@
                                     textbox.appendChild(nomDateLine);
                                 }
                                 // Then, add options for each entry in the history.
-                                result.statusHistory.forEach(({ timestamp, status }, i) => addEventToHistoryDisplay(box, timestamp, status, i));
+                                result.statusHistory.forEach(({ timestamp, status, verified }, i) => addEventToHistoryDisplay(box, timestamp, status, verified, i));
                                 // Clean up when we're done.
                                 db.close();
                             }
@@ -232,7 +232,7 @@
     };
 
     // Adds a nomination history entry to the given history display <select>.
-    const addEventToHistoryDisplay = (box, timestamp, status, index) => {
+    const addEventToHistoryDisplay = (box, timestamp, status, verified, index) => {
         if (status === 'NOMINATED' && index > 0) status = 'Hold released';
 
         // Format the date as UTC as this is what Wayfarer uses to display the nomination date.
@@ -242,7 +242,7 @@
         const text = `${dateString} - ${stateMap.hasOwnProperty(status) ? stateMap[status] : status}`;
 
         const opt = document.createElement('option');
-        opt.textContent = text;
+        opt.textContent = text + (verified ? ' \u2713' : '');
         // Create a random "value" for our option, so we can select it from the dropdown after it's added.
         opt.value = 'n' + Math.random();
         const select = box.querySelector('select');
@@ -252,6 +252,7 @@
 
         const line = document.createElement('p');
         line.textContent = text;
+        if (verified) line.classList.add('wfnshVerified');
         const textbox = box.querySelector('.wfnshInner');
         textbox.appendChild(line);
     };
@@ -631,6 +632,7 @@
             lblOld.textContent = diff.previously ? new Date(diff.previously).toLocaleString(undefined, timeOpts) : '(missing)';
             const lblNew = document.createElement('span');
             lblNew.classList.add('wfnshIENew');
+            if (diff.verified) lblNew.classList.add('wfnshVerified');
             lblNew.textContent = new Date(diff.timestamp).toLocaleString(undefined, timeOpts);
             const change = document.createElement('p');
             change.classList.add('wfnshIEChange');
@@ -677,7 +679,7 @@
     const mergeEmailChanges = (history, changes) => {
         const joinedChanges = {};
         Object.keys(changes).forEach(k => {
-            const joined = [...history[k], ...changes[k].updates];
+            const joined = [...changes[k].updates, ...history[k]];
             joined.sort((a, b) => a.timestamp - b.timestamp);
             for (let i = joined.length - 2; i >= 0; i--) {
                 if (joined[i].status == joined[i + 1].status) {
@@ -695,7 +697,7 @@
             const diffs = [];
             for (let i = 0, j = 0; i < history[k].length && j < joined.length; i++, j++) {
                 while (history[k][i].status !== joined[j].status) diffs.push({ ...joined[j++], previously: null });
-                if (history[k][i].timestamp !== joined[j].timestamp) diffs.push({ ...joined[j], previously: history[k][i].timestamp });
+                if (history[k][i].timestamp !== joined[j].timestamp || !!history[k][i].verified !== !!joined[j].verified) diffs.push({ ...joined[j], previously: history[k][i].timestamp });
             }
             if (diffs.length) joinedChanges[k] = { ...changes[k], updates: joined, diffs };
         });
@@ -736,6 +738,64 @@
             IMAGE_ALT: alt => doc => tryNull(() => doc.querySelector(`img[alt='${alt}']`).src),
             ING_TYPE_1: doc => tryNull(() => doc.querySelector('h2 ~ p:last-of-type').lastChild.textContent.trim()),
             ING_TYPE_2: doc => tryNull(() => doc.querySelector('h2 ~ p:last-of-type img').src),
+            ING_TYPE_3: (status, regex, tooClose) => (doc, fh) => {
+                const match = fh.subject.match(regex);
+                if (!match) throw new Error('Unable to extract the name of the Wayspot from this email.');
+                const text = doc.querySelector('p').textContent.trim();
+                if (tooClose && text.includes(tooClose)) {
+                    status = 'ACCEPTED';
+                }
+                const candidates = nominations.filter(e => e.title == match.groups.title && e.status == status);
+                if (!candidates.length) throw new Error(`Unable to find a nomination with status ${status} that matches the title "${match.groups.title}" on this Wayfarer account.`);
+                if (candidates.length > 1) throw new Error(`Multiple nominations with status ${status} on this Wayfarer account match the title "${match.groups.title}" specified in the email.`);
+                return candidates[0].imageUrl;
+            },
+            ING_TYPE_4: doc => {
+                const query = doc.querySelector('h2 ~ p:last-of-type');
+                if (!query) return null;
+                const [ title, desc ] = query.textContent.split('\n');
+                if (!title || !desc) return null;
+                const candidates = nominations.filter(e => e.title == title);
+                if (!candidates.length) throw new Error(`Unable to find a nomination that matches the title "${title}" on this Wayfarer account.`);
+                if (candidates.length > 1) {
+                    const cand2 = candidates.filter(e => e.description == desc);
+                    if (!cand2.length) throw new Error(`Unable to find a nomination that matches the title "${title}" and description "${desc}" on this Wayfarer account.`);
+                    if (cand2.length > 1) throw new Error(`Multiple nominations on this Wayfarer account match the title "${title}" and description "${desc}" specified in the email.`);
+                    return cand2[0].imageUrl;
+                }
+                return candidates[0].imageUrl;
+            },
+            ING_TYPE_5: (doc, fh) => {
+                const a = doc.querySelector('a[href^="https://www.ingress.com/intel?ll="]');
+                if (!a) return null;
+                const match = a.href.match(/\?ll=(?<lat>-?\d{1,2}(\.\d{1,6})?),(?<lng>-?\d{1,3}(\.\d{1,6})?)/);
+                if (!match) return;
+                const candidates = nominations.filter(e => e.lat == parseFloat(match.groups.lat) && e.lng == parseFloat(match.groups.lng));
+                if (candidates.length != 1) {
+                    const m2 = fh.subject.match(/^(Ingress Portal Live|Portal review complete): ?(?<title>.*)$/);
+                    if (!m2) throw new Error('Unable to extract the name of the Wayspot from this email.');
+                    const cand2 = (candidates.length ? candidates : nominations).filter(e => e.title == m2.groups.title);
+                    if (!cand2.length) throw new Error(`Unable to find a nomination that matches the title "${m2.groups.title}" or is located at ${match.groups.lat},${match.groups.lng} on this Wayfarer account.`);
+                    if (cand2.length > 1) throw new Error(`Multiple nominations on this Wayfarer account match the title "${m2.groups.title}" and/or are located at ${match.groups.lat},${match.groups.lng} as specified in the email.`);
+                    return cand2[0].imageUrl;
+                }
+                return candidates[0].imageUrl;
+            },
+            ING_TYPE_6: regex => (doc, fh) => {
+                const match = fh.subject.match(regex);
+                if (!match) throw new Error('Unable to extract the name of the Wayspot from this email.');
+                const date = new Date(fh.date);
+                // Wayfarer is in UTC, but emails are in local time. Work around this by also matching against the preceding
+                // and following dates from the one specified in the email.
+                const dateCur = utcDateToISO8601(date);
+                const dateNext = utcDateToISO8601(shiftDays(date, 1));
+                const datePrev = utcDateToISO8601(shiftDays(date, -1));
+                const dates = [ datePrev, dateCur, dateNext ];
+                const candidates = nominations.filter(e => dates.includes(e.day) && e.title.trim() == match.groups.title);
+                if (!candidates.length) throw new Error(`Unable to find a nomination that matches the title "${match.groups.title}" and submission date ${dateCur} on this Wayfarer account.`);
+                if (candidates.length > 1) throw new Error(`Multiple nominations on this Wayfarer account match the title "${match.groups.title}" and submission date ${dateCur} specified in the email.`);
+                return candidates[0].imageUrl;
+            },
             PGO_TYPE_1: doc => tryNull(() => doc.querySelector('h2 ~ p:last-of-type').previousElementSibling.textContent.trim()),
             PGO_TYPE_2: doc => tryNull(() => doc.querySelector('h2 ~ p:last-of-type').previousElementSibling.querySelector('img').src),
             WF_DECIDED: (regex, months) => doc => {
@@ -809,13 +869,15 @@
                 if (rejectText && text.includes(rejectText)) return eType.determineAppealRejectType(nom);
                 return null;
             },
-            ING_DECIDED: (acceptText1, acceptText2, rejectText, dupText, tooCloseText) => doc => {
-                const text = doc.querySelector('h2 + p').textContent.trim();
+            ING_DECIDED: (acceptText1, acceptText2, rejectText, dupText1, tooCloseText, dupText2) => doc => {
+                const text = (doc.querySelector('h2 + p') || doc.querySelector('p')).textContent.trim();
                 if (acceptText1 && text.startsWith(acceptText1)) return eType.ACCEPTED;
                 if (acceptText2 && text.startsWith(acceptText2)) return eType.ACCEPTED;
                 if (rejectText && text.includes(rejectText)) return eType.REJECTED;
-                if (dupText && text.includes(dupText)) return eType.DUPLICATE;
+                if (dupText1 && text.includes(dupText1)) return eType.DUPLICATE;
                 if (tooCloseText && text.includes(tooCloseText)) return eType.ACCEPTED;
+                const query2 = doc.querySelector('p:nth-child(2)');
+                if (query2 && dupText2 && query2.textContent.trim().includes(dupText2)) return eType.DUPLICATE;
                 return null;
             }
         };
@@ -861,13 +923,9 @@
                 // Nomination received (Ingress)
                 subject: /^Portal submission confirmation:/,
                 status: () => eType.NOMINATED,
-                image: [ eQuery.IMAGE_ALT('Nomination Photo'), eQuery.ING_TYPE_1, eQuery.IMAGE_ALT('Portal image') ]
-            },
-            {
-                // Nomination received (Ingress NIA)
-                subject: /^Ingress Portal Submitted:/,
-                status: () => eType.NOMINATED,
-                image: [ eQuery.IMAGE_ANY ]
+                image: [ eQuery.IMAGE_ALT('Nomination Photo'), eQuery.ING_TYPE_1, eQuery.ING_TYPE_6(
+                    /^Portal submission confirmation: (?<title>.*)$/
+                ) ]
             },
             {
                 // Nomination decided (Ingress)
@@ -877,8 +935,42 @@
                     'Excellent work, Agent.',
                     'we have decided not to accept this candidate.',
                     'your candidate is a duplicate of an existing Portal.',
-                    'this candidate is too close to an existing Portal.'
-                ), image: [ eQuery.IMAGE_ALT('Nomination Photo'), eQuery.ING_TYPE_1, eQuery.ING_TYPE_2 ]
+                    'this candidate is too close to an existing Portal',
+                    'Your candidate is a duplicate of either an existing Portal'
+                ), image: [ eQuery.IMAGE_ALT('Nomination Photo'), eQuery.ING_TYPE_1, eQuery.ING_TYPE_2, eQuery.ING_TYPE_5, eQuery.ING_TYPE_4 ]
+            },
+            {
+                // Nomination received (Ingress Redacted)
+                subject: /^Ingress Portal Submitted:/,
+                status: () => eType.NOMINATED,
+                image: [ eQuery.ING_TYPE_6(
+                    /^Ingress Portal Submitted: (?<title>.*)$/
+                ) ]
+            },
+            {
+                // Nomination duplicated (Ingress Redacted)
+                subject: /^Ingress Portal Duplicate:/,
+                status: () => eType.DUPLICATE,
+                image: [ eQuery.ING_TYPE_3(
+                    eType.DUPLICATE,
+                    /^Ingress Portal Duplicate: (?<title>.*)$/
+                ) ]
+            },
+            {
+                // Nomination accepted (Ingress Redacted)
+                subject: /^Ingress Portal Live:/,
+                status: () => eType.ACCEPTED,
+                image: [ eQuery.ING_TYPE_5 ]
+            },
+            {
+                // Nomination rejected (Ingress Redacted)
+                subject: /^Ingress Portal Rejected:/,
+                status: () => eType.REJECTED,
+                image: [ eQuery.ING_TYPE_3(
+                    eType.REJECTED,
+                    /^Ingress Portal Rejected: (?<title>.*)$/,
+                    'Unfortunately, this Portal is too close to another existing Portal'
+                ) ]
             },
             {
                 // Nomination received (PoGo)
@@ -1120,6 +1212,36 @@
                 ), image: [ eQuery.WF_DECIDED(
                     /^Merci pour votre proposition de Wayspot (?<title>.*) le (?<day>\d+) (?<month>)\.? (?<year>\d+)\u2009!$/,
                     ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc']
+                ) ]
+            },
+
+            //  ---------------------------------------- HINDI [hi] ----------------------------------------
+            // MISSING:
+            // Nomination received (Wayfarer)
+            // Appeal received
+            // Appeal decided
+            // Nomination received (Ingress)
+            // Nomination decided (Ingress)
+            // Nomination received (PoGo)
+            // Nomination accepted (PoGo)
+            // Nomination rejected (PoGo)
+            // Nomination duplicated (PoGo)
+            // Photo, edit, or report; received or decided (PoGo)
+            // Photo, edit, or report decided (Wayfarer)
+            // Photo, edit, or report received (Wayfarer)
+            // Photo or edit decided (Ingress)
+            // Edit received (Ingress)
+            // Photo received (Ingress)
+            // Report received or decided (Ingress)
+            {
+                // Nomination decided (Wayfarer)
+                subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
+                status: eStatusHelpers.WF_DECIDED(
+                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'ने को आपके Wayspot नामांकन को अस्वीकार करने का निर्णय लिया है'
+                ), image: [ eQuery.WF_DECIDED(
+                    /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 ) ]
             },
 
@@ -1533,7 +1655,7 @@
                         fh[i] = matching.length ? matching.pop()[1] : null;
                     }
                     const partCT = parseContentType(fh['content-type']);
-                    if (fh['content-transfer-encoding'].toLowerCase() == 'quoted-printable' && partCT.type == 'text/html') {
+                    if (fh['content-transfer-encoding'] && fh['content-transfer-encoding'].toLowerCase() == 'quoted-printable' && partCT.type == 'text/html') {
                         htmlBody = partBody;
                         charset = (partCT.params.charset || 'utf-8').toLowerCase();
                     }
@@ -1563,6 +1685,7 @@
                             return decodeURIComponent(uriStr);
                         case 'iso-8859-1':
                         case 'us-ascii':
+                        case 'windows-1252':
                             return decodeURIComponent(asciiToUTF8(uriStr));
                         default:
                             throw new Error(`Unknown charset ${charset}.`);
@@ -1590,7 +1713,7 @@
                     let url = null;
                     if (emailParsers[j].image) {
                         for (let k = 0; k < emailParsers[j].image.length && url === null; k++) {
-                            url = emailParsers[j].image[k](doc);
+                            url = emailParsers[j].image[k](doc, fh);
                             if (url) {
                                 const match = url.match(/^https?:\/\/lh3.googleusercontent.com\/(.*)$/);
                                 if (!match) url = null;
@@ -1611,12 +1734,14 @@
                     }
                     parsedChanges[nom.id].updates.push({
                         timestamp: new Date(fh.date).getTime(),
+                        verified: true,
                         status
                     });
                     success = true;
                 }
                 if (!success && !ignore) throw new Error('This email does not appear to match any styles of Niantic emails currently known to Nomination Status History.');
             } catch (e) {
+                console.log(e);
                 parseFailures.push({
                     file: files[i].name,
                     subject: fh.subject,
@@ -1640,7 +1765,7 @@
                 const token = e.substr(0, b);
                 // Decode RFC 2047 atoms
                 const field = e.substr(b + 1).trim().replaceAll(/=\?([A-Za-z0-9-]+)\?([QqBb])\?([^\?]+)\?=(?:\s+(?==\?[A-Za-z0-9-]+\?[QqBb]\?[^\?]+\?=))?/g, (_, charset, encoding, text) => {
-                    if (!['utf-8', 'us-ascii', 'iso-8859-1'].includes(charset.toLowerCase())) throw new Error(`Unknown charset "${charset}".`);
+                    if (!['utf-8', 'us-ascii', 'iso-8859-1', 'windows-1252'].includes(charset.toLowerCase())) throw new Error(`Unknown charset "${charset}".`);
                     switch (encoding) {
                         case 'Q': case 'q':
                             text = text.split('_').join(' ').split('%').join('=25').split('=').join('%');
@@ -1661,7 +1786,7 @@
         const paramMap = {};
         if (params) params.substr(1).split(';').forEach(param => {
             const [ attr, value ] = param.trim().split('=');
-            paramMap[attr.toLowerCase()] = value;
+            paramMap[attr.toLowerCase()] = value.startsWith('"') && value.endsWith('"') ? value.substring(1, value.length - 1) : value;
         });
         return { type: type.toLowerCase(), params: paramMap };
     };
@@ -1825,6 +1950,14 @@
             }
             .wfnshIEError {
                 color: #FF0000;
+            }
+            .wfnshVerified::after {
+                content: ' \u2713';
+                color: green;
+                font-family: initial;
+            }
+            .dark .wfnshVerified::after {
+                color: lime;
             }
 
             `;
