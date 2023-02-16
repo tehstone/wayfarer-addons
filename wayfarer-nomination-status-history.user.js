@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.7.0
+// @version      0.8.0
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -477,111 +477,380 @@
         awaitElement(() => document.getElementById('wfnshNotify')).then(ref => ref.appendChild(notification));
     };
 
-    const addImportButton = nominations => {
-        if (document.getElementById('wfnshImportBtn') !== null) return;
-        const ref = document.querySelector('wf-logo');
-        const div = document.createElement('div');
+    const createBackground = () => {
+        const outer = document.createElement('div');
+        outer.classList.add('wfnshImportBg');
+        document.querySelector('body').appendChild(outer);
+        return outer;
+    };
+
+    const createEmailLoader = () => {
+        const outer = createBackground();
+        const loadingHeader = document.createElement('h2');
+        loadingHeader.textContent = 'Parsing...';
+        const loadingStatus = document.createElement('p');
+        loadingStatus.textContent = 'Please wait';
+        const loadingDiv = document.createElement('div');
+        loadingDiv.classList.add('wfnshImportLoading');
+        loadingDiv.appendChild(loadingHeader);
+        loadingDiv.appendChild(loadingStatus);
+        outer.appendChild(loadingDiv);
+        return {
+            setTitle: text => { loadingHeader.textContent = text },
+            setStatus: text => { loadingStatus.textContent = text },
+            destroy: () => outer.parentNode.removeChild(outer)
+        };
+    };
+
+    const getProcessedEmailIDs = () => localStorage.hasOwnProperty('wfnshProcessedEmailIDs') ? JSON.parse(localStorage.wfnshProcessedEmailIDs) : [];
+
+    const importFromIterator = (nominations, loader, iterator, count, callback) => {
+        getIDBInstance().then(db => {
+            const tx = db.transaction([OBJECT_STORE_NAME], "readonly");
+            const objectStore = tx.objectStore(OBJECT_STORE_NAME);
+            const getList = objectStore.getAll();
+            getList.onsuccess = () => {
+                const history = {};
+                getList.result.forEach(e => { history[e.id] = e.statusHistory });
+                db.close();
+                parseEmails(iterator, count, nominations, history, (n, t) => {
+                    loader.setStatus(`Processing email ${n} of ${t}`);
+                }).then(parsed => {
+                    const merged = mergeEmailChanges(history, parsed.parsedChanges);
+                    const mergeList = Object.keys(merged).map(id => ({ ...merged[id], id }));
+                    mergeList.sort((a, b) => a.title.localeCompare(b.title));
+
+                    let changeCount = 0;
+                    mergeList.forEach(e => { changeCount += e.diffs.length; });
+
+                    loader.destroy();
+                    const outer = createBackground();
+
+                    const inner = document.createElement('div');
+                    inner.classList.add('wfnshImportInner');
+                    outer.appendChild(inner);
+                    const header = document.createElement('h1');
+                    header.textContent = 'Preview email import';
+                    inner.appendChild(header);
+                    const sub = document.createElement('p');
+                    sub.textContent = 'The summary below is a preview of the results of the email import. Please review the changes and click "Import" below to permanently commit the import.';
+                    inner.appendChild(sub);
+                    const btn1 = document.createElement('btn');
+                    btn1.classList.add('wfnshTopButton');
+                    btn1.textContent = `Import ${changeCount} change(s)`;
+                    btn1.addEventListener('click', () => {
+                        outer.parentNode.removeChild(outer);
+                        const loader2 = createEmailLoader();
+                        loader2.setTitle('Importing...');
+                        loader2.setStatus('Please wait');
+                        const processedIDs = getProcessedEmailIDs();
+                        parsed.parsedIDs.forEach(id => {
+                            if (!processedIDs.includes(id)) processedIDs.push(id);
+                        });
+                        parsed.skippedEmails.forEach(({ id }) => {
+                            if (id && !processedIDs.includes(id)) processedIDs.push(id);
+                        });
+                        localStorage.wfnshProcessedEmailIDs = JSON.stringify(processedIDs);
+                        if (callback) callback();
+                        processEmailImport(mergeList, (n, t) => {
+                            loader2.setStatus(`Importing change ${n} of ${t}`);
+                        }).then(() => {
+                            loader2.destroy();
+                        });
+                    });
+                    inner.appendChild(btn1);
+                    const btn2 = document.createElement('btn');
+                    btn2.classList.add('wfnshTopButton');
+                    btn2.classList.add('wfnshCancelButton');
+                    btn2.textContent = 'Cancel import';
+                    btn2.addEventListener('click', () => outer.parentNode.removeChild(outer));
+                    inner.appendChild(btn2);
+
+                    if (parsed.parseFailures.length) {
+                        const failHeader = document.createElement('h3');
+                        failHeader.textContent = `Import failures (${parsed.parseFailures.length})`;
+                        inner.appendChild(failHeader);
+                        parsed.parseFailures.forEach(e => inner.appendChild(renderEmailFailureEntry(e, false)));
+                    }
+
+                    if (mergeList.length) {
+                        const changeHeader = document.createElement('h3');
+                        changeHeader.textContent = `Changes to import (${changeCount})`;
+                        inner.appendChild(changeHeader);
+                        mergeList.forEach(e => inner.appendChild(renderEmailImportEntry(e)));
+                    }
+
+                    if (parsed.skippedEmails.length) {
+                        const skipHeader = document.createElement('h3');
+                        skipHeader.textContent = `Skipped emails (${parsed.skippedEmails.length})`;
+                        inner.appendChild(skipHeader);
+                        parsed.skippedEmails.forEach(e => inner.appendChild(renderEmailFailureEntry(e, true)));
+                    }
+                });
+            };
+        }).catch(e => {
+            loader.setStatus('An error occurred');
+            console.error(e);
+        });
+    };
+
+    const importFromEml = nominations => {
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = 'multiple';
         input.accept = 'message/rfc822,*.eml';
         input.style.display = 'none';
         input.addEventListener('change', e => {
+            const loader = createEmailLoader();
+            loader.setTitle('Parsing...');
+            loader.setStatus('Please wait');
+            const fileCount = e.target.files.length;
+            const iterator = async function*() {
+                for (let i = 0; i < fileCount; i++) {
+                    yield {
+                        name: e.target.files[i].name,
+                        contents: await e.target.files[i].text()
+                    };
+                }
+            };
+            importFromIterator(nominations, loader, iterator, fileCount);
+        });
+        document.querySelector('body').appendChild(input);
+        input.click();
+    };
+
+    const importFromGAScript = nominations => {
+        const outer = createBackground();
+        const inner = document.createElement('div');
+        inner.classList.add('wfnshImportInner');
+        inner.classList.add('wfnshImportGAScriptOptions');
+        outer.appendChild(inner);
+        const header = document.createElement('h1');
+        header.textContent = 'Import using Google Apps Script';
+        inner.appendChild(header);
+        const sub = document.createElement('p');
+        const s1 = document.createElement('span');
+        s1.textContent = 'Please enter your Importer Script details below. New to the Importer Script? ';
+        const s2 = document.createElement('a');
+        s2.textContent = 'Please click here';
+        s2.addEventListener('click', () => {
+            const b = new Blob([userManualGAS], { type: 'text/html' });
+            const bUrl = URL.createObjectURL(b);
+            window.open(bUrl, '_blank', 'popup');
+        });
+        const s3 = document.createElement('span');
+        s3.textContent = ' for detailed setup instructions.';
+        sub.appendChild(s1);
+        sub.appendChild(s2);
+        sub.appendChild(s3);
+        inner.appendChild(sub);
+        const tbl = document.createElement('table');
+        tbl.classList.add('wfnshGAScriptTable');
+        inner.appendChild(tbl);
+
+        const inputs = [
+            {
+                id: 'url',
+                type: 'text',
+                label: 'Script URL',
+                placeholder: 'https://script.google.com/macros/.../exec'
+            },
+            {
+                id: 'token',
+                type: 'password',
+                label: 'Access token',
+            },
+            {
+                id: 'since',
+                type: 'date',
+                label: 'Search emails starting from'
+            }
+        ];
+
+        const values = localStorage.hasOwnProperty('wfnshGAScriptSettings') ? JSON.parse(localStorage.wfnshGAScriptSettings) : { };
+
+        inputs.forEach(input => {
+            const row = document.createElement('tr');
+            const col1 = document.createElement('td');
+            col1.textContent = `${input.label}:`;
+            const col2 = document.createElement('td');
+            input.field = document.createElement('input');
+            input.field.type = input.type;
+            if (input.placeholder) input.field.placeholder = input.placeholder;
+            if (values.hasOwnProperty(input.id)) input.field.value = values[input.id];
+            col2.appendChild(input.field);
+            row.appendChild(col1);
+            row.appendChild(col2);
+            tbl.appendChild(row);
+        });
+
+        const btn1 = document.createElement('btn');
+        btn1.classList.add('wfnshTopButton');
+        btn1.textContent = 'Start import';
+        btn1.addEventListener('click', () => {
+            const gass = {
+                url: inputs[0].field.value,
+                token: inputs[1].field.value,
+                since: inputs[2].field.value
+            };
+            localStorage.wfnshGAScriptSettings = JSON.stringify(gass);
+            outer.parentNode.removeChild(outer);
+            const loader = createEmailLoader();
+            loader.setTitle('Connecting...');
+            loader.setStatus('Validating script credentials');
+            const createFetchOptions = object => ({
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(object)
+            });
+            fetch(gass.url, createFetchOptions({ request: "test", token: gass.token })).then(response => response.json()).then(async data => {
+                if (data.status !== "OK") {
+                    alert('Credential validation failed. Please double check your access token and script URL.');
+                    loader.destroy();
+                } else {
+                    const startTime = new Date();
+                    loader.setStatus('Searching for new emails');
+                    const processedIDs = getProcessedEmailIDs();
+                    const ids = [];
+                    let count = 0, size = 500, totalFetched = 0;
+                    do {
+                        const batch = await fetch(gass.url, createFetchOptions({
+                            request: "list",
+                            token: gass.token,
+                            options: {
+                                since: gass.since,
+                                offset: totalFetched,
+                                size
+                            }
+                        })).then(response => response.json());
+                        if (batch.status !== "OK") throw new Error("Email listing failed");
+                        count = batch.result.length;
+                        totalFetched += count;
+                        batch.result.forEach(id => {
+                            if (!processedIDs.includes('G-' + id)) ids.push(id);
+                        });
+                        loader.setStatus(`Searching for new emails (${ids.length}/${totalFetched})`);
+                    } while (count == size);
+                    const totalCount = ids.length;
+                    loader.setTitle('Downloading...');
+                    loader.setStatus('Please wait');
+                    const dlBatchSize = 20;
+                    let offset = 0;
+                    let iterSuccess = true;
+                    const iterator = async function*() {
+                        try {
+                            let batch = [];
+                            while (ids.length) {
+                                while (batch.length < 20 && ids.length) batch.push(ids.shift());
+                                loader.setTitle('Downloading...');
+                                loader.setStatus(`Downloading ${offset + 1}-${offset + batch.length} of ${totalCount}`);
+                                const emlMap = await fetch(gass.url, createFetchOptions({
+                                    request: "fetch",
+                                    token: gass.token,
+                                    options: {
+                                        ids: batch
+                                    }
+                                })).then(response => response.json());
+                                if (emlMap.status !== "OK") throw new Error("Email listing failed");
+                                loader.setTitle('Parsing...');
+                                for (const id in emlMap.result) {
+                                    yield {
+                                        name: `${id}.eml`,
+                                        contents: emlMap.result[id],
+                                        id: 'G-' + id
+                                    };
+                                }
+                                offset += batch.length;
+                                batch = [];
+                            }
+                        } catch (e) {
+                            iterSuccess = false;
+                            console.error(e);
+                            alert('An error occurred fetching emails from Google. You may have to continue importing from the same date again to ensure all emails are downloaded.');
+                        }
+                    };
+                    importFromIterator(nominations, loader, iterator, totalCount, () => {
+                        if (iterSuccess) {
+                            const newSince = utcDateToISO8601(shiftDays(startTime, -1));
+                            gass.since = newSince;
+                            localStorage.wfnshGAScriptSettings = JSON.stringify(gass);
+                        }
+                    });
+                }
+            }).catch(e => {
+                console.error(e);
+                alert('The Importer Script returned an invalid response. Please see the console for more information.');
+                loader.destroy();
+            });
+        });
+        inner.appendChild(btn1);
+
+        const btn2 = document.createElement('btn');
+        btn2.classList.add('wfnshTopButton');
+        btn2.classList.add('wfnshCancelButton');
+        btn2.textContent = 'Cancel import';
+        btn2.addEventListener('click', () => outer.parentNode.removeChild(outer));
+        inner.appendChild(btn2);
+    };
+
+    const importMethods = [
+        {
+            title: 'From *.eml files',
+            description: 'Import email files saved and exported from an email client, such as Thunderbird',
+            callback: importFromEml,
+            icon: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iTGF5ZXJfMSIKICAgeD0iMHB4IgogICB5PSIwcHgiCiAgIHdpZHRoPSIyODM0LjkzOCIKICAgaGVpZ2h0PSIyOTAyLjE5MzEiCiAgIHZpZXdCb3g9IjAgMCAyODM0LjkzNzkgMjkwMi4xOTMxIgogICBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCA1MzU2LjkyOSA1MDE0Ljk5NyIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcwogICAgIGlkPSJkZWZzNDMiIC8+CiAgPGcKICAgICBpZD0iZzM4IgogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMzE1LjQ2NCwtOTQ2LjkxMikiPgogICAgPGcKICAgICAgIGlkPSJnMzYiPgogICAgICA8cGF0aAogICAgICAgICBmaWxsPSIjZjM3MDViIgogICAgICAgICBkPSJtIDQwMzUuNDcsMjA0OS44NzkgYyAtMzAuMTYzLC0xOC4zMjEgLTY0LjE3MiwtMjkuNTg3IC0xMDAuODAyLC0yOS41ODcgSCAxNTMxLjExNyBjIC00OC40NSwwIC05Mi42MzUsMTguNzY3IC0xMjguNjk0LDQ5LjQ2MiBsIDEyMTguNzY1LDkzMi43NzkgNC40NzksMS4zNzggLTQuNDc5LDIuNzA2IDEwNi44MTMsODEuNzU0IDEwOC4zNTMsLTg1LjgzOCAtNC4yODgsLTIuNzI5IDQuMjg4LC0xLjI1NyB6IgogICAgICAgICBpZD0icGF0aDYiIC8+CiAgICAgIDxwYXRoCiAgICAgICAgIGZpbGw9IiNmMzcwNWIiCiAgICAgICAgIGQ9Im0gMTQwMi40MiwyMDczLjc5NiBjIDAsMCAxMTY0LjUxMSwtMTEyNi44ODQgMTMzNS41MDEsLTExMjYuODg0IDE3MS4wNjcsMCAxMjk3LjU1MywxMTA2Ljk4IDEyOTcuNTUzLDExMDYuOTggeiIKICAgICAgICAgaWQ9InBhdGg4IiAvPgogICAgICA8ZwogICAgICAgICBpZD0iZzI0Ij4KICAgICAgICA8cmVjdAogICAgICAgICAgIHg9IjE5MDIuMDc4IgogICAgICAgICAgIHk9IjE3NTQuNzI3MSIKICAgICAgICAgICBmaWxsPSIjZmZmZmZmIgogICAgICAgICAgIHdpZHRoPSIxNjkzLjc1MSIKICAgICAgICAgICBoZWlnaHQ9IjE5NzYuMDUyIgogICAgICAgICAgIGlkPSJyZWN0MTAiIC8+CiAgICAgICAgPHJlY3QKICAgICAgICAgICB4PSIyMDIxLjc2NCIKICAgICAgICAgICB5PSIxOTI2LjA0MzkiCiAgICAgICAgICAgZmlsbD0iI2ZmZDA2NiIKICAgICAgICAgICB3aWR0aD0iMTQ1NC4zMDgiCiAgICAgICAgICAgaGVpZ2h0PSI4OC40MDQ5OTkiCiAgICAgICAgICAgaWQ9InJlY3QxMiIgLz4KICAgICAgICA8cmVjdAogICAgICAgICAgIHg9IjIwMjEuNzY0IgogICAgICAgICAgIHk9IjIzMzAuOTc0MSIKICAgICAgICAgICBmaWxsPSIjZmZkMDY2IgogICAgICAgICAgIHdpZHRoPSIxNDU0LjMwOCIKICAgICAgICAgICBoZWlnaHQ9Ijg4LjM2MSIKICAgICAgICAgICBpZD0icmVjdDE0IiAvPgogICAgICAgIDxyZWN0CiAgICAgICAgICAgeD0iMjAyMS43NjQiCiAgICAgICAgICAgeT0iMjEyOC41MTM5IgogICAgICAgICAgIGZpbGw9IiNmZmQwNjYiCiAgICAgICAgICAgd2lkdGg9IjE0NTQuMzA4IgogICAgICAgICAgIGhlaWdodD0iODguMzkxOTk4IgogICAgICAgICAgIGlkPSJyZWN0MTYiIC8+CiAgICAgICAgPHJlY3QKICAgICAgICAgICB4PSIyMDIxLjc2NCIKICAgICAgICAgICB5PSIyNTMzLjQzNDEiCiAgICAgICAgICAgZmlsbD0iI2ZmZDA2NiIKICAgICAgICAgICB3aWR0aD0iMTQ1NC4zMDgiCiAgICAgICAgICAgaGVpZ2h0PSI4OC4zMzAwMDIiCiAgICAgICAgICAgaWQ9InJlY3QxOCIgLz4KICAgICAgICA8cmVjdAogICAgICAgICAgIHg9IjIwMjEuNzY0IgogICAgICAgICAgIHk9IjI3MjIuNzEiCiAgICAgICAgICAgZmlsbD0iI2ZmZDA2NiIKICAgICAgICAgICB3aWR0aD0iMTQ1NC4zMDgiCiAgICAgICAgICAgaGVpZ2h0PSI4OC40MDQ5OTkiCiAgICAgICAgICAgaWQ9InJlY3QyMCIgLz4KICAgICAgICA8cmVjdAogICAgICAgICAgIHg9IjIwMjEuNzY0IgogICAgICAgICAgIHk9IjI5MjUuMjA4IgogICAgICAgICAgIGZpbGw9IiNmZmQwNjYiCiAgICAgICAgICAgd2lkdGg9IjE0NTQuMzA4IgogICAgICAgICAgIGhlaWdodD0iODguMzIzOTk3IgogICAgICAgICAgIGlkPSJyZWN0MjIiIC8+CiAgICAgIDwvZz4KICAgICAgPGcKICAgICAgICAgaWQ9ImczNCI+CiAgICAgICAgPHBvbHlnb24KICAgICAgICAgICBmaWxsPSIjNjZiYmM5IgogICAgICAgICAgIHBvaW50cz0iMjU1Mi42MzQsMjk1NC4wNjkgMjU1Mi44NCwyOTU0LjIzMSAyNTE2LjEyMSwyOTI2LjA4MiAiCiAgICAgICAgICAgaWQ9InBvbHlnb24yNiIgLz4KICAgICAgICA8cGF0aAogICAgICAgICAgIGZpbGw9IiNmN2JhMWQiCiAgICAgICAgICAgZD0ibSAyNTUyLjg0LDI5NTQuMjMxIC0wLjIwNiwtMC4xNjIgLTM2LjUxMywtMjcuOTg3IC0zNDEuODkyLC0yNjEuNTQ5IC03NzEuODA2LC01OTAuNzM2IGMgLTUyLjQwMSw0NC43NjIgLTg2Ljk1OSwxMTUuMzgyIC04Ni45NTksMTk1LjYxNiB2IDEzMzQuNTY5IGMgMCw2OS45MzUgMjYuMDY5LDEzMi41NTEgNjcuMzc2LDE3Ny4xODkgbCA5NTkuMTI1LC01OTkuOTI4IDI3OS4yMjQsLTE3NC42MjEgeiIKICAgICAgICAgICBpZD0icGF0aDI4IiAvPgogICAgICAgIDxwYXRoCiAgICAgICAgICAgZmlsbD0iI2Y3YmExZCIKICAgICAgICAgICBkPSJtIDQwMzUuNDcsMjA1My44OTYgLTg5Ni43ODUsNzA5LjU4NSB2IDAgbCAtMTg5LjYyMSwxNTAuMDc0IC05Ni42MjQsNzYuMzY2IC0xNi4wOTMsMTIuNjA4IDMzOS43ODUsMjE2LjQzMiA4OTcuMjY5LDU3MS40MTIgYyA0Ni43MDYsLTQ0Ljk1MSA3Ny4wMDEsLTExMS4yODIgNzcuMDAxLC0xODYuMzk1IFYgMjI2OS40MSBjIDAsLTkzLjgxNSAtNDYuOTEzLC0xNzQuMzIgLTExNC45MzIsLTIxNS41MTQgeiIKICAgICAgICAgICBpZD0icGF0aDMwIiAvPgogICAgICAgIDxwYXRoCiAgICAgICAgICAgZmlsbD0iI2U0YTMzYSIKICAgICAgICAgICBkPSJtIDMxNzYuMTQsMzIxOC45NjQgLTMzOS43ODYsLTIxNi40MzIgMTYuMDkzLC0xMi42MDggYyAtMC45ODUsMC42MzQgLTg5LjYzMyw1NS42MzUgLTEzMy41ODksNTUuNjM1IC00My43OTIsMCAtMTY1LjI0OCwtOTAuNjg0IC0xNjYuMDE0LC05MS4zMjggbCA2OC4zNTIsNTIuMzg2IC0yNzkuMjI0LDE3NC42MiAtOTU5LjEyOCw1OTkuOTMgYyAzOC41MjYsNDEuODUxIDkwLjY5Nyw2Ny45MzggMTQ4LjI4NCw2Ny45MzggaCAyNDAzLjU0OSBjIDUzLjE2LDAgMTAxLjA4MSwtMjIuNjI5IDEzOC43MzUsLTU4LjczNSB6IgogICAgICAgICAgIGlkPSJwYXRoMzIiIC8+CiAgICAgIDwvZz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo='
+        },
+        {
+            title: 'Google Apps Script',
+            description: 'Import emails directly from Gmail, using a Google Apps Script',
+            callback: importFromGAScript,
+            icon: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgdmVyc2lvbj0iMS4xIgogICB3aWR0aD0iNDU2LjEzOTI1IgogICBoZWlnaHQ9IjM2MC44MDg1IgogICBpZD0ic3ZnMjIiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczI2IiAvPgogIDxyZWN0CiAgICAgZmlsbD0iI2VhNDMzNSIKICAgICB4PSIwIgogICAgIHk9IjI1My41MzAzOCIKICAgICB3aWR0aD0iMzczIgogICAgIGhlaWdodD0iMTA3IgogICAgIHJ4PSI1My41IgogICAgIGlkPSJyZWN0MiIgLz4KICA8cmVjdAogICAgIGZpbGw9IiNmYmJjMDQiCiAgICAgeD0iLTQ5Mi45MDU5NCIKICAgICB5PSItMTE0LjA0NzMzIgogICAgIHdpZHRoPSIzNzMiCiAgICAgaGVpZ2h0PSIxMDciCiAgICAgcng9IjUzLjUiCiAgICAgdHJhbnNmb3JtPSJyb3RhdGUoLTE0NCkiCiAgICAgaWQ9InJlY3Q0IiAvPgogIDxyZWN0CiAgICAgZmlsbD0iIzM0YTg1MyIKICAgICB4PSI3MS4wODQ2MjUiCiAgICAgeT0iLTI2My42ODY5MiIKICAgICB3aWR0aD0iMzczIgogICAgIGhlaWdodD0iMTA3IgogICAgIHJ4PSI1My41IgogICAgIHRyYW5zZm9ybT0icm90YXRlKDcyKSIKICAgICBpZD0icmVjdDYiIC8+CiAgPHJlY3QKICAgICBmaWxsPSIjNDI4NWY0IgogICAgIHg9Ii0yNDYuMDAxMSIKICAgICB5PSIzNDUuOTQzNzMiCiAgICAgd2lkdGg9IjM3MyIKICAgICBoZWlnaHQ9IjEwNyIKICAgICByeD0iNTMuNSIKICAgICB0cmFuc2Zvcm09InJvdGF0ZSgtNzIpIgogICAgIGlkPSJyZWN0OCIgLz4KICA8ZwogICAgIGZpbGw9IiNmZmZmZmYiCiAgICAgaWQ9ImcyMCIKICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjcuNTMwMDAxLC03NS4zNjk2MTMpIj4KICAgIDxjaXJjbGUKICAgICAgIGN4PSIyNjUuODQiCiAgICAgICBjeT0iMTI5LjI4IgogICAgICAgcj0iMjYuNzAwMDAxIgogICAgICAgaWQ9ImNpcmNsZTEwIiAvPgogICAgPGNpcmNsZQogICAgICAgY3g9IjEzMS40NCIKICAgICAgIGN5PSIyMjUuNDQiCiAgICAgICByPSIyNi43MDAwMDEiCiAgICAgICBpZD0iY2lyY2xlMTIiIC8+CiAgICA8Y2lyY2xlCiAgICAgICBjeD0iODEuMzYwMDAxIgogICAgICAgY3k9IjM4Mi42MDAwMSIKICAgICAgIHI9IjI2LjcwMDAwMSIKICAgICAgIGlkPSJjaXJjbGUxNCIgLz4KICAgIDxjaXJjbGUKICAgICAgIGN4PSIzNDguMjIiCiAgICAgICBjeT0iMzgxLjY0MDAxIgogICAgICAgcj0iMjYuNzAwMDAxIgogICAgICAgaWQ9ImNpcmNsZTE2IiAvPgogICAgPGNpcmNsZQogICAgICAgY3g9IjQzMC42NzAwMSIKICAgICAgIGN5PSIxMjcuODkiCiAgICAgICByPSIyNi43MDAwMDEiCiAgICAgICBpZD0iY2lyY2xlMTgiIC8+CiAgPC9nPgo8L3N2Zz4K'
+        }
+    ];
+
+    const addImportButton = nominations => {
+        if (document.getElementById('wfnshImportBtn') !== null) return;
+        const ref = document.querySelector('wf-logo');
+        const div = document.createElement('div');
+        const btn = document.createElement('btn');
+        btn.textContent = 'Import emails';
+        btn.addEventListener('click', () => {
             const outer = document.createElement('div');
             outer.classList.add('wfnshImportBg');
             document.querySelector('body').appendChild(outer);
+            const inner = document.createElement('div');
+            inner.classList.add('wfnshImportInner');
+            inner.classList.add('wfnshImportMethod');
+            outer.appendChild(inner);
+            const header = document.createElement('h1');
+            header.textContent = 'Import history from emails';
+            inner.appendChild(header);
+            const sub = document.createElement('p');
+            sub.textContent = 'Please select how you want to import your emails.';
+            inner.appendChild(sub);
 
-            const loadingHeader = document.createElement('h2');
-            loadingHeader.textContent = 'Parsing...';
-            const loadingStatus = document.createElement('p');
-            loadingStatus.textContent = 'Please wait';
-            const loadingDiv = document.createElement('div');
-            loadingDiv.classList.add('wfnshImportLoading');
-            loadingDiv.appendChild(loadingHeader);
-            loadingDiv.appendChild(loadingStatus);
-            outer.appendChild(loadingDiv);
-
-            getIDBInstance().then(db => {
-                const tx = db.transaction([OBJECT_STORE_NAME], "readonly");
-                const objectStore = tx.objectStore(OBJECT_STORE_NAME);
-                const getList = objectStore.getAll();
-                getList.onsuccess = () => {
-                    const history = {};
-                    getList.result.forEach(e => { history[e.id] = e.statusHistory });
-                    db.close();
-                    parseEmails(e.target.files, nominations, history, (n, t) => {
-                        loadingStatus.textContent = `Processing email ${n} of ${t}`;
-                    }).then(parsed => {
-                        const merged = mergeEmailChanges(history, parsed.parsedChanges);
-                        const mergeList = Object.keys(merged).map(id => ({ ...merged[id], id }));
-                        mergeList.sort((a, b) => a.title.localeCompare(b.title));
-
-                        let changeCount = 0;
-                        mergeList.forEach(e => { changeCount += e.diffs.length; });
-
-                        loadingDiv.style.display = 'none';
-                        const inner = document.createElement('div');
-                        inner.classList.add('wfnshImportInner');
-                        outer.appendChild(inner);
-                        const header = document.createElement('h1');
-                        header.textContent = 'Preview email import';
-                        inner.appendChild(header);
-                        const sub = document.createElement('p');
-                        sub.textContent = 'The summary below is a preview of the results of the email import. Please review the changes and click "Import" below to permanently commit the import.';
-                        inner.appendChild(sub);
-                        const btn1 = document.createElement('btn');
-                        btn1.classList.add('wfnshTopButton');
-                        btn1.textContent = `Import ${changeCount} change(s)`;
-                        btn1.addEventListener('click', () => {
-                            outer.removeChild(inner);
-                            loadingHeader.textContent = 'Importing...';
-                            loadingStatus.textContent = 'Please wait';
-                            loadingDiv.style.display = 'block';
-                            processEmailImport(mergeList, (n, t) => {
-                                loadingStatus.textContent = `Importing change ${n} of ${t}`;
-                            }).then(() => {
-                                outer.parentNode.removeChild(outer);
-                            });
-                        });
-                        inner.appendChild(btn1);
-                        const btn2 = document.createElement('btn');
-                        btn2.classList.add('wfnshTopButton');
-                        btn2.classList.add('wfnshCancelButton');
-                        btn2.textContent = 'Cancel import';
-                        btn2.addEventListener('click', () => outer.parentNode.removeChild(outer));
-                        inner.appendChild(btn2);
-
-                        if (parsed.parseFailures.length) {
-                            const failHeader = document.createElement('h3');
-                            failHeader.textContent = `Import failures (${parsed.parseFailures.length})`;
-                            inner.appendChild(failHeader);
-                            parsed.parseFailures.forEach(e => inner.appendChild(renderEmailFailureEntry(e, false)));
-                        }
-
-                        if (mergeList.length) {
-                            const changeHeader = document.createElement('h3');
-                            changeHeader.textContent = `Changes to import (${changeCount})`;
-                            inner.appendChild(changeHeader);
-                            mergeList.forEach(e => inner.appendChild(renderEmailImportEntry(e)));
-                        }
-
-                        if (parsed.skippedEmails.length) {
-                            const skipHeader = document.createElement('h3');
-                            skipHeader.textContent = `Skipped emails (${parsed.skippedEmails.length})`;
-                            inner.appendChild(skipHeader);
-                            parsed.skippedEmails.forEach(e => inner.appendChild(renderEmailFailureEntry(e, true)));
-                        }
-                    });
-                };
-            }).catch(e => {
-                loadingStatus.textContent = 'An error occurred'
-                console.error(e);
+            importMethods.forEach(method => {
+                const btn = document.createElement('div');
+                btn.classList.add('wfnshMethodButton');
+                if (method.icon) {
+                    btn.style.paddingLeft = '60px';
+                    btn.style.backgroundImage = 'url(' + method.icon + ')';
+                }
+                const btnTitle = document.createElement('p');
+                btnTitle.classList.add('wfnshMethodTitle');
+                btnTitle.textContent = method.title;
+                btn.appendChild(btnTitle);
+                const btnDesc = document.createElement('p');
+                btnDesc.classList.add('wfnshMethodDesc');
+                btnDesc.textContent = method.description;
+                btn.appendChild(btnDesc);
+                btn.addEventListener('click', () => {
+                    outer.parentNode.removeChild(outer);
+                    method.callback(nominations);
+                });
+                inner.appendChild(btn);
             });
         });
-        div.appendChild(input);
-        const btn = document.createElement('btn');
-        btn.textContent = 'Import emails';
-        btn.addEventListener('click', () => input.click());
         btn.id = 'wfnshImportBtn';
         btn.classList.add('wfnshTopButton');
         div.appendChild(btn);
@@ -704,17 +973,53 @@
         return joinedChanges;
     };
 
-    const parseEmails = (files, nominations, statusHistory, progress) => new Promise(async (resolve, reject) => {
+    const parseEmails = (files, fileCount, nominations, statusHistory, progress) => new Promise(async (resolve, reject) => {
         const remapChars = text => {
             const map = {
-                'a': 'åä',
-                'A': 'ÅÄ',
-                'o': 'óö',
-                'O': 'ÓÖ',
-                'e': 'é',
-                'E': 'É',
-                'u': 'ü',
-                'U': 'Ü',
+                A: 'ÅÄĀĂĄǍǞǠǺȀȂȦ',
+                C: 'ĆĈĊČ',
+                D: 'Ď',
+                E: 'ÉĒĔĖĘĚȄȆȨ',
+                G: 'ĜĞĠĢǦǴ',
+                H: 'ĤȞ',
+                I: 'ĨĪĬĮİǏȈȊ',
+                J: 'Ĵ',
+                K: 'ĶǨ',
+                L: 'ĹĻĽ',
+                N: 'ŃŅŇǸ',
+                O: 'ÓÖŌŎŐƠǑǪǬȌȎȪȬȮȰ',
+                R: 'ŔŖŘȐȒ',
+                S: 'ŚŜŞŠȘ',
+                T: 'ŢŤȚ',
+                U: 'ÜŨŪŬŮŰŲƯǓǕǗǙǛȔȖ',
+                W: 'Ŵ',
+                Y: 'ŶŸȲ',
+                Z: 'ŹŻŽ',
+                a: 'åäāăąǎǟǡǻȁȃȧ',
+                c: 'ćĉċč',
+                d: 'ď',
+                e: 'éēĕėęěȅȇȩ',
+                g: 'ĝğġģǧǵ',
+                h: 'ĥȟ',
+                i: 'ĩīĭįǐȉȋ',
+                j: 'ĵǰ',
+                k: 'ķǩ',
+                l: 'ĺļľ',
+                n: 'ńņňǹ',
+                o: 'óöōŏőơǒǫǭȍȏȫȭȯȱ',
+                r: 'ŕŗřȑȓ',
+                s: 'śŝşšș',
+                t: 'ţťț',
+                u: 'üũūŭůűųưǔǖǘǚǜȕȗ',
+                w: 'ŵ',
+                y: 'ŷȳ',
+                z: 'źżž',
+                Æ: 'ǢǼ',
+                Ø: 'Ǿ',
+                æ: 'ǣǽ',
+                ø: 'ǿ',
+                Ʒ: 'Ǯ',
+                ʒ: 'ǯ',
                 "'": '"'
             };
             for (const k in map) {
@@ -1031,6 +1336,16 @@
                 subject: /^Invalid Ingress Portal report (received|reviewed)$/,
                 ignore: true
             },
+            {
+                // Ingress Mission related
+                subject: /^Ingress Mission/,
+                ignore: true
+            },
+            {
+                // Ingress damage report
+                subject: /^Ingress Damage Report:/,
+                ignore: true
+            },
 
             //  ---------------------------------------- GERMAN [de] ----------------------------------------
             {
@@ -1156,6 +1471,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^¡Gracias! ¡Hemos recibido la propuesta de Wayspot de Niantic/,
@@ -1197,6 +1514,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Remerciements ! Proposition d’un Wayspot Niantic reçue pour/,
@@ -1233,6 +1552,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
@@ -1262,6 +1583,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Grazie! Abbiamo ricevuto una candidatura di Niantic Wayspot per/,
@@ -1297,6 +1620,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^ありがとうございます。 Niantic Wayspotの申請「.*」が受領されました。$/,
@@ -1332,6 +1657,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 후보 신청이 완료되었습니다!$/,
@@ -1367,6 +1694,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Bedankt! Niantic Wayspot-nominatie ontvangen voor/,
@@ -1403,6 +1732,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Appeal decided
                 subject: /^En avgjørelse er tatt for Niantic Wayspot-klagen for/,
@@ -1432,6 +1763,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Agradecemos a sua indicação para o Niantic Wayspot/,
@@ -1467,6 +1800,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Спасибо! Номинация Niantic Wayspot для .* получена!$/,
@@ -1501,6 +1836,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Tack! Niantic Wayspot-nominering har tagits emot för/,
@@ -1547,6 +1884,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^ขอบคุณ! เราได้รับการเสนอสถานที่ Niantic Wayspot สำหรับ/,
@@ -1582,6 +1921,8 @@
             // Edit received (Ingress)
             // Photo received (Ingress)
             // Report received or decided (Ingress)
+            // Ingress Mission related
+            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^感謝你！ 我們已收到 Niantic Wayspot 候選/,
@@ -1604,6 +1945,7 @@
         const parsedChanges = {};
         const parseFailures = [];
         const skippedEmails = [];
+        const parsedIDs = [];
 
         const dp = new DOMParser();
         const supportedSenders = [
@@ -1613,13 +1955,16 @@
             'ingress-support@google.com',
             'ingress-support@nianticlabs.com'
         ];
-        for (let i = 0; i < files.length; i++) {
-            progress(i + 1, files.length);
-            const content = await files[i].text();
+        let i = 0;
+        for await (const file of files()) {
+            i++;
+            progress(i + 1, fileCount);
+            const content = file.contents;
             const mime = parseMIME(content);
             if (!mime) {
                 skippedEmails.push({
-                    file: files[i].name,
+                    id: file.id,
+                    file: file.name,
                     reason: `This file does not appear to be an email in MIME format (invalid RFC 822 data).`
                 });
                 continue;
@@ -1632,12 +1977,24 @@
                 fh[i] = matching.length ? matching.pop()[1] : null;
             }
 
-            if (!supportedSenders.includes(extractEmail(fh.from))) {
+            const emailAddress = extractEmail(fh.from);
+            if (!supportedSenders.includes(emailAddress)) {
                 skippedEmails.push({
-                    file: files[i].name,
+                    id: file.id,
+                    file: file.name,
                     subject: fh.subject,
                     date: fh.date,
                     reason: `Sender "${fh.name}" was not recognized as a valid Niantic Wayfarer or OPR-related email address.`
+                });
+                continue;
+            } else if (emailAddress == "hello@pokemongolive.com" && new Date(fh.date).getUTCFullYear() <= 2018) {
+                // Newsletters used this email address for some time up until late 2018, which was before this game got Wayfarer/OPR access
+                skippedEmails.push({
+                    id: file.id,
+                    file: file.name,
+                    subject: fh.subject,
+                    date: fh.date,
+                    reason: `The email was classified as a Pokémon Go newsletter.`
                 });
                 continue;
             }
@@ -1650,10 +2007,12 @@
                     const partMime = parseMIME(part);
                     if (!partMime) return;
                     const [ partHead, partBody ] = partMime;
+                    if (!partBody.trim().length) return;
                     for (const i of ['content-transfer-encoding', 'content-type']) {
                         const matching = partHead.filter(e => e[0].toLowerCase() == i);
                         fh[i] = matching.length ? matching.pop()[1] : null;
                     }
+                    if (fh['content-type'] === null) return;
                     const partCT = parseContentType(fh['content-type']);
                     if (fh['content-transfer-encoding'] && fh['content-transfer-encoding'].toLowerCase() == 'quoted-printable' && partCT.type == 'text/html') {
                         htmlBody = partBody;
@@ -1666,7 +2025,8 @@
                 charset = (ct.params.charset || 'utf-8').toLowerCase();
             } else {
                 parseFailures.push({
-                    file: files[i].name,
+                    id: file.id,
+                    file: file.name,
                     subject: fh.subject,
                     date: fh.date,
                     reason: `Unsupported Content-Transfer-Encoding (${fh['content-transfer-encoding']}) and/or Content-Type (${fh['content-type']}).`
@@ -1702,10 +2062,11 @@
                     if (!fh.subject.match(emailParsers[j].subject)) continue;
                     if (emailParsers[j].ignore) {
                         skippedEmails.push({
-                            file: files[i].name,
+                            id: file.id,
+                            file: file.name,
                             subject: fh.subject,
                             date: fh.date,
-                            reason: `Edit, photo, and wayspot removal submission and decision emails are not supported at this time.`
+                            reason: `This email is either for a type of contribution that is not trackable in Niantic Wayfarer, or for content that is unrelated to Wayfarer.`
                         });
                         ignore = true;
                         break;
@@ -1732,6 +2093,7 @@
                             updates: []
                         }
                     }
+                    if (file.id) parsedIDs.push(file.id);
                     parsedChanges[nom.id].updates.push({
                         timestamp: new Date(fh.date).getTime(),
                         verified: true,
@@ -1743,7 +2105,8 @@
             } catch (e) {
                 console.log(e);
                 parseFailures.push({
-                    file: files[i].name,
+                    id: file.id,
+                    file: file.name,
                     subject: fh.subject,
                     date: new Date(fh.date),
                     reason: e.message,
@@ -1752,7 +2115,7 @@
         }
 
         Object.keys(parsedChanges).forEach(k => parsedChanges[k].updates.sort((a, b) => a.timestamp - b.timestamp));
-        resolve({ parsedChanges, parseFailures, skippedEmails });
+        resolve({ parsedChanges, parseFailures, skippedEmails, parsedIDs });
     });
 
     const parseMIME = data => {
@@ -1814,6 +2177,211 @@
         return nd;
     }
 
+    const userManualGAS =
+`<!DOCTYPE html>
+<html>
+<head>
+<title>GAS Setup Guide</title>
+<style>
+* {
+font-family: sans-serif;
+}
+code {
+font-family: monospace;
+}
+img {
+box-shadow: 0 0 10px black;
+}
+body {
+background: #ccc;
+}
+#content {
+max-width: 800px;
+margin: auto;
+padding: 0 30px 30px 30px;
+border: 1px solid black;
+background: #fff;
+}
+img {
+max-width: 100%;
+}
+</style>
+<script>
+function copyScript() {
+navigator.clipboard.writeText(
+\`function setup() {
+  const props = PropertiesService.getScriptProperties();
+  if (!props.getProperty("accessToken")) props.setProperty("accessToken", randomBase64(128));
+  console.log(
+    "Script configured!\\\\n\\\\nTHIS IS YOUR ACCESS TOKEN:\\\\n"
+    + props.getProperty("accessToken")
+    + "\\\\n\\\\nKeep it secret, and never share it with anyone else.");
+}
+
+function resetScriptData() {
+  const props = PropertiesService.getScriptProperties();
+  props.deleteAllProperties();
+  console.log("Script data successfully reset. Please remember to regenerate an access token by running setup.");
+}
+
+function randomBase64(length) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
+
+function doPost(e) {
+  const req = JSON.parse(e.postData.contents);
+  const props = PropertiesService.getScriptProperties();
+  const token = props.getProperty("accessToken");
+  const output = { version: 1 };
+
+  if (!token || req.token !== token) {
+    output.status = "ERROR";
+    output.result = "unauthorized";
+  } else {
+    let callback = null;
+    switch (req.request) {
+      case "list": callback = findEmails; break;
+      case "fetch": callback = getEmails; break;
+      case "test": callback = validate; break;
+    }
+    if (callback) {
+      output.status = "OK";
+      output.result = callback(req.options);
+    } else {
+      output.status = "ERROR";
+      output.result = "unknown_route";
+    }
+  }
+  var contentSvc = ContentService.createTextOutput(JSON.stringify(output));
+  contentSvc.setMimeType(ContentService.MimeType.JSON);
+  return contentSvc;
+}
+
+function findEmails({ since, offset, size }) {
+  const senders = [
+    "hello@pokemongolive.com",
+    "nominations@portals.ingress.com",
+    "notices@wayfarer.nianticlabs.com",
+    "ingress-support@nianticlabs.com",
+    "ingress-support@google.com"
+  ].map(e => "from:" + e);
+  if (since == "") since = "1970-01-01";
+  if (!since.match(/^\d{4}-\d{2}-\d{2}$/)) return [];
+  const emails = [];
+  const threads = GmailApp.search("(" + senders.join(" | ") + ") after:" + since, offset, size);
+  for (j = 0; j < threads.length; j++) emails.push(threads[j].getId());
+  return emails;
+}
+
+function getEmails({ ids }) {
+  const emls = {};
+  for (let i = 0; i < ids.length; i++) {
+    emls[ids[i]] = GmailApp.getThreadById(ids[i]).getMessages()[0].getRawContent();
+  }
+  return emls;
+}
+
+function validate() {
+  return "success";
+}
+\`);
+var e = document.getElementById('btnCopyScript');
+e.textContent = "Copied!";
+setTimeout(() => { e.textContent = ""; }, 2000);
+}
+
+function copyManifest() {
+navigator.clipboard.writeText(
+\`{
+  "timeZone": "Etc/UTC",
+  "dependencies": {
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/gmail.readonly"
+  ]
+}
+\`);
+var e = document.getElementById('btnCopyManifest');
+e.textContent = "Copied!";
+setTimeout(() => { e.textContent = ""; }, 2000);
+}
+</script>
+</head>
+<body><div id="content">
+<h1>Nomination Status History: GAS Setup Guide</h1>
+<p>This user manual will explain how to set up semi-automatic email imports from Gmail using Google Apps Script. If you have previously set up the Wayfarer Planner addon, the steps are similar.</p>
+<p>Note: The layout of the Google Apps Script website is subject to change. Please reach out to the developer of the script if you are unsure how to proceed with the setup, or if the guide below is no longer accurate.</p>
+<h2>Step 1: Create a Google Apps Script project</h2>
+<p><a href="https://script.google.com/home" target="_blank">Click here</a> to open Google Apps Script. Sign in to your Google account, if you aren't already.</p>
+<p>Click on the "New Project" button in the top left corner:</p>
+<img src="https://i.imgur.com/a8CicNr.png">
+<p>The new project will look like this:</p>
+<img src="https://i.imgur.com/98mlmxj.png">
+<p>Click on "Untitled project" at the top, and give it a name so that you can easily recognize it later. I suggest "Wayfarer Email Importer".</p>
+<hr>
+<h2>Step 2: Copy and paste the importer code</h2>
+<p>Click the button below to copy the current Importer Script source code to your clipboard:</p>
+<p><input type="button" onclick="copyScript();" value="Copy to clipboard"> <span id="btnCopyScript"></span></p>
+<p>The script editor contains a few lines of code that starts with <code>function myFunction()</code>. Delete <i>all</i> of the text in this window, and paste the script you just copied by pressing <code>Ctrl+V</code>.</p>
+<p>Then save the file by pressing <code>Ctrl+S</code>.</p>
+<hr>
+<h2>Step 3: Limit the script's permissions</h2>
+<p>By default, the script you have pasted will try to get full read and write access to your Gmail account. This level of permission is not necessary, and for the safety of your account, it is recommended that you limit the permissions of the script so that it cannot write or delete emails. This step is <u>optional</u>, but it is <u>highly recommended</u>.</p>
+<p>Click on the cog wheel icon (1) to access project settings, then ensure that "Show appsscript.json manifest file" is <u>checked</u>, like in this picture:</p>
+<img src="https://i.imgur.com/Q7h200M.png">
+<p>Next, return to the script editor by pressing the "Editor" button (1), and click on the new "appsscript.json" file that appears in the file list (2):</p>
+<img src="https://i.imgur.com/eB5hred.png">
+<p>Click on the button below to copy the correct manifest contents:</p>
+<p><input type="button" onclick="copyManifest();" value="Copy to clipboard"> <span id="btnCopyManifest"></span></p>
+<p>Then, overwrite the contents of the file by deleting all the contents, then pressing <code>Ctrl+V</code> to paste the contents you just copied. Save the file using <code>Ctrl+S</code>.</p>
+<hr>
+<h2>Step 4: Authorizing the script to access emails</h2>
+<p>Return to the "Code.gs" file (1). In the function dropdown, ensure "setup" is selected (2), then press "Run" (3):</p>
+<img src="https://i.imgur.com/VFx9Wgs.png">
+<p>You will see an authorization prompt, like the screenshot below. Click on "Review permissions" when it appears.</p>
+<img src="https://i.imgur.com/sReSttx.png">
+<p>A popup will appear. Click on "Advanced" (1), then "Go to Wayfarer Email Importer (unsafe)" (or the name of your script) (2). This warning screen shows because the script used by Nomination Status History has not been verified by Google. It is completely safe to use - the source code of the script is what you just pasted earlier.</p>
+<img src="https://i.imgur.com/3wSTjPy.png">
+<p>The following screen will then appear, asking permission to view your emails. Click on Allow.</p>
+<img src="https://i.imgur.com/QHiZLc4.png">
+<hr>
+<h2>Step 5: Copy the access token</h2>
+<p>You will be returned to the main Apps Script window, where a new "Execution log" will appear. After a few seconds, an access token will appear in this pane.</p>
+<img src="https://i.imgur.com/WUAMGLR.png">
+<p>Copy this value, and paste it in the "Access token" box that you are asked for on the "Import using Google Apps Script" window on Wayfarer.</p>
+<p><b>It is very important that you do not share this token with <u>anyone</u>. Keep it completely secret.</b></p>
+<p>P.S. The input box for the access token will hide its contents to prevent accidental leakage through screenshots. If you ever need it again, for example on another device, you can return to the Google Apps Script and click "Run" using the "setup" function again. If your token is ever accidentally disclosed, you can reset it by running the "resetScriptData" function, and the "setup" again to generate a new token.</p>
+<hr>
+<h2>Step 6: Deploy the script</h2>
+<p>In the top right corner of the Google Apps Script page, there is a blue "Deploy" button. Click on it, and then click "New deployment".</p>
+<img src="https://i.imgur.com/WNiIMwf.png">
+<p>In the window that appears, click the gear icon, then select "Web app".</p>
+<img src="https://i.imgur.com/tmvBq3E.png">
+<p>Some settings will appear. Leave "Execute as" set to "Me", but make sure that "Who has access" is set to "Anyone" (1). Then, click "Deploy" (2).</p>
+<img src="https://i.imgur.com/a8LPFaM.png">
+<p>When the deployment has completed, you will be shown a web app URL. Copy this URL, and paste it into the "Script URL" box in the "Import using Google Apps Script" window on Wayfarer.</p>
+<img src="https://i.imgur.com/2ydKg9H.png">
+<hr>
+<h2>Step 7: First import</h2>
+<p>Congratulations, the setup is now complete! Here are a few things to keep in mind that specifically apply to the <u>first time</u> you use the importer:</p>
+<ul>
+<li>The first time you import emails, the process can take a very long time, as it has to import all of your emails. This can take many minutes.</li>
+<li>If you have previously and recently used the manual *.eml file importer function, you may not have any changes detected. It is very important that even if you have no changes detected, you click on "Import 0 change(s)" this time, because this will mark all the emails you just imported as processed, so that it does not have to process every single one of them again the next time you run the importer.</li>
+</ul>
+</div></body>
+</html>
+`;
+
     (() => {
         const css = `
             #wfnshNotify {
@@ -1869,8 +2437,37 @@
                 font-size: 16px;
                 cursor: pointer;
             }
+            .wfnshMethodButton {
+                background-color: #e5e5e5;
+                border: none;
+                padding: 10px 10px;
+                cursor: pointer;
+                width: 100%;
+                background-size: 30px;
+                background-position: 15px;
+                background-repeat: no-repeat;
+                margin-bottom: 10px;
+            }
+            .wfnshMethodButton .wfnshMethodTitle {
+                color: #ff4713;
+                font-size: 16px;
+            }
+            .wfnshMethodButton .wfnshMethodDesc {
+                font-size: 12px;
+            }
             .wfnshCancelButton {
                 color: #000000;
+            }
+            .wfnshGAScriptTable {
+                width: 100%;
+            }
+            .wfnshGAScriptTable td {
+                border: none;
+            }
+            .dark .wfnshGAScriptTable input {
+                background-color: #222;
+                width: 100%;
+                padding: 5px;
             }
 
             .dark .wfnshTopButton {
@@ -1879,6 +2476,12 @@
             }
             .dark .wfnshCancelButton {
                 color: #ff0000;
+            }
+            .dark .wfnshMethodButton {
+                background-color: #404040;
+            }
+            .dark .wfnshMethodButton .wfnshMethodTitle {
+                color: #20B8E3;
             }
 
             .wfnshImportBg {
@@ -1903,6 +2506,14 @@
                 padding: 20px;
                 max-width: 900px;
                 max-height: 500px;
+            }
+            .wfnshImportMethod {
+                max-width: 500px;
+                height: initial;
+            }
+            .wfnshImportGAScriptOptions {
+                max-width: 700px;
+                height: initial;
             }
             .dark .wfnshImportInner {
                 background-color: #333;
