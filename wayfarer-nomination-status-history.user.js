@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.8.0
+// @version      0.8.1
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -2186,7 +2186,7 @@
 * {
 font-family: sans-serif;
 }
-code {
+code, textarea {
 font-family: monospace;
 }
 img {
@@ -2205,17 +2205,33 @@ background: #fff;
 img {
 max-width: 100%;
 }
+textarea {
+width: 100%;
+height: 100px;
+}
 </style>
-<script>
-function copyScript() {
-navigator.clipboard.writeText(
-\`function setup() {
+</head>
+<body><div id="content">
+<h1>Nomination Status History: GAS Setup Guide</h1>
+<p>This user manual will explain how to set up semi-automatic email imports from Gmail using Google Apps Script. If you have previously set up the Wayfarer Planner addon, the steps are similar.</p>
+<p>Note: The layout of the Google Apps Script website is subject to change. Please reach out to the developer of the script if you are unsure how to proceed with the setup, or if the guide below is no longer accurate.</p>
+<h2>Step 1: Create a Google Apps Script project</h2>
+<p><a href="https://script.google.com/home" target="_blank">Click here</a> to open Google Apps Script. Sign in to your Google account, if you aren't already.</p>
+<p>Click on the "New Project" button in the top left corner:</p>
+<img src="https://i.imgur.com/a8CicNr.png">
+<p>The new project will look like this:</p>
+<img src="https://i.imgur.com/98mlmxj.png">
+<p>Click on "Untitled project" at the top, and give it a name so that you can easily recognize it later. I suggest "Wayfarer Email Importer".</p>
+<hr>
+<h2>Step 2: Copy and paste the importer code</h2>
+<p>Copy the current Importer Script source code below:</p>
+<textarea readonly>function setup() {
   const props = PropertiesService.getScriptProperties();
   if (!props.getProperty("accessToken")) props.setProperty("accessToken", randomBase64(128));
   console.log(
-    "Script configured!\\\\n\\\\nTHIS IS YOUR ACCESS TOKEN:\\\\n"
+    "Script configured!\\n\\nTHIS IS YOUR ACCESS TOKEN:\\n"
     + props.getProperty("accessToken")
-    + "\\\\n\\\\nKeep it secret, and never share it with anyone else.");
+    + "\\n\\nKeep it secret, and never share it with anyone else.");
 }
 
 function resetScriptData() {
@@ -2229,7 +2245,7 @@ function randomBase64(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const charactersLength = characters.length;
   let counter = 0;
-  while (counter < length) {
+  while (counter &lt; length) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
     counter += 1;
   }
@@ -2277,13 +2293,13 @@ function findEmails({ since, offset, size }) {
   if (!since.match(/^\d{4}-\d{2}-\d{2}$/)) return [];
   const emails = [];
   const threads = GmailApp.search("(" + senders.join(" | ") + ") after:" + since, offset, size);
-  for (j = 0; j < threads.length; j++) emails.push(threads[j].getId());
+  for (j = 0; j &lt; threads.length; j++) emails.push(threads[j].getId());
   return emails;
 }
 
 function getEmails({ ids }) {
   const emls = {};
-  for (let i = 0; i < ids.length; i++) {
+  for (let i = 0; i &lt; ids.length; i++) {
     emls[ids[i]] = GmailApp.getThreadById(ids[i]).getMessages()[0].getRawContent();
   }
   return emls;
@@ -2291,47 +2307,7 @@ function getEmails({ ids }) {
 
 function validate() {
   return "success";
-}
-\`);
-var e = document.getElementById('btnCopyScript');
-e.textContent = "Copied!";
-setTimeout(() => { e.textContent = ""; }, 2000);
-}
-
-function copyManifest() {
-navigator.clipboard.writeText(
-\`{
-  "timeZone": "Etc/UTC",
-  "dependencies": {
-  },
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "oauthScopes": [
-    "https://www.googleapis.com/auth/gmail.readonly"
-  ]
-}
-\`);
-var e = document.getElementById('btnCopyManifest');
-e.textContent = "Copied!";
-setTimeout(() => { e.textContent = ""; }, 2000);
-}
-</script>
-</head>
-<body><div id="content">
-<h1>Nomination Status History: GAS Setup Guide</h1>
-<p>This user manual will explain how to set up semi-automatic email imports from Gmail using Google Apps Script. If you have previously set up the Wayfarer Planner addon, the steps are similar.</p>
-<p>Note: The layout of the Google Apps Script website is subject to change. Please reach out to the developer of the script if you are unsure how to proceed with the setup, or if the guide below is no longer accurate.</p>
-<h2>Step 1: Create a Google Apps Script project</h2>
-<p><a href="https://script.google.com/home" target="_blank">Click here</a> to open Google Apps Script. Sign in to your Google account, if you aren't already.</p>
-<p>Click on the "New Project" button in the top left corner:</p>
-<img src="https://i.imgur.com/a8CicNr.png">
-<p>The new project will look like this:</p>
-<img src="https://i.imgur.com/98mlmxj.png">
-<p>Click on "Untitled project" at the top, and give it a name so that you can easily recognize it later. I suggest "Wayfarer Email Importer".</p>
-<hr>
-<h2>Step 2: Copy and paste the importer code</h2>
-<p>Click the button below to copy the current Importer Script source code to your clipboard:</p>
-<p><input type="button" onclick="copyScript();" value="Copy to clipboard"> <span id="btnCopyScript"></span></p>
+}</textarea>
 <p>The script editor contains a few lines of code that starts with <code>function myFunction()</code>. Delete <i>all</i> of the text in this window, and paste the script you just copied by pressing <code>Ctrl+V</code>.</p>
 <p>Then save the file by pressing <code>Ctrl+S</code>.</p>
 <hr>
@@ -2341,8 +2317,17 @@ setTimeout(() => { e.textContent = ""; }, 2000);
 <img src="https://i.imgur.com/Q7h200M.png">
 <p>Next, return to the script editor by pressing the "Editor" button (1), and click on the new "appsscript.json" file that appears in the file list (2):</p>
 <img src="https://i.imgur.com/eB5hred.png">
-<p>Click on the button below to copy the correct manifest contents:</p>
-<p><input type="button" onclick="copyManifest();" value="Copy to clipboard"> <span id="btnCopyManifest"></span></p>
+<p>Copy the correct manifest contents from below:</p>
+<textarea readonly>{
+  "timeZone": "Etc/UTC",
+  "dependencies": {
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/gmail.readonly"
+  ]
+}</textarea>
 <p>Then, overwrite the contents of the file by deleting all the contents, then pressing <code>Ctrl+V</code> to paste the contents you just copied. Save the file using <code>Ctrl+S</code>.</p>
 <hr>
 <h2>Step 4: Authorizing the script to access emails</h2>
