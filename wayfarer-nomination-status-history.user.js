@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.8.1
+// @version      0.8.3
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -2290,7 +2290,7 @@ function findEmails({ since, offset, size }) {
     "ingress-support@google.com"
   ].map(e => "from:" + e);
   if (since == "") since = "1970-01-01";
-  if (!since.match(/^\d{4}-\d{2}-\d{2}$/)) return [];
+  if (!since.match(/^\\d{4}-\\d{2}-\\d{2}$/)) return [];
   const emails = [];
   const threads = GmailApp.search("(" + senders.join(" | ") + ") after:" + since, offset, size);
   for (j = 0; j &lt; threads.length; j++) emails.push(threads[j].getId());
@@ -2320,8 +2320,7 @@ function validate() {
 <p>Copy the correct manifest contents from below:</p>
 <textarea readonly>{
   "timeZone": "Etc/UTC",
-  "dependencies": {
-  },
+  "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "oauthScopes": [
