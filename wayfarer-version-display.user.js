@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Version Display
-// @version      0.1.1
+// @version      0.1.2
 // @description  Displays the current Wayfarer version.
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-version-display.user.js
@@ -55,7 +55,7 @@
             const json = JSON.parse(this.response);
             if (!json) return;
             if (json.version) {
-                box.textContent = `v${json.version.replace('release-wayfarer-web-', '')}`;
+                box.textContent = json.version.replace('release-wayfarer-web-', '');
                 if (!version) version = json.version;
                 else if (version !== json.version) {
                     const css = `
@@ -100,10 +100,11 @@
             display: block;
             position: absolute;
             top: 0;
-            left: 90px;
+            left: 85px;
             margin-top: -1px;
             color: rgb(32, 184, 227);
             font-weight: bold;
+            white-space: nowrap;
         }
         wf-logo {
             position: absolute;
