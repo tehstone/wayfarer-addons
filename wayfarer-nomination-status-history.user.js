@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.8.3
+// @version      0.8.6
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -137,13 +137,14 @@
         getNom.onsuccess = () => {
             const { result } = getNom;
             const history = result.statusHistory;
+            const oldStatus = history.length ? history[history.length - 1].status : null;
             const timestamp = Date.now();
             const newStatus = historyOnly ? result.status : status;
             // Add the change in hold status to the nomination's history.
             history.push({ timestamp, status });
             objectStore.put({ ...result, ...extras, status: newStatus, statusHistory: history });
             tx.commit();
-            awaitElement(() => document.querySelector('.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status, false, 1));
+            awaitElement(() => document.querySelector('.wfnshDropdown')).then(ref => addEventToHistoryDisplay(ref, timestamp, status, false, oldStatus));
             resolve();
         }
         getNom.onerror = reject;
@@ -187,18 +188,31 @@
                         if (box) box.parentElement.removeChild(box);
                         box = document.createElement('div');
                         box.classList.add('wfnshDropdown');
-                        const select = document.createElement('select');
-                        select.title = 'Right click to expand full history';
-                        box.appendChild(select);
+                        const leftBox = document.createElement('a');
+                        leftBox.classList.add('wfnshDDLeftBox');
+                        leftBox.textContent = '\u25b6';
+                        box.appendChild(leftBox);
+                        const rightBox = document.createElement('div');
+                        rightBox.classList.add('wfnshDDRightBox');
+                        box.appendChild(rightBox);
+
+                        const oneLine = document.createElement('p');
+                        oneLine.classList.add('wfnshOneLine');
+                        rightBox.appendChild(oneLine);
                         const textbox = document.createElement('div');
                         textbox.classList.add('wfnshInner');
-                        box.appendChild(textbox);
-                        select.addEventListener('contextmenu', e => {
+                        rightBox.appendChild(textbox);
+
+                        let collapsed = true;
+                        box.addEventListener('click', e => {
                             e.preventDefault();
-                            select.style.display = 'none';
-                            textbox.style.display = 'block';
+                            oneLine.style.display = collapsed ? 'none' : 'block';
+                            textbox.style.display = collapsed ? 'block' : 'none';
+                            leftBox.textContent = collapsed ? '\u25bc' : '\u25b6';
+                            collapsed = !collapsed;
                             return false;
                         });
+
                         ref.parentNode.appendChild(box);
                         // Don't populate the dropdown until the nomination change detection has run successfully.
                         // That process sets ready = true when done. If it was already ready, then this will
@@ -212,15 +226,17 @@
                                 // Create an option for initial nomination; this may not be stored in the IDB history,
                                 // so we need to handle this as a special case here.
                                 if (!result.statusHistory.length || result.statusHistory[0].status !== 'NOMINATED') {
-                                    const nomDateOpt = document.createElement('option');
-                                    nomDateOpt.textContent = result.day + ' - Nominated';
-                                    select.appendChild(nomDateOpt);
+                                    oneLine.textContent = result.day + ' - Nominated';
                                     const nomDateLine = document.createElement('p');
                                     nomDateLine.textContent = result.day + ' - Nominated';
                                     textbox.appendChild(nomDateLine);
                                 }
                                 // Then, add options for each entry in the history.
-                                result.statusHistory.forEach(({ timestamp, status, verified }, i) => addEventToHistoryDisplay(box, timestamp, status, verified, i));
+                                let previous = null;
+                                result.statusHistory.forEach(({ timestamp, status, verified }) => {
+                                    addEventToHistoryDisplay(box, timestamp, status, verified, previous);
+                                    previous = status;
+                                });
                                 // Clean up when we're done.
                                 db.close();
                             }
@@ -232,8 +248,14 @@
     };
 
     // Adds a nomination history entry to the given history display <select>.
-    const addEventToHistoryDisplay = (box, timestamp, status, verified, index) => {
-        if (status === 'NOMINATED' && index > 0) status = 'Hold released';
+    const addEventToHistoryDisplay = (box, timestamp, status, verified, previous) => {
+        if (status === 'NOMINATED' && !!previous) {
+            if (previous === 'HELD') {
+                status = 'Hold released';
+            } else {
+                status = 'Returned to queue';
+            }
+        }
 
         // Format the date as UTC as this is what Wayfarer uses to display the nomination date.
         // Maybe make this configurable to user's local time later?
@@ -241,16 +263,11 @@
         const dateString = `${date.getUTCFullYear()}-${('0'+(date.getUTCMonth()+1)).slice(-2)}-${('0'+date.getUTCDate()).slice(-2)}`;
         const text = `${dateString} - ${stateMap.hasOwnProperty(status) ? stateMap[status] : status}`;
 
-        const opt = document.createElement('option');
-        opt.textContent = text + (verified ? ' \u2713' : '');
-        // Create a random "value" for our option, so we can select it from the dropdown after it's added.
-        opt.value = 'n' + Math.random();
-        const select = box.querySelector('select');
-        select.appendChild(opt);
-        // Select it by its random value.
-        select.value = opt.value;
-
+        const lastLine = box.querySelector('.wfnshOneLine');
+        lastLine.textContent = text;
         const line = document.createElement('p');
+        if (verified) lastLine.classList.add('wfnshVerified');
+        else if (lastLine.classList.contains('wfnshVerified')) lastLine.classList.remove('wfnshVerified');
         line.textContent = text;
         if (verified) line.classList.add('wfnshVerified');
         const textbox = box.querySelector('.wfnshInner');
@@ -644,21 +661,25 @@
         sub.appendChild(s2);
         sub.appendChild(s3);
         inner.appendChild(sub);
+        const form = document.createElement('form');
+        inner.appendChild(form);
         const tbl = document.createElement('table');
         tbl.classList.add('wfnshGAScriptTable');
-        inner.appendChild(tbl);
+        form.appendChild(tbl);
 
         const inputs = [
             {
                 id: 'url',
                 type: 'text',
                 label: 'Script URL',
-                placeholder: 'https://script.google.com/macros/.../exec'
+                placeholder: 'https://script.google.com/macros/.../exec',
+                required: true
             },
             {
                 id: 'token',
                 type: 'password',
                 label: 'Access token',
+                required: true
             },
             {
                 id: 'since',
@@ -676,6 +697,7 @@
             const col2 = document.createElement('td');
             input.field = document.createElement('input');
             input.field.type = input.type;
+            if (input.required) input.field.required = true;
             if (input.placeholder) input.field.placeholder = input.placeholder;
             if (values.hasOwnProperty(input.id)) input.field.value = values[input.id];
             col2.appendChild(input.field);
@@ -684,10 +706,22 @@
             tbl.appendChild(row);
         });
 
-        const btn1 = document.createElement('btn');
+        const btn1 = document.createElement('input');
+        btn1.type = 'submit';
         btn1.classList.add('wfnshTopButton');
-        btn1.textContent = 'Start import';
-        btn1.addEventListener('click', () => {
+        btn1.value = 'Start import';
+        form.appendChild(btn1);
+
+        const btn2 = document.createElement('input');
+        btn2.type = 'button';
+        btn2.classList.add('wfnshTopButton');
+        btn2.classList.add('wfnshCancelButton');
+        btn2.value = 'Cancel import';
+        btn2.addEventListener('click', () => outer.parentNode.removeChild(outer));
+        form.appendChild(btn2);
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
             const gass = {
                 url: inputs[0].field.value,
                 token: inputs[1].field.value,
@@ -782,15 +816,8 @@
                 alert('The Importer Script returned an invalid response. Please see the console for more information.');
                 loader.destroy();
             });
+            return false;
         });
-        inner.appendChild(btn1);
-
-        const btn2 = document.createElement('btn');
-        btn2.classList.add('wfnshTopButton');
-        btn2.classList.add('wfnshCancelButton');
-        btn2.textContent = 'Cancel import';
-        btn2.addEventListener('click', () => outer.parentNode.removeChild(outer));
-        inner.appendChild(btn2);
     };
 
     const importMethods = [
@@ -964,9 +991,15 @@
                 }
             }
             const diffs = [];
-            for (let i = 0, j = 0; i < history[k].length && j < joined.length; i++, j++) {
-                while (history[k][i].status !== joined[j].status) diffs.push({ ...joined[j++], previously: null });
-                if (history[k][i].timestamp !== joined[j].timestamp || !!history[k][i].verified !== !!joined[j].verified) diffs.push({ ...joined[j], previously: history[k][i].timestamp });
+            if (history[k].length) {
+                for (let i = 0, j = 0; i < history[k].length && j < joined.length; i++, j++) {
+                    while (history[k][i].status !== joined[j].status) diffs.push({ ...joined[j++], previously: null });
+                    if (history[k][i].timestamp !== joined[j].timestamp || !!history[k][i].verified !== !!joined[j].verified) diffs.push({ ...joined[j], previously: history[k][i].timestamp });
+                }
+            } else {
+                for (let j = 0; j < joined.length; j++) {
+                    diffs.push({ ...joined[j++], previously: null });
+                }
             }
             if (diffs.length) joinedChanges[k] = { ...changes[k], updates: joined, diffs };
         });
@@ -2308,7 +2341,7 @@ function getEmails({ ids }) {
 function validate() {
   return "success";
 }</textarea>
-<p>The script editor contains a few lines of code that starts with <code>function myFunction()</code>. Delete <i>all</i> of the text in this window, and paste the script you just copied by pressing <code>Ctrl+V</code>.</p>
+<p>The Google Apps Script page has a large text area that currently contains <code>function myFunction()</code> and some brackets. Select all of this text, delete it, and press <code>Ctrl+V</code> to replace it with the code you just copied above.</p>
 <p>Then save the file by pressing <code>Ctrl+S</code>.</p>
 <hr>
 <h2>Step 3: Limit the script's permissions</h2>
@@ -2394,17 +2427,19 @@ function validate() {
             .wfnshBg-gold {
                 background-color: goldenrod;
             }
-            .dark .wfnshDropdown select {
-                background-color: #262626;
-            }
-            .wfnshDropdown select {
-                text-align: right;
-            }
-            .wfnshDropdown select option {
-                text-align: left;
+            .wfnshDropdown {
+                cursor: pointer;
             }
             .wfnshDropdown .wfnshInner {
                 display: none;
+            }
+            .wfnshDropdown .wfnshDDLeftBox {
+                float: left;
+                margin-right: 7px;
+                display: block;
+            }
+            .wfnshDropdown .wfnshDDRightBox {
+                float: right;
             }
             ${nomDateSelector} {
                 display: none;
@@ -2448,10 +2483,13 @@ function validate() {
             .wfnshGAScriptTable td {
                 border: none;
             }
-            .dark .wfnshGAScriptTable input {
-                background-color: #222;
+            .wfnshGAScriptTable input {
+                background-color: #ddd;
                 width: 100%;
                 padding: 5px;
+            }
+            .dark .wfnshGAScriptTable input {
+                background-color: #222;
             }
 
             .dark .wfnshTopButton {
