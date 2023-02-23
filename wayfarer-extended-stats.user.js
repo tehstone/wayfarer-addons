@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.5.2
+// @version      0.5.3
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -506,6 +506,11 @@ function init() {
                 text-decoration: none;
                 display: inline-block;
                 font-size: 16px;
+              }
+
+              .dark .wayfarercc__button {
+                background-color: #404040;
+                color: #20B8E3;
               }
 
               .wayfarercc__hiddendl {
