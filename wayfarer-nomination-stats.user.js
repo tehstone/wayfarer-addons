@@ -274,12 +274,14 @@ function init() {
 
     function convertToCSV(objArray) {
         let array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
-        let str = 'id,title,description,lat,lng,city,state,day,order,imageUrl,nextUpgrade,upgraded,status\r\n';
+        console.log(array);
+        let str = 'id,group,type,title,description,lat,lng,city,state,day,order,imageUrl,nextUpgrade,upgraded,status,isMutable,isNianticControlled,statement,supportingImageUrl,rejectReasons,canAppeal,isClosed,appealNotes,canHold,canReleaseHold\r\n';
 
         for (let i = 0; i < array.length; i++) {
             let line = '';
             for (let index in array[i]) {
-                if (index === 'title' || index === 'description') {
+                if (index === 'title' || index === 'description' || index === 'statement' || index === 'appealNotes') {
+                    array[i][index] = array[i][index].replace(/#/g, '').replace(/"/g, '""');
                     array[i][index] = `"${array[i][index]}"`;
                 }
                 if (line != '') line += ','
