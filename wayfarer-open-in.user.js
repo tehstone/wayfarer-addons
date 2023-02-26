@@ -970,7 +970,6 @@
         });
 
         const addOpenButtons = (before, { lat, lng, title, description, guid }) => {
-            [ lat, lng ] = [ 9.340378, 2.629102 ];
             const box = document.createElement('div');
             box.classList.add('wayfareropenin__container');
 
