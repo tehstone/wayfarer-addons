@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.3
+// @version      0.1.4
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -227,7 +227,7 @@
                   )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${imageUrl}" class="img-responsive" alt="${title}"></a>
                   <a target="${getTarget(
                       "images"
-                  )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
+                  )}" href="${supportingImageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
                   </div>
                 </dl>
                 <br>
