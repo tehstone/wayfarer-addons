@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History IDB
-// @version      0.1.3
+// @version      0.2.0
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -56,6 +56,8 @@
             } else if (url == '/api/v1/vault/properties' && method == 'GET') {
                 // NOTE: Requires @run-at document-start.
                 this.addEventListener('load', handleXHRResult(handleProfile), false);
+            } else if (url == '/api/v1/vault/profile' && method == 'GET') {
+                this.addEventListener('load', addRHButtons, false);
             }
             open.apply(this, arguments);
         };
@@ -98,7 +100,6 @@
     };
 
     const handleIncomingReview = result => new Promise((resolve, reject) => {
-        addRHButtons();
         let saveColumns = [];
         const common = ['type', 'id', 'title', 'description', 'lat', 'lng'];
         switch (result.type) {
@@ -157,9 +158,7 @@
         queryLoop();
     });
 
-    const addRHButtons = () => awaitElement(() => document.querySelector('body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div.flex.justify-center.mt-8.ng-star-inserted')).then(ref => {
-        console.log('ädding');
-        if (document.getElementById('wfrh-idb-topbar')) return;
+    const addRHButtons = () => awaitElement(() => document.querySelector('wf-rating-bar')).then(ref => {
         const outer = document.createElement('div');
         outer.id = 'wfrh-idb-topbar';
         outer.classList.add('wfrh-idb');
@@ -206,8 +205,7 @@
         outer.appendChild(label);
         outer.appendChild(exportBtn);
         outer.appendChild(clearBtn);
-        insertAfter(outer, ref);
-        //ref.parentNode.parentNode.appendChild(outer);
+        ref.parentNode.appendChild(outer);
     });
 
     function insertAfter(newNode, referenceNode) {
@@ -257,7 +255,6 @@
         const css = `
         .wfrh-idb {
             color: #333;
-            margin-left: 2em;
             padding-top: 0.3em;
             text-align: center;
             display: block;
