@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.10
+// @version      0.4.11
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -102,11 +102,12 @@ function init() {
             return;
         }
         let gmap;
-        if (document.querySelector('app-location-accuracy nia-map')) {
-            gmap = document.querySelector('app-location-accuracy nia-map');
+        if (document.querySelector('#check-duplicates-card nia-map')) {
+            gmap = document.querySelector('#check-duplicates-card nia-map');
             mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1];
             map = mapCtx.componentRef.map;
             map.setZoom(17);
+            map.setMapTypeId('satellite');
             addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
@@ -139,7 +140,7 @@ function init() {
 
     function locationChangeBtnListener() {
         const markerone = mapCtx.markers.default.markers[0];
-        const locationChangeBtn = document.querySelector("#location-accuracy-card > div.wf-review-card__body > div > div.mt-2.flex.justify-between.pb-1.space-x-4 > div:nth-child(2) > button");
+        const locationChangeBtn = document.querySelector("#check-duplicates-card nia-map ~ div button");
         if (locationChangeBtn) {
             drawCloseCircle();
             locationChangeBtn.addEventListener('click', function() {
@@ -153,7 +154,7 @@ function init() {
     }
 
     function locationResetChangeBtnListener() {
-        let resetButton = document.querySelector("#location-accuracy-card > div.wf-review-card__header > div.pl-2.ng-star-inserted > button");
+        let resetButton = document.querySelector("#check-duplicates-card .wf-review-card__header button");
         if (resetButton) {
             resetButton.onclick = function() {
                 map.setZoom(17);
@@ -184,7 +185,7 @@ function init() {
     }
 
     function addNearbyTooltips() {
-        const markerDiv = document.querySelector("#location-accuracy-card > div.wf-review-card__body > div > nia-map > div > ng-component > agm-map > div.agm-map-container-inner.sebm-google-map-container-inner > div > div > div:nth-child(2) > div:nth-child(2) > div > div:nth-child(3)");
+        const markerDiv = document.querySelector("#check-duplicates-card nia-map agm-map div.agm-map-container-inner > div > div > div:nth-child(2) > div:nth-child(2) > div > div:nth-child(3)");
         if (!markerDiv) {
             setTimeout(addNearbyTooltips, 500);
             return;
