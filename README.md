@@ -127,6 +127,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇦🇽 **Åland Islands:** Maanmittauslaitos, Paikkatietoikkuna
 - 🇧🇦 **Bosnia and Herzegovina:** Kadastar.ba\*
 - 🇧🇪 **Belgium:** NGI/IGN
+- 🇧🇯 **Benin:** IGN Bénin\*
 - 🇧🇱 **Saint Barthélemy:** Mappy
 - 🇨🇭 **Switzerland:** Admin.ch
 - 🇨🇿 **Czech Republic:** Mapy.cz
@@ -154,6 +155,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇬🇵 **Guadeloupe:** Mappy
 - 🇭🇷 **Croatia:** Geoportal DGU
 - 🇮🇨 **Canary Islands:** Fototeca Digital, Iberpix
+- 🇮🇩 **Indonesia:** Badan Informasi Geospasial
 - 🇮🇱 **Israel:** Govmap
 - 🇮🇸 **Iceland:** Já.is Götusýn, Landupplýsingagátt LMÍ, Map.is, Samsýn
 - 🇮🇹 **Italy:** Geoportale Nazionale\*
@@ -168,6 +170,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇲🇹 **Malta:** Planning Authority\*
 - 🇳🇱 **Netherlands:** Kaarten van Nederland, Map5 NLTopo
 - 🇳🇴 **Norway:** Gule Sider, Kommunekart, Norge i bilder, Norgeskart, UT.no
+- 🇳🇿 **New Zealand:** Land Information NZ
 - 🇵🇱 **Poland:** Geoportal
 - 🇵🇲 **Saint Pierre and Miquelon:** Mappy
 - 🇵🇸 **Palestinian Territories:**
@@ -176,6 +179,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇷🇸 **Serbia:** МРЕ Србије
 - 🇸🇨 **Seychelles:** MHILT WebGIS\*
 - 🇸🇪 **Sweden:** Eniro, Lantmäteriet
+- 🇸🇬 **Singapore:** OneMap3D\*
 - 🇸🇯 **Svalbard and Jan Mayen:**
     - **Svalbard:** TopoSvalbard
 - 🇸🇰 **Slovakia:** Mapy.cz
@@ -183,8 +187,8 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇸🇽 **Sint Maarten:** Mappy
 - 🇻🇦 **Vatican City:** Geoportale Nazionale\*
 - 🇼🇫 **Wallis and Futuna:** Mappy
-- 🇾🇹 **Mayotte:** Mappy
 - 🇽🇰 **Kosovo:** МРЕ Србије
+- 🇾🇹 **Mayotte:** Mappy
 
 </details>
 

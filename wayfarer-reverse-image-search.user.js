@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Reverse Image Search
-// @version      0.2.0
+// @version      0.2.1
 // @description  Add reverse image search links to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-reverse-image-search.user.js
@@ -74,7 +74,7 @@
     )).then(ref => {
         switch (ref.tagName) {
             case 'APP-SHOULD-BE-WAYSPOT':
-                awaitElement(() => document.querySelector('#location-accuracy-card nia-map'))
+                awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
                 .then((ref) => {
                     addImageSearchLinks(ref, result);
                 });
