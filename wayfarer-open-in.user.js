@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.6.7
+// @version      0.6.8
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -107,7 +107,7 @@
         {
             // Germany (Bavaria)
             label: 'BayernAtlas',
-            url: 'https://geoportal.bayern.de/bayernatlas/?lang=de&topic=ba&bgLayer=atkis&catalogNodes=11&E=%lng%&N=%lat%&zoom=14&layers=luftbild,luftbild_parz,tk_by&layers_visibility=true,false,false&crosshair=marker',
+            url: 'https://geoportal.bayern.de/bayernatlas/?lang=de&topic=ba&bgLayer=atkis&catalogNodes=11&E=%lng%&N=%lat%&zoom=14&layers=luftbild,luftbild_parz,tk_by,d0e7d4ea-62d8-46a0-a54a-09654530beed,bcce5127-a233-4bea-ad08-c0e4c376bccf,e528a2a8-44e7-46e9-9069-1a8295b113b5,6e2f5825-4a89-4942-a464-c88ec41bb734,86e82390-1739-4d21-bf78-e8b189c1a35d,22a00a49-82fc-4562-8176-00bf4a41e587&layers_visibility=false,true,false,true,true,true,true,true,true&crosshair=marker',
             projection: 'EPSG:25832',
             regions: ['DE_BY']
         },
@@ -953,7 +953,7 @@
         )).then(ref => {
             switch (ref.tagName) {
                 case 'APP-SHOULD-BE-WAYSPOT':
-                    awaitElement(() => document.querySelector('#location-accuracy-card nia-map'))
+                    awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
                         .then((ref) => {
                         addOpenButtons(ref, result);
                     });
