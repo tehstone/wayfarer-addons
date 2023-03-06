@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.7.8
+// @version      0.7.9
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -116,7 +116,7 @@
                         ratingElements.push(ratingElementParts[i]);
                     }
                     reviewType = 'NEW';
-                    setTimeout(initWhatIsItClickListeners, 500);
+                    //setTimeout(initWhatIsItClickListeners, 500);
                     break;
 
                 case 'APP-REVIEW-EDIT':
@@ -657,12 +657,7 @@
 
         ratingElements[revPosition].classList.add('kbdActiveElement');
         ratingElements[revPosition].focus();
-        if (revPosition <= 2 || revPosition >= 6) {
-            ratingElements[revPosition].scrollIntoView(false);
-        } else {
-            // Scroll the map into view, anything else is jarring
-            ratingElements[2].scrollIntoView(false);
-        }
+        ratingElements[revPosition].scrollIntoView({ block: 'center' });
 
         if (ratingElements[revPosition].id == 'categorization-card') {
             const wfinput = ratingElements[revPosition].querySelector('wf-select input');
