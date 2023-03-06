@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.6.8
+// @version      0.6.9
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -955,6 +955,12 @@
                 case 'APP-SHOULD-BE-WAYSPOT':
                     awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
                         .then((ref) => {
+                        if (result.streetAddress) {
+                            const addrBox = document.createElement('p');
+                            addrBox.classList.add('wayfareropenin__address');
+                            addrBox.textContent = result.streetAddress;
+                            ref.parentElement.insertBefore(addrBox, ref);
+                        }
                         addOpenButtons(ref, result);
                     });
                     break;
@@ -1136,6 +1142,14 @@
             }
             .wayfareropenin__experimental:hover .wayfareropenin__tooltip {
                 visibility: visible;
+            }
+            .wayfareropenin__address {
+                font-size: 1.1em;
+                font-weight: bold;
+                color: black;
+            }
+            .dark .wayfareropenin__address {
+                color: white;
             }
         `;
             const style = document.createElement('style');
