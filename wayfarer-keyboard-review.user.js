@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.7.6
+// @version      0.7.2
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -43,6 +43,7 @@
     let firstClick = true;
     let candidate;
     const markerSVG = "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg width='28px' height='61px' viewBox='0 0 28 61' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Ctitle%3EIcon-Pink%3C/title%3E%3Cg id='Icon-Pink' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E%3Cpath d='M15.5093388,20.7281993 C14.9275251,20.9855232 14.2863961,21.1311947 13.6095035,21.1311947 C12.9326109,21.1311947 12.2914819,20.9855232 11.7096682,20.7281993 C10.0593063,19.997225 8.90701866,18.3486077 8.90701866,16.4278376 C8.90701866,13.8310471 11.012713,11.726225 13.6095035,11.726225 C16.206294,11.726225 18.3119883,13.8310471 18.3119883,16.4278376 C18.3119883,18.3486077 17.1597007,19.997225 15.5093388,20.7281993 M22.3271131,7.71022793 C17.5121036,2.89609069 9.70603111,2.89609069 4.89189387,7.71022793 C1.3713543,11.2307675 0.437137779,16.3484597 2.06482035,20.7281993 L2.05435293,20.7281993 L2.15379335,20.9820341 L2.20525812,21.113749 L11.1688519,44.0984412 L11.1758302,44.0984412 C11.5561462,45.0736551 12.4990855,45.7671211 13.6095035,45.7671211 C14.7190492,45.7671211 15.6619885,45.0736551 16.0431768,44.0984412 L16.0492828,44.0984412 L25.0128766,21.1163658 L25.0669582,20.9776726 L25.1637818,20.7281993 L25.1541867,20.7281993 C26.7818692,16.3484597 25.8476527,11.2307675 22.3271131,7.71022793 M13.6095035,50.6946553 C11.012713,50.6946553 8.90701866,52.7994774 8.90701866,55.3962679 C8.90701866,57.9939306 11.012713,60.099625 13.6095035,60.099625 C16.206294,60.099625 18.3119883,57.9939306 18.3119883,55.3962679 C18.3119883,52.7994774 16.206294,50.6946553 13.6095035,50.6946553' id='F' stroke='%23FFFFFF' fill='%23BB00FF'%3E%3C/path%3E%3C/g%3E%3C/svg%3E";
+
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -110,7 +111,7 @@
             switch (ref.tagName) {
                 case 'APP-SHOULD-BE-WAYSPOT':
                     for (let i = 0; i < ratingElementParts.length; i++) {
-                        if (i == 2 || i == 3 || i > 8) continue;
+                        if (i == 2 || i > 7) continue;
                         ratingElements.push(ratingElementParts[i]);
                     }
                     reviewType = 'NEW';
@@ -179,9 +180,6 @@
         if (whatIsItButtons.length) {
             for (let i = 0; i < whatIsItButtons.length; i+=2) {
             whatIsItButtons[i].addEventListener('click', function(e) {
-                if (e.clientX === 0 && e.clientY === 0) {
-                  return;
-                }
                 if (firstClick === true) {
                     firstClick = false;
                     const whatIsItButtons = document.querySelectorAll('.review-categorization > mat-button-toggle-group');;
@@ -207,7 +205,7 @@
                 } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
                     suppress = handleCustomWhatIf(card, e.keyCode - 49);
                 } else if (e.keyCode === 13) { // Enter
-                    trySubmit(e.ctrlKey);
+                    trySubmit(false);
                 }
             } else if (isReject && e.keyCode === 27) { // escape
                 cancelReject();
@@ -243,7 +241,7 @@
             } else if (e.keyCode == 9) { // Tab
                 suppress = selectAllPhotosOK();
             } else if (e.keyCode === 13) { // Enter
-                trySubmit(e.ctrlKey);
+                trySubmit(false);
             }
         } else if (isDuplicate) {
             if (e.keyCode === 27) { // escape
@@ -272,7 +270,7 @@
                 } else if (e.keyCode === 9) {
                     suppress = setRating(e.shiftKey ? -1 : -2, false);
                 } else if (e.keyCode === 13) { // Enter
-                    trySubmit(e.ctrlKey);
+                    trySubmit(false);
                 } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
                     suppress = updateRevPosition(-1, true);
                 }
@@ -280,7 +278,7 @@
                 suppress = updateRevPosition(-1, true);
             } else if (e.keyCode === 39) { //Right arrow key
                 suppress = updateRevPosition(1, true);
-            } else if ((revPosition == 0) && (e.keyCode === 97 || e.keyCode === 49)) {
+            } else if ((revPosition == 0) && e.keyCode === 97 || e.keyCode === 49) {
                 suppress = setRating(0, false);
                 isReject = true;
                 modifyRejectionPanel();
@@ -289,7 +287,7 @@
             } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
                 suppress = setRating(e.keyCode - 49, true);
             } else if (e.keyCode === 13) { // Enter
-                trySubmit(e.ctrlKey);
+                trySubmit(false);
             } else if (e.keyCode == 81) { // Q
                 fullSizePhoto('app-should-be-wayspot');
             } else if (e.keyCode == 69) { // E
@@ -337,7 +335,9 @@
                     }
                 }
             } else if (rate == -1) {
-                activateOtherTextBox();
+                ratingElements[revPosition].querySelector('.review-categorization > button').click();
+                const wfinput = ratingElements[revPosition].querySelector('wf-select input');
+                if (wfinput) focusWhatIsInput(wfinput);
             }
             return true;
         } else if (whatIsButtons.length) {
@@ -348,17 +348,6 @@
             return true;
         }
         return false;
-    }
-
-    function activateOtherTextBox() {
-        let otherBtn = ratingElements[revPosition].querySelector('.review-categorization > button');
-        if (otherBtn === null) {
-            setTimeout(activateOtherTextBox, 50);
-            return;
-        }
-        otherBtn.click();
-        const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-        if (wfinput) focusWhatIsInput(wfinput);
     }
 
     function setEditOption(option) {
@@ -499,21 +488,15 @@
     }
 
     function modifyRejectionPanel() {
-        awaitElement(() => document.querySelector("app-rejection-reason-selection.ng-star-inserted"))
+        awaitElement(() => document.querySelector("app-review-rejection-abuse-modal"))
             .then((ref) => {
-                const cancelButton = document.querySelector(".mat-dialog-actions > button:nth-child(1)");
-                cancelButton.addEventListener('click', function(e) {
-                  isReject = false;
-                  rejectDepth = 0;
-                });
-          
                 const els = document.getElementsByClassName("mat-expansion-panel");
                 if (els.length > 0) {
                     const first = els[0];
                     const categories = first.children[1].children[0].children[0].children;
                     for (let i = 0; i < categories.length; i++) {
                         menuPosition[i] = {"children": {}};
-                        const text = categories[i].getElementsByTagName("mat-panel-title")[0].innerText.trim();
+                        const text = categories[i].getElementsByTagName("mat-panel-title")[0].innerText;
                         if (isNaN(text[0])) {
                             const newText = i + 1 + ". " + text;
                             categories[i].getElementsByTagName("mat-panel-title")[0].innerText = newText;
@@ -522,7 +505,7 @@
 
                         const childSelections = categories[i].getElementsByTagName("mat-list-option");
                         for (let j = 0; j < childSelections.length; j++) {
-                            const text = childSelections[j].getElementsByClassName("mat-list-text")[0].innerHTML.trim();
+                            const text = childSelections[j].getElementsByClassName("mat-list-text")[0].innerText;
                             if (isNaN(text[0])) {
                                 const newText = j + 1 + ". " + text;
                                 childSelections[j].getElementsByClassName("mat-list-text")[0].innerText = newText;
@@ -645,7 +628,12 @@
 
         ratingElements[revPosition].classList.add('kbdActiveElement');
         ratingElements[revPosition].focus();
-        ratingElements[revPosition].scrollIntoView(false);
+        if (revPosition <= 2 || revPosition >= 6) {
+            ratingElements[revPosition].scrollIntoView(false);
+        } else {
+            // Scroll the map into view, anything else is jarring
+            ratingElements[2].scrollIntoView(false);
+        }
 
         if (ratingElements[revPosition].id == 'categorization-card') {
             const wfinput = ratingElements[revPosition].querySelector('wf-select input');
@@ -672,7 +660,6 @@
             const buttonParts = submitWrapper[0].getElementsByTagName("button");
             if (finish) {
                 buttonParts[1].click();
-                document.querySelector("button.mat-focus-indicator.mat-menu-item").click()
             } else {
                 buttonParts[0].click();
             }
@@ -739,15 +726,15 @@
             }
             ${photoOptions}
 
-        .card.kbdActiveElement {
-            border-width: 1px;
-        }
-        .kbdActiveElement {
-            border-color: #df471c;
-        }
-        .dark .kbdActiveElement {
-            border-color: #20B8E3;
-        }
+	    .card.kbdActiveElement {
+		    border-width: 1px;
+	    }
+	    .kbdActiveElement {
+		    border-color: #df471c;
+	    }
+	    .dark .kbdActiveElement {
+		    border-color: #20B8E3;
+	    }
             `;
         const style = document.createElement('style');
         style.type = 'text/css';
