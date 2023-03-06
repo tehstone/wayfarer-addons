@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.11
+// @version      0.4.12
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -107,7 +107,7 @@ function init() {
             mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1];
             map = mapCtx.componentRef.map;
             map.setZoom(17);
-            map.setMapTypeId('satellite');
+            map.setMapTypeId('hybrid');
             addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
