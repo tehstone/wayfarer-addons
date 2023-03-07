@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.7.9
+// @version      0.8.0
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -149,12 +149,22 @@
                 }
             }
 
-            const dupeContainer = document.getElementsByTagName("app-check-duplicates");
-            if (dupeContainer.length > 0) {
-                const dupeImages = dupeContainer[0].getElementsByClassName("cursor-pointer");
-                if (dupeImages.length > 0) {
-                 dupeImages[0].click();
-                }
+            const dupeImages = document.querySelectorAll('app-check-duplicates img.cursor-pointer');
+            for (let i = 0; i < dupeImages.length && i < 26; i++) {
+                const dpbox = document.createElement('div');
+                dpbox.classList.add('kbdDupeImageBox');
+                dupeImages[i].parentNode.insertBefore(dpbox, dupeImages[i]);
+                const inner = document.createElement('div');
+                inner.textContent = String.fromCharCode(65 + i);
+                dpbox.appendChild(inner);
+            }
+
+            const dupeRef = document.querySelector('app-check-duplicates nia-map');
+            if (dupeRef) {
+                const dupeHelp = document.createElement('p');
+                dupeHelp.textContent = '\u2b06\ufe0f = Zoom in; \u2b07\ufe0f = Zoom out; [A-Z] = Open duplicate window';
+                dupeHelp.classList.add('kbdDupeHelp');
+                dupeRef.parentNode.insertBefore(dupeHelp, dupeRef.nextSibling);
             }
         });
     }
@@ -299,6 +309,7 @@
                 } else if (e.keyCode === 9) {
                     suppress = setRating(e.shiftKey ? -1 : -2, false);
                 } else if (e.keyCode === 13) { // Enter
+                    document.activeElement.blur();
                     trySubmit(false);
                 } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
                     suppress = updateRevPosition(-1, true);
@@ -315,29 +326,51 @@
                 suppress = setRating(e.keyCode - 97, true);
             } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
                 suppress = setRating(e.keyCode - 49, true);
+            } else if (e.keyCode == 38) { // Up arrow
+                zoomInOnMaps();
+                suppress = true;
+            } else if (e.keyCode == 40) { // Down arrow
+                zoomOutOnMaps();
+                suppress = true;
+            } else if (revPosition == 2) { // Location/duplicate check
+                if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
+                    openDuplicate(e.keyCode - 65);
+                } else if (e.keyCode == 13) {
+                    //document.activeElement.blur();
+                    console.log(document.activeElement);
+                    suppress = true;
+                    markDuplicate();
+                }
             } else if (e.keyCode === 13) { // Enter
+                document.activeElement.blur();
                 trySubmit(false);
             } else if (e.keyCode == 81) { // Q
                 fullSizePhoto('app-should-be-wayspot');
             } else if (e.keyCode == 69) { // E
                 fullSizePhoto('app-supporting-info');
-            } else if (e.keyCode == 65) {
+            } else if (e.keyCode == 65) { // A
                 showFullSupportingInfo();
-            } else if (e.keyCode == 82) { // R
-                zoomInOnMaps();
-            } else if (e.keyCode == 70) { // F
-                zoomOutOnMaps();
             } else if (e.keyCode == 27) { // Escape
-                exitStreetView();
+                //exitStreetView();
             } else if (e.keyCode == 87) { // W
                 scrollCardBody(-50);
             } else if (e.keyCode == 83) { // S
                 scrollCardBody(50);
-            } else if (e.keyCode == 68) { // Duplicate
-                markDuplicate();
+            } else if (e.keyCode == 68) { // D
+                updateRevPosition(-10, false);
+                suppress = updateRevPosition(2, false);
             }
         }
-        if (suppress) e.preventDefault();
+        if (suppress) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    }
+
+    function openDuplicate(index) {
+        const dupes = document.querySelectorAll('app-check-duplicates img.cursor-pointer');
+        if (dupes.length - 1 >= index) dupes[index].click();
     }
 
     function setRating(rate, advance){
@@ -476,7 +509,7 @@
     }
 
     function markDuplicate() {
-        const btn = document.querySelector('button[class="wf-button wf-button--primary"]');
+        const btn = document.querySelector('app-check-duplicates nia-map .agm-map-container-inner button.wf-button[wftype="primary"]');
         if (btn !== null) {
             isDuplicate = true;
             btn.click()
@@ -678,6 +711,8 @@
     }
 
     function trySubmit(finish) {
+        const dialog = document.querySelector('mat-dialog-container');
+        if (dialog) dialog.parentNode.removeChild(dialog);
         let smartButton = document.getElementById("wayfarerrtssbutton_0");
         if (smartButton === null || smartButton === undefined) {
             const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
@@ -759,6 +794,30 @@
 	    .dark .kbdActiveElement {
 		    border-color: #20B8E3;
 	    }
+        .kbdDupeImageBox {
+            width: 0;
+            z-index: 10;
+        }
+        .kbdDupeImageBox > div {
+            width: 1.7em;
+            margin: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3em;
+            border: 1px solid black;
+            pointer-events: none;
+            background: rgba(0,0,0,0.5);
+            color: #FF6D38;
+        }
+        .kbdDupeHelp {
+            color: #FF6D38;
+            font-family: monospace;
+        }
+
+        app-check-duplicates nia-map .agm-map-container-inner button.wf-button[wftype="primary"]::before {
+            content: '[Enter]';
+            font-family: monospace;
+        }
             `;
         const style = document.createElement('style');
         style.type = 'text/css';
