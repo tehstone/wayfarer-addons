@@ -128,8 +128,6 @@
         }
         @media (max-width: 1024px) {
         wf-logo {
-            position: absolute;
-            top: 0.5rem;
             left: 3.5rem;
         }
         .wfvd-display {
