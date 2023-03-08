@@ -133,6 +133,9 @@
         .wfvd-display {
             overflow: visible;
         }
+        .wfvd-display:hover span {
+            transform: none;
+}
   }
 }
         `;
