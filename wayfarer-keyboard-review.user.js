@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.0
+// @version      0.8.1
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -116,7 +116,7 @@
                         ratingElements.push(ratingElementParts[i]);
                     }
                     reviewType = 'NEW';
-                    //setTimeout(initWhatIsItClickListeners, 500);
+                    setTimeout(initWhatIsItClickListeners, 500);
                     break;
 
                 case 'APP-REVIEW-EDIT':
@@ -318,7 +318,7 @@
                 suppress = updateRevPosition(-1, true);
             } else if (e.keyCode === 39) { //Right arrow key
                 suppress = updateRevPosition(1, true);
-            } else if ((revPosition == 0) && e.keyCode === 97 || e.keyCode === 49) {
+            } else if (revPosition == 0 && (e.keyCode === 97 || e.keyCode === 49)) {
                 suppress = setRating(0, false);
                 isReject = true;
                 modifyRejectionPanel();
@@ -359,6 +359,8 @@
             } else if (e.keyCode == 68) { // D
                 updateRevPosition(-10, false);
                 suppress = updateRevPosition(2, false);
+            } else if (e.keyCode == 84) {
+                openTranslate();
             }
         }
         if (suppress) {
@@ -366,6 +368,11 @@
             e.stopPropagation();
             return false;
         }
+    }
+
+    function openTranslate() {
+        const btn = document.querySelector('.translBtnAll');
+        if (btn) btn.click();
     }
 
     function openDuplicate(index) {
@@ -383,6 +390,7 @@
             if (advance) return updateRevPosition(1, false);
         } else if (whatIsYN) {
             // What is it? (Required)
+            firstClick = false;
             whatIsYN.forEach(group => {
                 if (rate < 0 || !group.querySelector('mat-button-toggle.mat-button-toggle-checked')) {
                     group.querySelector('mat-button-toggle:nth-child(2) button').click();
@@ -817,6 +825,12 @@
         app-check-duplicates nia-map .agm-map-container-inner button.wf-button[wftype="primary"]::before {
             content: '[Enter]';
             font-family: monospace;
+        }
+        /* Translation button integration */
+        .translBtnAll::after {
+            content: '[T]';
+            font-family: monospace;
+            color: #FF6D38;
         }
             `;
         const style = document.createElement('style');
