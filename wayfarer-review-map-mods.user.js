@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.4.13
+// @version      0.5.0
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -40,6 +40,8 @@ function init() {
     let cellShade;
     let userId;
 
+    let pano = null;
+
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
      */
@@ -47,6 +49,16 @@ function init() {
     XMLHttpRequest.prototype.open = function (method, url) {
         if (url == '/api/v1/vault/review' && method == 'GET') {
             this.addEventListener('load', parseCandidate, false);
+        } else if (url == '/api/v1/vault/review' && method == 'POST') {
+            if (pano) {
+                // Street View panorama must be unloaded to avoid it remaining alive in the background
+                // after each review is submitted. The additional photospheres pile up in browser memory
+                // and either slow down the browser, or crash the tab entirely. This was the root cause
+                // behind why reviews would slow down and eventually crash Firefox before Street View was
+                // removed by default in Wayfarer 5.2.
+                pano.setVisible(false);
+                pano = null;
+            }
         }
         open.apply(this, arguments);
         };
@@ -106,9 +118,24 @@ function init() {
             gmap = document.querySelector('#check-duplicates-card nia-map');
             mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1];
             map = mapCtx.componentRef.map;
+            const ll = { lat: candidate.lat, lng: candidate.lng };
             map.setZoom(17);
-            map.setCenter({ lat: candidate.lat, lng: candidate.lng });
+            map.setCenter(ll);
             map.setMapTypeId('hybrid');
+            const svClient = new google.maps.StreetViewService;
+            svClient.getPanoramaByLocation(ll, 50, function(result, status) {
+                if (status === "OK") {
+                    const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
+                    const svLocation = result.location.latLng;
+                    const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
+                    pano = map.getStreetView();
+                    pano.setPosition(svLocation);
+                    pano.setPov({ heading, pitch: 0, zoom: 1 });
+                    pano.setMotionTracking(false);
+                    pano.setVisible(true);
+                    console.log(pano);
+                }
+            });
             addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
