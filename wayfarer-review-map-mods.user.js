@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.5.3
+// @version      0.5.4
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -131,6 +131,11 @@ function init() {
             map.setZoom(17);
             map.setCenter(ll);
             map.setMapTypeId('hybrid');
+            let sv = map.getStreetView();
+            sv.setOptions({
+                motionTracking: false,
+                imageDateControl: true
+            });
             const svClient = new google.maps.StreetViewService;
             svClient.getPanoramaByLocation(ll, 50, function(result, status) {
                 if (status === "OK") {
@@ -138,14 +143,10 @@ function init() {
                     const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
                     const svLocation = result.location.latLng;
                     const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
-                    pano = map.getStreetView();
+                    pano = sv;
                     pano.setPosition(svLocation);
                     pano.setPov({ heading, pitch: 0, zoom: 1 });
-                    pano.setOptions({
-                        motionTracking: false,
-                        imageDateControl: true,
-                        visible: true
-                    });
+                    pano.setVisible(true);
                 }
             });
             addNearbyTooltips();
