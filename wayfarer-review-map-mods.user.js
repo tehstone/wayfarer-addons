@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.5.2
+// @version      0.5.3
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -41,7 +41,6 @@ function init() {
     let userId;
 
     let pano = null;
-    let svDetails = null;
     let listenSVFocus = false;
 
     /**
@@ -60,10 +59,6 @@ function init() {
                 // removed by default in Wayfarer 5.2.
                 pano.setVisible(false);
                 pano = null;
-            }
-            if (svDetails) {
-                svDetails.parentNode.removeChild(svDetails);
-                svDetails = null;
             }
         }
         open.apply(this, arguments);
@@ -151,17 +146,6 @@ function init() {
                         imageDateControl: true,
                         visible: true
                     });
-
-                    svDetails = document.createElement('p');
-                    svDetails.style.marginBottom = '10px';
-                    const svBold = document.createElement('span');
-                    svBold.style.fontWeight = 'bold';
-                    svBold.textContent = 'Street View date: ';
-                    const svDate = document.createElement('span');
-                    svDate.textContent = result.imageDate;
-                    svDetails.appendChild(svBold);
-                    svDetails.appendChild(svDate);
-                    gmap.parentNode.insertBefore(svDetails, gmap);
                 }
             });
             addNearbyTooltips();
