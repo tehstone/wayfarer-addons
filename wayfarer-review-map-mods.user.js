@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.5.1
+// @version      0.5.4
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -41,7 +41,7 @@ function init() {
     let userId;
 
     let pano = null;
-    let svDetails = null;
+    let listenSVFocus = false;
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -60,14 +60,18 @@ function init() {
                 pano.setVisible(false);
                 pano = null;
             }
-            if (svDetails) {
-                svDetails.parentNode.removeChild(svDetails);
-                svDetails = null;
-            }
         }
         open.apply(this, arguments);
         };
     })(XMLHttpRequest.prototype.open);
+
+    document.addEventListener('focusin', e => {
+        // Prevent scroll to Street View on load (if applicable)
+        if (listenSVFocus && document.activeElement.classList.contains('mapsConsumerUiSceneInternalCoreScene__root')) {
+            listenSVFocus = false;
+            document.querySelector('mat-sidenav-content').scrollTo(0, 0);
+        }
+    });
 
     function parseCandidate(e) {
         tryNumber = 10;
@@ -127,27 +131,22 @@ function init() {
             map.setZoom(17);
             map.setCenter(ll);
             map.setMapTypeId('hybrid');
+            let sv = map.getStreetView();
+            sv.setOptions({
+                motionTracking: false,
+                imageDateControl: true
+            });
             const svClient = new google.maps.StreetViewService;
             svClient.getPanoramaByLocation(ll, 50, function(result, status) {
                 if (status === "OK") {
+                    listenSVFocus = true;
                     const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
                     const svLocation = result.location.latLng;
                     const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
-                    pano = map.getStreetView();
+                    pano = sv;
                     pano.setPosition(svLocation);
                     pano.setPov({ heading, pitch: 0, zoom: 1 });
-                    pano.setMotionTracking(false);
                     pano.setVisible(true);
-                    svDetails = document.createElement('p');
-                    svDetails.style.marginBottom = '10px';
-                    const svBold = document.createElement('span');
-                    svBold.style.fontWeight = 'bold';
-                    svBold.textContent = 'Street View date: ';
-                    const svDate = document.createElement('span');
-                    svDate.textContent = result.imageDate;
-                    svDetails.appendChild(svBold);
-                    svDetails.appendChild(svDate);
-                    gmap.parentNode.insertBefore(svDetails, gmap);
                 }
             });
             addNearbyTooltips();
