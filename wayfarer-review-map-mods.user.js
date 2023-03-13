@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.5.1
+// @version      0.5.2
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -42,6 +42,7 @@ function init() {
 
     let pano = null;
     let svDetails = null;
+    let listenSVFocus = false;
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -68,6 +69,14 @@ function init() {
         open.apply(this, arguments);
         };
     })(XMLHttpRequest.prototype.open);
+
+    document.addEventListener('focusin', e => {
+        // Prevent scroll to Street View on load (if applicable)
+        if (listenSVFocus && document.activeElement.classList.contains('mapsConsumerUiSceneInternalCoreScene__root')) {
+            listenSVFocus = false;
+            document.querySelector('mat-sidenav-content').scrollTo(0, 0);
+        }
+    });
 
     function parseCandidate(e) {
         tryNumber = 10;
@@ -130,14 +139,19 @@ function init() {
             const svClient = new google.maps.StreetViewService;
             svClient.getPanoramaByLocation(ll, 50, function(result, status) {
                 if (status === "OK") {
+                    listenSVFocus = true;
                     const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
                     const svLocation = result.location.latLng;
                     const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
                     pano = map.getStreetView();
                     pano.setPosition(svLocation);
                     pano.setPov({ heading, pitch: 0, zoom: 1 });
-                    pano.setMotionTracking(false);
-                    pano.setVisible(true);
+                    pano.setOptions({
+                        motionTracking: false,
+                        imageDateControl: true,
+                        visible: true
+                    });
+
                     svDetails = document.createElement('p');
                     svDetails.style.marginBottom = '10px';
                     const svBold = document.createElement('span');
