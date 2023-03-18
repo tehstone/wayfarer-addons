@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.1
+// @version      0.8.2
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -244,7 +244,7 @@
                 } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
                     suppress = handleCustomWhatIf(card, e.keyCode - 49);
                 } else if (e.keyCode === 13) { // Enter
-                    trySubmit(false);
+                    trySubmit(e.ctrlKey);
                 }
             } else if (isReject && e.keyCode === 27) { // escape
                 cancelReject();
@@ -280,7 +280,7 @@
             } else if (e.keyCode == 9) { // Tab
                 suppress = selectAllPhotosOK();
             } else if (e.keyCode === 13) { // Enter
-                trySubmit(false);
+                trySubmit(e.ctrlKey);
             }
         } else if (isDuplicate) {
             if (e.keyCode === 27) { // escape
@@ -310,7 +310,7 @@
                     suppress = setRating(e.shiftKey ? -1 : -2, false);
                 } else if (e.keyCode === 13) { // Enter
                     document.activeElement.blur();
-                    trySubmit(false);
+                    trySubmit(e.ctrlKey);
                 } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
                     suppress = updateRevPosition(-1, true);
                 }
@@ -343,7 +343,7 @@
                 }
             } else if (e.keyCode === 13) { // Enter
                 document.activeElement.blur();
-                trySubmit(false);
+                trySubmit(e.ctrlKey);
             } else if (e.keyCode == 81) { // Q
                 fullSizePhoto('app-should-be-wayspot');
             } else if (e.keyCode == 69) { // E
@@ -727,6 +727,7 @@
             const buttonParts = submitWrapper[0].getElementsByTagName("button");
             if (finish) {
                 buttonParts[1].click();
+		document.querySelector("button.mat-focus-indicator.mat-menu-item").click();
             } else {
                 buttonParts[0].click();
             }
