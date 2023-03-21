@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.2
+// @version      0.8.3
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -351,7 +351,7 @@
             } else if (e.keyCode == 65) { // A
                 showFullSupportingInfo();
             } else if (e.keyCode == 27) { // Escape
-                //exitStreetView();
+                exitStreetView();
             } else if (e.keyCode == 87) { // W
                 scrollCardBody(-50);
             } else if (e.keyCode == 83) { // S
