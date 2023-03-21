@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.7.0
+// @version      0.7.1
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -35,6 +35,7 @@ function init() {
     let mapCtx;
     let overlay;
     let closeCircle;
+    let moveCircle;
     let cellShade;
     let userId;
 
@@ -181,8 +182,10 @@ function init() {
             cellColorTwo
         } = getDrawSettings();
 
-        addS2Overlay(map, cellSize, cellColor, secondGridEnabled, cellSizeTwo, cellColorTwo);
-        addS2Highlight(map, candidate['lat'], candidate['lng']);
+        if (isDisplayGridEnabled()) {
+            addS2Overlay(cellSize, cellColor, secondGridEnabled, cellSizeTwo, cellColorTwo);
+            addS2HighlightAtCoords(candidate['lat'], candidate['lng']);
+        }
         locationChangeBtnListener();
         locationResetChangeBtnListener();
         /*
@@ -196,8 +199,9 @@ function init() {
         const markerone = mapCtx.markers.default.markers[0];
         const locationChangeBtn = document.querySelector("#check-duplicates-card nia-map ~ div button");
         if (locationChangeBtn) {
-            drawCloseCircle();
+            
             locationChangeBtn.addEventListener('click', function() {
+                drawCloseCircle();
                 drawMoveCircle();
                 addListenerToMarker(true);
             }, true);
@@ -212,8 +216,25 @@ function init() {
         if (resetButton) {
             resetButton.onclick = function() {
                 map.setZoom(17);
+                drawCloseCircle();
+                drawMoveCircle();
+                if (isDisplayGridEnabled()) {
+                    addS2Highlight();
+                }
+                locationChangeBtnListener();
+                locationResetChangeBtnListener();
             }
         }
+    }
+
+    function isDisplayGridEnabled() {
+        userId = getUserId();
+        let displayGrid = localStorage["wfmm_grid_enabled_" + userId];
+        if (displayGrid === undefined || displayGrid === null || displayGrid === "false" || displayGrid === "") {
+            displayGrid = false;
+            localStorage["wfmm_grid_enabled_" + userId] = displayGrid;
+        }
+        return displayGrid === "true";
     }
 
     function addListenerToMarker(firstTime) {
@@ -228,8 +249,10 @@ function init() {
                 if (t) {
                     if (t.lat) {
                         drawCloseCircleAtCoords(t['lat'], t['lng']);
-                        const map = mapCtx.componentRef.map;
-                        addS2Highlight(map, t['lat'], t['lng']);
+                        drawMoveCircleAtCoords(t['lat'], t['lng']);
+                        if (isDisplayGridEnabled()) {
+                            addS2HighlightAtCoords(t['lat'], t['lng']);
+                        }
                     }
                 }
                 _markerOnDrag(t);
@@ -350,6 +373,30 @@ function init() {
                 selection = 'satellite';
                 localStorage["wfmm_map_display" + userId] = selection;
             }
+
+            let displayGridInput = document.createElement('input');
+            displayGridInput.setAttribute("type", "checkbox");
+            let displayGridEnabled = localStorage["wfmm_grid_enabled_" + userId];
+            if (displayGridEnabled === undefined || displayGridEnabled === null || displayGridEnabled === "") {
+                displayGridEnabled = false;
+            }
+            displayGridInput.checked = displayGridEnabled === "true";
+            displayGridInput.addEventListener('change', function() {
+                displayGridEnabled = this.checked;
+                localStorage["wfmm_grid_enabled_" + userId] = displayGridEnabled;
+            });
+            displayGridInput.id = "wayfarermmgridenabled";
+            displayGridInput.classList.add('wayfarercc_input');
+
+            const displayGridLabel = document.createElement("label");
+            displayGridLabel.innerText = "Draw S2 Grid Cells:";
+            displayGridLabel.setAttribute("for", "wayfarermmgridenabled");
+            displayGridLabel.classList.add('wayfareres_settings_label');
+
+            const displayCellsLabel = document.createElement("label");
+            displayCellsLabel.innerText = "Review Map Cell Size:";
+            displayCellsLabel.setAttribute("for", "wayfarermmcellsizeone");
+            displayCellsLabel.classList.add('wayfareres_settings_label');
 
             let cellSizeInput = document.createElement('input');
             cellSizeInput.setAttribute("type", "number");
@@ -482,7 +529,9 @@ function init() {
             selectLabel.setAttribute("for", "wayfarermmmapdisplay");
             selectLabel.classList.add('wayfareres_settings_label');
 
-
+            settingsDiv.appendChild(document.createElement('br'));
+            settingsDiv.appendChild(displayGridLabel);
+            settingsDiv.appendChild(displayGridInput);
             settingsDiv.appendChild(document.createElement('br'));
             settingsDiv.appendChild(cellSizeLabel);
             settingsDiv.appendChild(cellSizeInput);
@@ -624,7 +673,7 @@ function init() {
         };
     }
 
-    function addS2Overlay(map, gridLevel, color, secondGridEnabled, gridLevelTwo, colorTwo) {
+    function addS2Overlay(gridLevel, color, secondGridEnabled, gridLevelTwo, colorTwo) {
         overlay = new S2Overlay();
 
         if (secondGridEnabled) {
@@ -659,12 +708,32 @@ function init() {
     }
 
     function drawMoveCircle() {
+        if (moveCircle) {
+            moveCircle.setMap(null)
+        }
         const {
             lat,
             lng
         } = candidate;
         const latLng = new google.maps.LatLng(lat, lng);
-        new google.maps.Circle({
+        moveCircle = new google.maps.Circle({
+            map: map,
+            center: latLng,
+            radius: 2,
+            strokeColor: 'red',
+            fillColor: 'red',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillOpacity: 0.2
+        });
+    }
+
+    function drawMoveCircleAtCoords(lat, lng) {
+        if (moveCircle) {
+            moveCircle.setMap(null)
+        }
+        const latLng = new google.maps.LatLng(lat, lng);
+        moveCircle = new google.maps.Circle({
             map: map,
             center: latLng,
             radius: 2,
@@ -714,7 +783,38 @@ function init() {
         });
     }
 
-    function addS2Highlight(map, lat, lng) {
+    function addS2Highlight() {
+        if (cellShade) {
+            cellShade.setMap(null)
+        }
+
+        const {
+            lat,
+            lng
+        } = candidate;
+        const {
+            cellSize
+        } = getDrawSettings();
+        let cell = window.S2.S2Cell.FromLatLng({
+            lat: lat,
+            lng: lng
+        }, cellSize);
+
+        let cellCorners = cell.getCornerLatLngs();
+        cellCorners[4] = cellCorners[0]; //Loop it
+
+        cellShade = new google.maps.Polygon({
+            path: cellCorners,
+            geodesic: true,
+            fillColor: '#000',
+            fillOpacity: 0.2,
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            map: map
+        });
+    }
+
+    function addS2HighlightAtCoords(lat, lng) {
         if (cellShade) {
             cellShade.setMap(null)
         }
