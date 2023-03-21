@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.4.1
+// @version      0.4.2
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -133,13 +133,37 @@
     function addSettings() {
         awaitElement(() => document.querySelector("body > app-root > app-wayfarer > div > mat-sidenav-container > mat-sidenav-content > div > app-review > div.flex.justify-center.mt-8.ng-star-inserted"))
             .then((ref) => {
-                if (document.getElementById("wayfarerrtsettings") !== null) {
-                  return;
-                }
-
                 userId = getUserId();
-                const settingsDiv = document.createElement('div');
-                settingsDiv.id = "wayfarerrtsettings";
+
+                let settingsDiv = document.getElementById("wayfarerrtsettings");
+                if (!settingsDiv) {
+                    settingsDiv = document.createElement('div');
+                    settingsDiv.id = "wayfarerrtsettings";
+                    settingsDiv.classList.add('wayfarerrh__visible');
+
+                    const settingsContainer = document.createElement('div');
+                    settingsContainer.setAttribute('class', 'wrap-collabsible')
+                    settingsContainer.id = "settingsContainer";
+
+                    const collapsibleInput = document.createElement("input");
+                    collapsibleInput.id = "collapsedSettings";
+                    collapsibleInput.setAttribute("class", "toggle");
+                    collapsibleInput.type = "checkbox";
+
+                    const collapsibleLabel = document.createElement("label");
+                    collapsibleLabel.setAttribute("class", "lbl-toggle-es");
+                    collapsibleLabel.innerText = "Add-on Settings";
+                    collapsibleLabel.setAttribute("for", "collapsedSettings");
+
+                    const collapsibleContent = document.createElement("div");
+                    collapsibleContent.setAttribute("class", "collapsible-content-es");
+
+                    collapsibleContent.appendChild(settingsDiv);
+                    settingsContainer.appendChild(collapsibleInput);
+                    settingsContainer.appendChild(collapsibleLabel);
+                    settingsContainer.appendChild(collapsibleContent);
+                    insertAfter(settingsContainer, ref);
+                }
 
                 let smartSubmitEnabledInput = document.createElement('input');
                 smartSubmitEnabledInput.setAttribute("type", "checkbox");
@@ -217,30 +241,6 @@
                 settingsDiv.appendChild(maxDelayLabel);
                 settingsDiv.appendChild(maxDelayInput);
                 settingsDiv.classList.add('wayfarerrh__visible');
-
-                const settingsContainer = document.createElement('div');
-                settingsContainer.setAttribute('class', 'wrap-collabsible')
-                settingsContainer.id = "nomStats";
-
-                const collapsibleInput = document.createElement("input");
-                collapsibleInput.id = "collapsed-settings";
-                collapsibleInput.setAttribute("class", "toggle");
-                collapsibleInput.type = "checkbox";
-
-                const collapsibleLabel = document.createElement("label");
-                collapsibleLabel.setAttribute("class", "lbl-toggle-es");
-                collapsibleLabel.innerText = "Add-on Settings";
-                collapsibleLabel.setAttribute("for", "collapsed-settings");
-
-                const collapsibleContent = document.createElement("div");
-                collapsibleContent.setAttribute("class", "collapsible-content-es");
-
-                collapsibleContent.appendChild(settingsDiv);
-                settingsContainer.appendChild(collapsibleInput);
-                settingsContainer.appendChild(collapsibleLabel);
-                settingsContainer.appendChild(collapsibleContent);
-
-                insertAfter(settingsContainer, ref)
             });
     }
 
