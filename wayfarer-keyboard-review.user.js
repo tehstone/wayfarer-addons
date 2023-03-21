@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.1
+// @version      0.8.2
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2022 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -244,7 +244,7 @@
                 } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
                     suppress = handleCustomWhatIf(card, e.keyCode - 49);
                 } else if (e.keyCode === 13) { // Enter
-                    trySubmit(false);
+                    trySubmit(e.ctrlKey);
                 }
             } else if (isReject && e.keyCode === 27) { // escape
                 cancelReject();
@@ -280,7 +280,7 @@
             } else if (e.keyCode == 9) { // Tab
                 suppress = selectAllPhotosOK();
             } else if (e.keyCode === 13) { // Enter
-                trySubmit(false);
+                trySubmit(e.ctrlKey);
             }
         } else if (isDuplicate) {
             if (e.keyCode === 27) { // escape
@@ -310,7 +310,7 @@
                     suppress = setRating(e.shiftKey ? -1 : -2, false);
                 } else if (e.keyCode === 13) { // Enter
                     document.activeElement.blur();
-                    trySubmit(false);
+                    trySubmit(e.ctrlKey);
                 } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
                     suppress = updateRevPosition(-1, true);
                 }
@@ -397,6 +397,10 @@
                 }
             });
             if (rate >= 0 && rate <= 5) {
+                if (rate >= whatIsYN.length) {
+                    setTimeout(activateWhatIsOther, 50);
+                    return true;
+                }
                 const opts = whatIsYN[rate].querySelectorAll('mat-button-toggle');
                 for (let i = 0; i < opts.length; i++) {
                     if (!opts[i].classList.contains('mat-button-toggle-checked')) {
@@ -405,19 +409,25 @@
                     }
                 }
             } else if (rate == -1) {
-                ratingElements[revPosition].querySelector('.review-categorization > button').click();
-                const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-                if (wfinput) focusWhatIsInput(wfinput);
+                setTimeout(activateWhatIsOther, 50);
+                return true;
             }
             return true;
         } else if (whatIsButtons.length) {
-            // What is it?
-            whatIsButtons[rate].click();
-            const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-            if (wfinput) focusWhatIsInput(wfinput);
+            setTimeout(activateWhatIsOther, 50);
             return true;
         }
         return false;
+    }
+
+    function activateWhatIsOther() {
+        const wfButtons = ratingElements[revPosition].getElementsByTagName("button");
+        const otherButton = wfButtons[wfButtons.length - 1];
+        if (otherButton) {
+            otherButton.click();
+            const wfinput = ratingElements[revPosition].querySelector('wf-select input');
+            if (wfinput) focusWhatIsInput(wfinput);
+        }
     }
 
     function setEditOption(option) {
@@ -560,6 +570,11 @@
     function modifyRejectionPanel() {
         awaitElement(() => document.querySelector("app-review-rejection-abuse-modal"))
             .then((ref) => {
+                const cancelButton = document.querySelector(".mat-dialog-actions > button:nth-child(1)");
+                cancelButton.addEventListener('click', function(e) {
+                  isReject = false;
+                  rejectDepth = 0;
+                });
                 const els = document.getElementsByClassName("mat-expansion-panel");
                 if (els.length > 0) {
                     const first = els[0];
@@ -722,11 +737,12 @@
         const dialog = document.querySelector('mat-dialog-container');
         if (dialog) dialog.parentNode.removeChild(dialog);
         let smartButton = document.getElementById("wayfarerrtssbutton_0");
-        if (smartButton === null || smartButton === undefined) {
+        if (smartButton !== null && smartButton !== undefined) {
             const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
             const buttonParts = submitWrapper[0].getElementsByTagName("button");
-            if (finish) {
-                buttonParts[1].click();
+            if (finish && buttonParts.length >= 3) {
+                buttonParts[2].click();
+                document.querySelector("button.mat-focus-indicator.mat-menu-item").click();
             } else {
                 buttonParts[0].click();
             }
@@ -793,15 +809,15 @@
             }
             ${photoOptions}
 
-	    .card.kbdActiveElement {
-		    border-width: 1px;
-	    }
-	    .kbdActiveElement {
-		    border-color: #df471c;
-	    }
-	    .dark .kbdActiveElement {
-		    border-color: #20B8E3;
-	    }
+        .card.kbdActiveElement {
+            border-width: 1px;
+        }
+        .kbdActiveElement {
+            border-color: #df471c;
+        }
+        .dark .kbdActiveElement {
+            border-color: #20B8E3;
+        }
         .kbdDupeImageBox {
             width: 0;
             z-index: 10;
