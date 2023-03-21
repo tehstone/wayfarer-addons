@@ -299,7 +299,11 @@
                 backReject();
             }
         } else {
-            if (revPosition === 6) { // what is it? menu
+            if (e.keyCode == 81) { // Q
+                fullSizePhoto('app-should-be-wayspot');
+            } else if (e.keyCode == 69) { // E
+                fullSizePhoto('app-supporting-info');
+            } else if (revPosition === 6) { // what is it? menu
                 if (e.keyCode >= 97 && e.keyCode <= 102) { // 1-6 Num pad
                     suppress = setRating(e.keyCode - 97, true);
                     document.activeElement.blur();
@@ -344,10 +348,6 @@
             } else if (e.keyCode === 13) { // Enter
                 document.activeElement.blur();
                 trySubmit(false);
-            } else if (e.keyCode == 81) { // Q
-                fullSizePhoto('app-should-be-wayspot');
-            } else if (e.keyCode == 69) { // E
-                fullSizePhoto('app-supporting-info');
             } else if (e.keyCode == 65) { // A
                 showFullSupportingInfo();
             } else if (e.keyCode == 27) { // Escape
