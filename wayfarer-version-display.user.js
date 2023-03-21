@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Version Display
-// @version      0.1.3
+// @version      0.1.4
 // @description  Displays the current Wayfarer version.
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-version-display.user.js
@@ -83,7 +83,7 @@
                 }
             }
         } catch (err) {
-            console.err(err);
+            console.error(err);
         }
     }
 

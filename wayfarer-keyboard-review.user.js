@@ -500,7 +500,7 @@
 
     function showFullSupportingInfo() {
         if (document.getElementsByTagName('mat-dialog-container').length) return;
-        const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200 .cursor-pointer');
+        const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200');
         if (supportingText) supportingText.click();
     }
 
@@ -736,16 +736,19 @@
     function trySubmit(finish) {
         const dialog = document.querySelector('mat-dialog-container');
         if (dialog) dialog.parentNode.removeChild(dialog);
-        let smartButton = document.getElementById("wayfarerrtssbutton_0");
-        if (smartButton !== null && smartButton !== undefined) {
-            const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
-            const buttonParts = submitWrapper[0].getElementsByTagName("button");
+        const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
+        const buttonParts = submitWrapper[0].getElementsByTagName("button");
+        if (finish) {
             if (finish && buttonParts.length >= 3) {
                 buttonParts[2].click();
                 document.querySelector("button.mat-focus-indicator.mat-menu-item").click();
-            } else {
-                buttonParts[0].click();
             }
+            return;
+        }
+        let smartButton = document.getElementById("wayfarerrtssbutton_0");
+        if (smartButton === null && smartButton === undefined) {
+            const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
+            buttonParts[0].click();
         } else {
             smartButton.click();
         }
