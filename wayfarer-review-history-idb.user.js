@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History IDB
-// @version      0.3.0
+// @version      0.3.1
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -192,46 +192,51 @@
 
         const importBtn = document.createElement('button');
         importBtn.textContent = 'Import';
-        importBtn.addEventListener('click', () => getIDBInstance().then(db => {
+        importBtn.addEventListener('click', () => {
             if (confirm('Importing will overwrite all currently stored data, are you sure you want to clear your currently saved review history?')) {
+            getIDBInstance().then(db => {
                 let data;
                 let input = document.createElement('input');
                 input.type = 'file';
                 input.onchange = (event) => {
                     const reader = new FileReader();
 
-                    reader.onload = function(event) {
-                        data = JSON.parse(event.target.result);
+                   reader.onload = function(event) {
                         const clearReviewHistory = new Promise((resolve, reject) => {
                             const tx = db.transaction([OBJECT_STORE_NAME], 'readwrite');
                             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
                             objectStore.clear();
                             let imported = 0;
                             let failed = 0;
-                            for (let i = 0; i < data.length; i++) {
-                                let found = false;
-                                if (!("id" in data[i])) {
-                                    if ("review" in data[i]) {
-                                        if (data[i].review !== false && data[i].review != "skipped") {
-                                            if ("id" in data[i].review) {
-                                                data[i].id = data[i].review.id;
-                                                objectStore.put(data[i]);
-                                                found = true;
-                                                imported += 1;
+                            try {
+                                data = JSON.parse(event.target.result);
+                                for (let i = 0; i < data.length; i++) {
+                                    let found = false;
+                                    if (!("id" in data[i])) {
+                                        if ("review" in data[i]) {
+                                            if (data[i].review !== false && data[i].review != "skipped") {
+                                                if ("id" in data[i].review) {
+                                                    data[i].id = data[i].review.id;
+                                                    objectStore.put(data[i]);
+                                                    found = true;
+                                                    imported += 1;
+                                                }
                                             }
                                         }
+                                    } else {
+                                        objectStore.put(data[i]);
+                                        found = true;
+                                        imported += 1;
                                     }
-                                } else {
-                                    objectStore.put(data[i]);
-                                    found = true;
-                                    imported += 1;
+                                    if (!found) {
+                                        failed += 1
+                                    }
                                 }
-                                if (!found) {
-                                    failed += 1
-                                }
+                            } catch (error) {
+                                tx.abort();
+                                reject(error);
                             }
                             tx.commit();
-                            db.close();
                             resolve([imported, failed]);
                         });
 
@@ -240,7 +245,12 @@
                             if (result[1] > 0) {
                                 alertText += `\nFailed to import ${result[1]} item(s).`;
                             }
+                            db.close();
                             alert(alertText);
+                            location.reload();
+                        }).catch((error) => {
+                            db.close();
+                            alert(`Failed to import data with error:\n${error}`);
                             location.reload();
                         })
                     }
@@ -248,7 +258,7 @@
                 }
                 input.click();
             }
-        }));
+        )}});
 
         const clearBtn = document.createElement('button');
         clearBtn.textContent = 'Clear';
