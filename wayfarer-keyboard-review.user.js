@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.3
+// @version      0.8.4
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -359,6 +359,7 @@
             } else if (e.keyCode == 68) { // D
                 updateRevPosition(-10, false);
                 suppress = updateRevPosition(2, false);
+                exitStreetView();
             } else if (e.keyCode == 84) {
                 openTranslate();
             }
