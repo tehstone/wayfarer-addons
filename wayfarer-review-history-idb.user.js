@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History IDB
-// @version      0.2.0
+// @version      0.3.0
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -189,6 +189,67 @@
                 URL.revokeObjectURL(url);
             };
         }));
+
+        const importBtn = document.createElement('button');
+        importBtn.textContent = 'Import';
+        importBtn.addEventListener('click', () => getIDBInstance().then(db => {
+            if (confirm('Importing will overwrite all currently stored data, are you sure you want to clear your currently saved review history?')) {
+                let data;
+                let input = document.createElement('input');
+                input.type = 'file';
+                input.onchange = (event) => {
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        data = JSON.parse(event.target.result);
+                        const clearReviewHistory = new Promise((resolve, reject) => {
+                            const tx = db.transaction([OBJECT_STORE_NAME], 'readwrite');
+                            const objectStore = tx.objectStore(OBJECT_STORE_NAME);
+                            objectStore.clear();
+                            let imported = 0;
+                            let failed = 0;
+                            for (let i = 0; i < data.length; i++) {
+                                let found = false;
+                                if (!("id" in data[i])) {
+                                    if ("review" in data[i]) {
+                                        if (data[i].review !== false && data[i].review != "skipped") {
+                                            if ("id" in data[i].review) {
+                                                data[i].id = data[i].review.id;
+                                                objectStore.put(data[i]);
+                                                found = true;
+                                                imported += 1;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    objectStore.put(data[i]);
+                                    found = true;
+                                    imported += 1;
+                                }
+                                if (!found) {
+                                    failed += 1
+                                }
+                            }
+                            tx.commit();
+                            db.close();
+                            resolve([imported, failed]);
+                        });
+
+                        clearReviewHistory.then((result) => {
+                            let alertText = `Cleared all saved review history.\nImported ${result[0]} review history item(s).`;
+                            if (result[1] > 0) {
+                                alertText += `\nFailed to import ${result[1]} item(s).`;
+                            }
+                            alert(alertText);
+                            location.reload();
+                        })
+                    }
+                    reader.readAsText(event.target.files[0]);
+                }
+                input.click();
+            }
+        }));
+
         const clearBtn = document.createElement('button');
         clearBtn.textContent = 'Clear';
         clearBtn.addEventListener('click', () => getIDBInstance().then(db => {
@@ -198,12 +259,15 @@
                 const objectStore = tx.objectStore(OBJECT_STORE_NAME);
                 const clearReviewHistory = objectStore.clear();
                 clearReviewHistory.onsuccess = () => {
-                    alert("Cleared all saved review history.")
+                    alert("Cleared all saved review history.");
+                    location.reload();
                 }
             }
         }));
+
         outer.appendChild(label);
         outer.appendChild(exportBtn);
+        outer.appendChild(importBtn);
         outer.appendChild(clearBtn);
         ref.parentNode.appendChild(outer);
     });

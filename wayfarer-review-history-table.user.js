@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.4
+// @version      0.1.5
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -116,63 +116,63 @@
           deferRender: true,
           order: [[0, 'desc']],
           columns: [
-            { 
-            	data: 'ts',
-            	defaultContent: '',
+            {
+                data: 'ts',
+                defaultContent: '',
                 title: "Date",
                 width: "7%",
-          	    render: (ts, type) => {
+                render: (ts, type) => {
                     if (type === "display") {
                         return getFormattedDate(ts);
                     }
                     return ts;
-                }                
+                }
             },
-	        { 
-	        	data: 'title',
-	            title: 'Title',
-	            width: "16%"
-	        },
-	        { 
-	        	data: 'description',
-	            title: 'Description',
-	            defaultContent: '',
-	            width: "47%"
-	        },
-	        {
-	            data: 'review',
-	            defaultContent: '',
-	            title: 'Review',
-	            width: "15%",
-	            render: (...review) => {
-  		            if (review[0] !== null && review[0] !== undefined) {
-		                if (review[0].quality !== undefined ) {
-	    	                return `${review[0].quality}`;
-	        	        } else if (review[0].rejectReason != undefined) {
-	        	        	return l10n[`reject.reason.${review[0].rejectReason.toLowerCase()}.short`];
-	                	} else if (review[0].duplicate != undefined) {
-		                	return "Duplicate";
-	                	} else {
-		                	console.log(review[0]);
-	                	}
-		        	} else {
-			            return 'Skipped/Timed Out';
-		        	}
-	            }
-	        },
-	        { 
-	        	data: 'review',
-	            defaultContent: '',
-	            title: 'Location',
-	            width: "15%",
-	            render: (...review) => {
-	          	    return `<a href="https://intel.ingress.com/?ll=${review[2].lat},${review[2].lng}&z=16" "target="_blank">${review[2].lat},${review[2].lng}</a>`;
-	            }
+            {
+                data: 'title',
+                title: 'Title',
+                width: "16%"
             },
-	        { 
-	        	data: 'id',
-	          	visible: false 
-	        },
+            {
+                data: 'description',
+                title: 'Description',
+                defaultContent: '',
+                width: "47%"
+            },
+            {
+                data: 'review',
+                defaultContent: '',
+                title: 'Review',
+                width: "15%",
+                render: (...review) => {
+                    if (review[0] !== null && review[0] !== undefined) {
+                        if (review[0].quality !== undefined ) {
+                            return `${review[0].quality}`;
+                        } else if (review[0].rejectReason != undefined) {
+                            return l10n[`reject.reason.${review[0].rejectReason.toLowerCase()}.short`];
+                        } else if (review[0].duplicate != undefined) {
+                            return "Duplicate";
+                        } else {
+                            console.log(review[0]);
+                        }
+                    } else {
+                        return 'Skipped/Timed Out';
+                    }
+                }
+            },
+            {
+                data: 'review',
+                defaultContent: '',
+                title: 'Location',
+                width: "15%",
+                render: (...review) => {
+                    return `<a href="https://intel.ingress.com/?ll=${review[2].lat},${review[2].lng}&z=16" "target="_blank">${review[2].lat},${review[2].lng}</a>`;
+                }
+            },
+            {
+                data: 'id',
+                visible: false
+            },
           ],
       });
 
@@ -243,7 +243,7 @@
                     ${getDD(
                     "Location",
                     getIntelLink(lat, lng, `Open in Intel`)
-                	)}
+                    )}
                     ${getDD("Review Date", getFormattedDate(ts, true))}
                   </dl>
                   ${renderScores(review)}
@@ -264,7 +264,7 @@
 
     const getFormattedDate = (ts, fullDate) => {
       try {
-          const date = new Date(ts);
+          const date = new Date(Number(ts));
 
           if (fullDate) {
               return date.toString();
@@ -272,13 +272,13 @@
 
           return new Intl.DateTimeFormat("default", dateSettings).format(date);
       } catch(err) {
-        console.log(err);
+        console.log(`failed to parse date: ${ts}`);
         return ts;
       }
     };
 
     const getTarget = (target) => {
-    	return "_blank";
+        return "_blank";
     };
 
     const getIntelLink = (lat, lng, content) =>
@@ -415,9 +415,9 @@
 
     (() => {
       const css = `
-      		  bbold {
-      		  	font-weight: bold;
-      		  }
+              bbold {
+                font-weight: bold;
+              }
               table.dataTable {
               clear: both;
               margin-top: 6px !important;
