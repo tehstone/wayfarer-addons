@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.6.0
+// @version      0.7.0
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -123,29 +123,47 @@ function init() {
             };
             map.setZoom(17);
             map.setCenter(ll);
-            map.setMapTypeId('hybrid');
-            let sv = map.getStreetView();
-            sv.setOptions({
-                motionTracking: false,
-                imageDateControl: true
-            });
-            const svClient = new google.maps.StreetViewService;
-            svClient.getPanoramaByLocation(ll, 50, function(result, status) {
-                if (status === "OK") {
-                    listenSVFocus = true;
-                    const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
-                    const svLocation = result.location.latLng;
-                    const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
-                    pano = sv;
-                    pano.setPosition(svLocation);
-                    pano.setPov({
-                        heading,
-                        pitch: 0,
-                        zoom: 1
+
+            const displayType = localStorage["wfmm_map_display" + userId];
+            // if the selected type is map then we don't change anything
+
+            if (displayType === 'satellite') {
+                // hybrid includes labels as well as satellite imagery
+                map.setMapTypeId('hybrid');
+            } else if (displayType === 'streetview') {
+                // do this here as well as a fallback if no SV image available
+                map.setMapTypeId('hybrid');
+                let sv = map.getStreetView();
+                sv.setOptions({
+                    motionTracking: false,
+                    imageDateControl: true
+                });
+                const svClient = new google.maps.StreetViewService;
+                svClient.getPanoramaByLocation(ll, 50, function(result, status) {
+                    if (status === "OK") {
+                        listenSVFocus = true;
+                        const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
+                        const svLocation = result.location.latLng;
+                        const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
+                        pano = sv;
+                        pano.setPosition(svLocation);
+                        pano.setPov({
+                            heading,
+                            pitch: 0,
+                            zoom: 1
+                        });
+                        pano.setVisible(true);
+                    } else {
+                        awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
+                        .then((ref) => {
+                            const warningBox = document.createElement('p');
+                            warningBox.classList.add('wayfarerrmm__warningbox');
+                            warningBox.textContent = "No Streetview found within a close radius";
+                            ref.parentElement.insertBefore(warningBox, ref);
                     });
-                    pano.setVisible(true);
-                }
-            });
+                    }
+                });
+            }
             addNearbyTooltips();
         } else if (document.querySelector("app-select-location-edit")) {
             gmap = document.querySelector("app-select-location-edit");
@@ -327,6 +345,12 @@ function init() {
                 insertAfter(settingsContainer, ref);
             }
 
+            let selection = localStorage["wfmm_map_display" + userId];
+            if (!selection) {
+                selection = 'satellite';
+                localStorage["wfmm_map_display" + userId] = selection;
+            }
+
             let cellSizeInput = document.createElement('input');
             cellSizeInput.setAttribute("type", "number");
             cellSizeInput.setAttribute("size", '2');
@@ -437,6 +461,28 @@ function init() {
             cellColorLabelTwo.setAttribute("for", "wayfarermmcellcolortwo");
             cellColorLabelTwo.classList.add('wayfareres_settings_label');
 
+            const div = document.createElement('div');
+            let select = document.createElement('select');
+            select.title = "Default Map View";
+            const mapTypes = [
+              {name: "map", title: "Map"},
+              {name: "satellite", title: "Satellite"},
+              {name: "streetview", title: "Streetview"}
+            ];
+            select.innerHTML = mapTypes.map(item => `<option value="${item.name}" ${item.name == selection ? 'selected' : ''}>${item.title}</option>`).join('');
+            select.addEventListener('change', function () {
+              selection = select.value;
+              localStorage["wfmm_map_display" + userId] = selection;
+            });
+            select.id = 'wayfarermmmapdisplay';
+            select.classList.add('wayfarercc_select');
+
+            const selectLabel = document.createElement("label");
+            selectLabel.innerText = "Default Map View:";
+            selectLabel.setAttribute("for", "wayfarermmmapdisplay");
+            selectLabel.classList.add('wayfareres_settings_label');
+
+
             settingsDiv.appendChild(document.createElement('br'));
             settingsDiv.appendChild(cellSizeLabel);
             settingsDiv.appendChild(cellSizeInput);
@@ -452,6 +498,9 @@ function init() {
             settingsDiv.appendChild(document.createElement('br'));
             settingsDiv.appendChild(cellColorLabelTwo);
             settingsDiv.appendChild(cellColorInputTwo);
+            settingsDiv.appendChild(document.createElement('br'));
+            settingsDiv.appendChild(selectLabel);
+            settingsDiv.appendChild(select);
             settingsDiv.appendChild(document.createElement('br'));
         })
     };
@@ -750,6 +799,29 @@ function init() {
 
     function addCss() {
         const css = `
+            .wayfarercc {
+                color: #333;
+                margin-left: 2em;
+                padding-top: 0.3em;
+                text-align: center;
+                display: none;
+              }
+
+            .wayfarercc_select {
+                margin:  2px 12px;
+                padding: 2px 12px;
+                background-color: #FFFFFF;
+                color: black;
+            }
+
+            .wayfarercc_input {
+                margin:  2px 12px;
+                padding: 2px 12px;
+                width: 90px;
+                background-color: #FFFFFF;
+                color: black;
+            }
+
             .wayfareres_settings_label {
                 margin:  2px 12px;
                 padding: 2px 12px;
@@ -837,6 +909,15 @@ function init() {
                 border-bottom-left-radius: 7px;
                 border-bottom-right-radius: 7px;
                 padding: .5rem 1rem;
+            }
+
+            .wayfarerrmm__warningbox {
+                font-size: 1.1em;
+                font-weight: bold;
+                color: black;
+            }
+            .dark .wayfarerrmm__warningbox {
+                color: white;
             }
         `;
         const style = document.createElement('style');
