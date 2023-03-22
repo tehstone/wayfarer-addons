@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.7.1
+// @version      0.7.2
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -114,92 +114,88 @@ function init() {
             return;
         }
         let gmap;
-        if (document.querySelector('#check-duplicates-card nia-map')) {
-            gmap = document.querySelector('#check-duplicates-card nia-map');
-            mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1];
-            map = mapCtx.componentRef.map;
-            const ll = {
-                lat: candidate.lat,
-                lng: candidate.lng
-            };
-            map.setZoom(17);
-            map.setCenter(ll);
+        awaitElement(() =>
+                document.querySelector('#check-duplicates-card nia-map') ||
+                document.querySelector("app-select-location-edit"))
+            .then((ref) => {
+                gmap = ref;
+                if (gmap === document.querySelector("app-select-location-edit")) {
+                    mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1].niaMap;
+                    map = mapCtx.componentRef.map;
+                } else {
+                    mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1];
+                    map = mapCtx.componentRef.map;
+                    const ll = {
+                        lat: candidate.lat,
+                        lng: candidate.lng
+                    };
+                    map.setZoom(17);
+                    map.setCenter(ll);
 
-            const displayType = localStorage["wfmm_map_display" + userId];
-            // if the selected type is map then we don't change anything
+                    const displayType = localStorage["wfmm_map_display" + userId];
+                    // if the selected type is map then we don't change anything
 
-            if (displayType === 'satellite') {
-                // hybrid includes labels as well as satellite imagery
-                map.setMapTypeId('hybrid');
-            } else if (displayType === 'streetview') {
-                // do this here as well as a fallback if no SV image available
-                map.setMapTypeId('hybrid');
-                let sv = map.getStreetView();
-                sv.setOptions({
-                    motionTracking: false,
-                    imageDateControl: true
-                });
-                const svClient = new google.maps.StreetViewService;
-                svClient.getPanoramaByLocation(ll, 50, function(result, status) {
-                    if (status === "OK") {
-                        listenSVFocus = true;
-                        const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
-                        const svLocation = result.location.latLng;
-                        const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
-                        pano = sv;
-                        pano.setPosition(svLocation);
-                        pano.setPov({
-                            heading,
-                            pitch: 0,
-                            zoom: 1
+                    if (displayType === 'satellite') {
+                        // hybrid includes labels as well as satellite imagery
+                        map.setMapTypeId('hybrid');
+                    } else if (displayType === 'streetview') {
+                        // do this here as well as a fallback if no SV image available
+                        map.setMapTypeId('hybrid');
+                        let sv = map.getStreetView();
+                        sv.setOptions({
+                            motionTracking: false,
+                            imageDateControl: true
                         });
-                        pano.setVisible(true);
-                    } else {
-                        awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
-                        .then((ref) => {
-                            const warningBox = document.createElement('p');
-                            warningBox.classList.add('wayfarerrmm__warningbox');
-                            warningBox.textContent = "No Streetview found within a close radius";
-                            ref.parentElement.insertBefore(warningBox, ref);
-                    });
+                        const svClient = new google.maps.StreetViewService;
+                        svClient.getPanoramaByLocation(ll, 50, function(result, status) {
+                            if (status === "OK") {
+                                listenSVFocus = true;
+                                const nomLocation = new google.maps.LatLng(ll.lat, ll.lng);
+                                const svLocation = result.location.latLng;
+                                const heading = google.maps.geometry.spherical.computeHeading(svLocation, nomLocation);
+                                pano = sv;
+                                pano.setPosition(svLocation);
+                                pano.setPov({
+                                    heading,
+                                    pitch: 0,
+                                    zoom: 1
+                                });
+                                pano.setVisible(true);
+                            } else {
+                                const warningBox = document.createElement('p');
+                                warningBox.classList.add('wayfarerrmm__warningbox');
+                                warningBox.textContent = "No Streetview found within a close radius";
+                                ref.parentElement.insertBefore(warningBox, ref);
+                            }
+                        });
                     }
-                });
-            }
-            addNearbyTooltips();
-        } else if (document.querySelector("app-select-location-edit")) {
-            gmap = document.querySelector("app-select-location-edit");
-            mapCtx = gmap.__ngContext__[gmap.__ngContext__.length - 1].niaMap;
-            map = mapCtx.componentRef.map;
-        } else {
-            return;
-        }
+                    addNearbyTooltips();
+                }
+                const {
+                    cellSize,
+                    cellColor,
+                    secondGridEnabled,
+                    cellSizeTwo,
+                    cellColorTwo
+                } = getDrawSettings();
 
-        const {
-            cellSize,
-            cellColor,
-            secondGridEnabled,
-            cellSizeTwo,
-            cellColorTwo
-        } = getDrawSettings();
-
-        if (isDisplayGridEnabled()) {
-            addS2Overlay(cellSize, cellColor, secondGridEnabled, cellSizeTwo, cellColorTwo);
-            addS2HighlightAtCoords(candidate['lat'], candidate['lng']);
-        }
-        locationChangeBtnListener();
-        locationResetChangeBtnListener();
-        /*
-                setTimeout(() => {
-                  document.querySelector('.wf-page-header__title > div:nth-child(1)').scrollIntoView();
-                }, 250);
-        */
+                if (isDisplayGridEnabled()) {
+                    addS2Overlay(cellSize, cellColor, secondGridEnabled, cellSizeTwo, cellColorTwo);
+                    addS2HighlightAtCoords(candidate['lat'], candidate['lng']);
+                }
+                locationChangeBtnListener();
+                locationResetChangeBtnListener();
+            })
+            .catch(() => {
+                return;
+            });
     }
 
     function locationChangeBtnListener() {
         const markerone = mapCtx.markers.default.markers[0];
         const locationChangeBtn = document.querySelector("#check-duplicates-card nia-map ~ div button");
         if (locationChangeBtn) {
-            
+
             locationChangeBtn.addEventListener('click', function() {
                 drawCloseCircle();
                 drawMoveCircle();
@@ -511,15 +507,20 @@ function init() {
             const div = document.createElement('div');
             let select = document.createElement('select');
             select.title = "Default Map View";
-            const mapTypes = [
-              {name: "map", title: "Map"},
-              {name: "satellite", title: "Satellite"},
-              {name: "streetview", title: "Streetview"}
-            ];
+            const mapTypes = [{
+                name: "map",
+                title: "Map"
+            }, {
+                name: "satellite",
+                title: "Satellite"
+            }, {
+                name: "streetview",
+                title: "Streetview"
+            }];
             select.innerHTML = mapTypes.map(item => `<option value="${item.name}" ${item.name == selection ? 'selected' : ''}>${item.title}</option>`).join('');
-            select.addEventListener('change', function () {
-              selection = select.value;
-              localStorage["wfmm_map_display" + userId] = selection;
+            select.addEventListener('change', function() {
+                selection = select.value;
+                localStorage["wfmm_map_display" + userId] = selection;
             });
             select.id = 'wayfarermmmapdisplay';
             select.classList.add('wayfarercc_select');
