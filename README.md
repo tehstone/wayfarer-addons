@@ -19,9 +19,10 @@ This plugin enables nearly full control of the review page via the keyboard.
 - Backspace within Rejection Dialog to navigate back a level in the reject reason menu
 - When the text box in the Rejection Dialog is focused, Shift+Enter will add a newline, Enter will submit the nomination
 - Whenever the submit button is active, Ctrl+Enter will select the "Submit and finish reviewing" option
-- "D" to mark the selected nomination as a duplicate
-- "Q" to open the main photo
-- "E" to open the supporting photo
+- "D" to jump to the duplicate selection panel
+- "A-Z" to select a nearby wayspot as a duplicate then Enter to select it
+- "Q" to open/close the main photo
+- "E" to open/close the supporting photo
 - "R" & "F" to zoom in and out of the map
 - If the Location Accuracy rating is focused, "Escape" will exit street view
 - Number keys to select Edit options
@@ -35,6 +36,17 @@ Adds a timer to the top of the page indicating the time remaining to review the 
 Adds a Smart Submit button that will wait to submit the nomination until a certain amount of time has elapsed. The minimum and maximum wait times are configurable and a random value between the min and max will be selected each time the button is pressed. The nomination will be submitted once that amount of time has elapsed on the timer.
 
 Smart Submit button can be disabled if desired, a toggle for the button as well as the min and max delays mentioned previously are all found within a new settings panel at the bottom of the review page.
+
+# Review Map Mods
+[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js)
+
+- Sets a more reasonable default zoom level when the map first loads
+- Adds a default setting for the map type with Streetview, satellite, and map options
+    - When Streetview is selected but no imagery is available within 50m, it will fall back to satellite and display a warning.
+- Adds an option S2 grid overlay with configurable size and colors plus optional second grid display
+- Adds circles for minimum edit distance and 20m range when selecting a new location for the nomination pin
+- Adds hover-over tooltips to each marker on the map to display its name
+
 
 # Review Counter
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js)
@@ -50,16 +62,17 @@ Highlights the differences in text for title and description edits that are simi
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js)
 
 - Adds total agreement count and percentage to the Profile Page
-- Includes settings to indicate whether agreements should be calculated from the Badge Stat in Pokemon GO or based on Upgrade Count
+- Includes settings to indicate whether agreements should be calculated from the Badge Stat in Pokemon GO, based on Upgrade Count, or a simple accepted + rejected + duplicate count
 - Includes settings for current Badge Count and Bonus Upgrades Earned count
 
 # Review History
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js)
 ~~[Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history.user.js)~~
 
-- Stores review history in 3 separate datasets for New Nominations, Edit Nominations, and Photo Reviews per user
-- Includes Export and Remove options
-* Note: there is a newer implementation of this script than what was previously available which will no longer run out of story. Use the first link above unless you have a good reason to use the older version.
+- Stores review history for New Nominations, Edit Nominations, and Photo Reviews per user
+- Includes Export, Import, and Clear options
+- Includes filtering options for import including an oldest date, and location/range options.
+* Note: there is a newer implementation of this script than what was previously available which will no longer run out of storage. Use the first link above unless you have a good reason to use the older version. The older version does not have several of the features listed above.
 
 # Review History Table
 [Install](https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-table.user.js)
