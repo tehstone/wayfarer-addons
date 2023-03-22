@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.5.3
+// @version      0.5.5
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2022 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -96,11 +96,43 @@ function init() {
     });
 
     function addSettings() {
-        if (document.getElementById("wayfarercccounttype") !== null) {
-          return;
+        let settingsDiv = document.getElementById("profileSettings");
+        if (settingsDiv === null) {
+            settingsDiv = document.createElement('div');
+            settingsDiv.id = "profileSettings";
+            settingsDiv.classList.add('wayfarerrh__visible');
+
+            const settingsContainer = document.createElement('div');
+            settingsContainer.setAttribute('class', 'wrap-collabsible')
+            settingsContainer.id = "nomStats";
+
+            const collapsibleInput = document.createElement("input");
+            collapsibleInput.id = "collapsed-settings";
+            collapsibleInput.setAttribute("class", "toggle");
+            collapsibleInput.type = "checkbox";
+
+            const collapsibleLabel = document.createElement("label");
+            collapsibleLabel.setAttribute("class", "lbl-toggle-es");
+            collapsibleLabel.innerText = "Settings";
+            collapsibleLabel.setAttribute("for", "collapsed-settings");
+
+            const collapsibleContent = document.createElement("div");
+            collapsibleContent.setAttribute("class", "collapsible-content-es");
+
+            collapsibleContent.appendChild(settingsDiv);
+            settingsContainer.appendChild(collapsibleInput);
+            settingsContainer.appendChild(collapsibleLabel);
+            settingsContainer.appendChild(collapsibleContent);
+
+            const ratingNarRef = document.querySelector('wf-rating-bar');
+            const container = ratingNarRef.parentNode.parentNode;
+            container.appendChild(settingsContainer);
         }
 
-        const div = document.createElement('div');
+        const sectionLabel = document.createElement("label");
+        sectionLabel.innerText = "Stats Settings";
+        sectionLabel.classList.add('wayfareres__bold');
+
         let select = document.createElement('select');
         select.title = "Select count type";
         const reviewTypes = [
@@ -139,7 +171,7 @@ function init() {
             updateOtherCount(badgeCount);
             updateAgreementDisplay();
         });
-        badgeCountInput.id - "wayfarerccbadgecount";
+        badgeCountInput.id = "wayfarerccbadgecount";
         badgeCountInput.classList.add('wayfarercc_input');
 
         const badgeCountLabel = document.createElement("label");
@@ -198,46 +230,22 @@ function init() {
         helpLabel.innerText = "Hover mouse over each item for an explanation.";
         helpLabel.classList.add('wayfareres_settings_label');
 
-        div.appendChild(selectLabel);
-        div.appendChild(select);
-        div.appendChild(document.createElement('br'));
-        div.appendChild(badgeCountLabel);
-        div.appendChild(badgeCountInput);
-        div.appendChild(document.createElement('br'));
-        div.appendChild(bonusUpgradeLabel);
-        div.appendChild(bonusUpgradeInput);
-        div.appendChild(document.createElement('br'));
-        div.appendChild(offsetAgreementsLabel);
-        div.appendChild(offsetAgreementsInput);
-        div.appendChild(document.createElement('br'));
-        div.appendChild(helpLabel);
-        div.classList.add('wayfarerrh__visible');
-
-        const settingsContainer = document.createElement('div');
-        settingsContainer.setAttribute('class', 'wrap-collabsible')
-        settingsContainer.id = "nomStats";
-
-        const collapsibleInput = document.createElement("input");
-        collapsibleInput.id = "collapsed-settings";
-        collapsibleInput.setAttribute("class", "toggle");
-        collapsibleInput.type = "checkbox";
-
-        const collapsibleLabel = document.createElement("label");
-        collapsibleLabel.setAttribute("class", "lbl-toggle-es");
-        collapsibleLabel.innerText = "Settings";
-        collapsibleLabel.setAttribute("for", "collapsed-settings");
-
-        const collapsibleContent = document.createElement("div");
-        collapsibleContent.setAttribute("class", "collapsible-content-es");
-
-        collapsibleContent.appendChild(div);
-        settingsContainer.appendChild(collapsibleInput);
-        settingsContainer.appendChild(collapsibleLabel);
-        settingsContainer.appendChild(collapsibleContent);
-
-        const ratingNarRef = document.querySelector('wf-rating-bar');
-        const container = ratingNarRef.parentNode.parentNode;
-        container.appendChild(settingsContainer);
+        settingsDiv.appendChild(sectionLabel);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(selectLabel);
+        settingsDiv.appendChild(select);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(badgeCountLabel);
+        settingsDiv.appendChild(badgeCountInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(bonusUpgradeLabel);
+        settingsDiv.appendChild(bonusUpgradeInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(offsetAgreementsLabel);
+        settingsDiv.appendChild(offsetAgreementsInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(helpLabel);
+        settingsDiv.appendChild(document.createElement('br'));
     }
 
     function updateOtherCount(badgeCount) {
@@ -607,6 +615,14 @@ function init() {
             td {
                 border: white solid 1pt;
                 padding: 1pt 5pt;
+            }
+
+            .wayfareres__bold {
+                margin:  2px 12px;
+                padding: 2px 12px;
+                font-size: 1.1em;
+                font-weight: bold;
+                color: black;
             }
             `;
         const style = document.createElement('style');

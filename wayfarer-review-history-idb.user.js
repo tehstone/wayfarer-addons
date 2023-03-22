@@ -58,6 +58,7 @@
                 this.addEventListener('load', handleXHRResult(handleProfile), false);
             } else if (url == '/api/v1/vault/profile' && method == 'GET') {
                 this.addEventListener('load', addRHButtons, false);
+                this.addEventListener('load', addSettings, false);
             }
             open.apply(this, arguments);
         };
@@ -201,13 +202,14 @@
                 input.onchange = (event) => {
                     const reader = new FileReader();
 
-                   reader.onload = function(event) {
+                    reader.onload = function(event) {
                         const clearReviewHistory = new Promise((resolve, reject) => {
                             const tx = db.transaction([OBJECT_STORE_NAME], 'readwrite');
                             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
                             objectStore.clear();
                             let imported = 0;
                             let failed = 0;
+                            let filtered = 0;
                             try {
                                 data = JSON.parse(event.target.result);
                                 for (let i = 0; i < data.length; i++) {
@@ -217,16 +219,25 @@
                                             if (data[i].review !== false && data[i].review != "skipped") {
                                                 if ("id" in data[i].review) {
                                                     data[i].id = data[i].review.id;
-                                                    objectStore.put(data[i]);
                                                     found = true;
-                                                    imported += 1;
+                                                    if (applyFilters(data[i])) {
+                                                        objectStore.put(data[i]);
+                                                        imported += 1;
+                                                    } else {
+                                                        filtered += 1;
+
+                                                    }
                                                 }
                                             }
                                         }
                                     } else {
-                                        objectStore.put(data[i]);
                                         found = true;
-                                        imported += 1;
+                                        if (applyFilters(data[i])) {
+                                            objectStore.put(data[i]);
+                                            imported += 1;
+                                        } else {
+                                            filtered += 1;
+                                        }
                                     }
                                     if (!found) {
                                         failed += 1
@@ -237,11 +248,14 @@
                                 reject(error);
                             }
                             tx.commit();
-                            resolve([imported, failed]);
+                            resolve([imported, failed, filtered]);
                         });
 
                         clearReviewHistory.then((result) => {
                             let alertText = `Cleared all saved review history.\nImported ${result[0]} review history item(s).`;
+                            if (result[2] > 0) {
+                                alertText += `\nFiltered ${result[2]} item(s) from import.`;
+                            }
                             if (result[1] > 0) {
                                 alertText += `\nFailed to import ${result[1]} item(s).`;
                             }
@@ -282,8 +296,207 @@
         ref.parentNode.appendChild(outer);
     });
 
+    function applyFilters(review) {
+        const userId = getUserId();
+        console.log("here")
+        let dateAfter = localStorage["wfrh_date_after" + userId];
+        if (dateAfter === undefined || dateAfter === null || dateAfter === "" || dateAfter === "false") {
+            dateAfter = 0;
+        } else {
+            dateAfter = new Date(dateAfter);
+        }
+        if (dateAfter !== 0) {
+            if (review['ts'] < dateAfter.getTime()) {
+                return false;
+            }
+        }
+
+        let location = localStorage["wfrh_location_" + userId];
+        if (location === undefined || location === null || location === "" || location === "false"){
+            location = "0,0";
+        }
+        let range = localStorage["wfrh_range_" + userId];
+        if (range === undefined || range === null || range === "" || range === "false" || range === "0"){
+            range = 0;
+        }
+
+        if (location !== "0,0" && range !== 0) {
+            const centerLocation = location.split(",");
+            if (centerLocation.length == 2) {
+                const reviewDistance = haversineDistance([parseInt(centerLocation[0]), parseInt(centerLocation[1])], [review["lat"], review["lng"]]);
+                if (reviewDistance > range) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function haversineDistance(coords1, coords2) {
+        function toRad(x) {
+            return x * Math.PI / 180;
+        }
+
+        let lat1 = coords1[0];
+        let lon1 = coords1[1];
+
+        let lat2 = coords2[0];
+        let lon2 = coords2[1];
+        let R = 6371; // km
+
+        let x1 = lat2 - lat1;
+        let dLat = toRad(x1);
+        let x2 = lon2 - lon1;
+        let dLon = toRad(x2)
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        let d = R * c;
+
+        // returns in kilometers
+        return d;
+    }
+
+    const addSettings = () => awaitElement(() =>document.querySelector('wf-rating-bar')).then(ref => {
+        let settingsDiv = document.getElementById("profileSettings");
+        if (settingsDiv === null) {
+            settingsDiv = document.createElement('div');
+            settingsDiv.id = "profileSettings";
+            settingsDiv.classList.add('wayfarerrh__visible');
+
+            const settingsContainer = document.createElement('div');
+            settingsContainer.setAttribute('class', 'wrap-collabsible')
+            settingsContainer.id = "nomStats";
+
+            const collapsibleInput = document.createElement("input");
+            collapsibleInput.id = "collapsed-settings";
+            collapsibleInput.setAttribute("class", "toggle");
+            collapsibleInput.type = "checkbox";
+
+            const collapsibleLabel = document.createElement("label");
+            collapsibleLabel.setAttribute("class", "lbl-toggle-es");
+            collapsibleLabel.innerText = "Settings";
+            collapsibleLabel.setAttribute("for", "collapsed-settings");
+
+            const collapsibleContent = document.createElement("div");
+            collapsibleContent.setAttribute("class", "collapsible-content-es");
+
+            collapsibleContent.appendChild(settingsDiv);
+            settingsContainer.appendChild(collapsibleInput);
+            settingsContainer.appendChild(collapsibleLabel);
+            settingsContainer.appendChild(collapsibleContent);
+
+            const ratingNarRef = document.querySelector('wf-rating-bar');
+            const container = ratingNarRef.parentNode.parentNode;
+            container.appendChild(settingsContainer);
+        }
+
+
+        const sectionLabel = document.createElement("label");
+        sectionLabel.innerText = "Review History Import Settings";
+        sectionLabel.classList.add('wayfarerrh__bold');
+
+        let dateInput = document.createElement('input');
+        dateInput.setAttribute("type", "date");
+        const userId = getUserId();
+        console.log("here")
+        let dateAfter = localStorage["wfrh_date_after" + userId];
+        if (dateAfter === undefined || dateAfter === null || dateAfter === "" || dateAfter === "false") {
+            dateAfter = 0;
+            dateInput.value = dateAfter;
+        } else {
+            dateAfter = new Date(dateAfter);
+            dateInput.valueAsDate = dateAfter;
+        }
+        
+        dateInput.addEventListener('change', function () {
+            const userId = getUserId();
+            dateAfter = new Date(this.value);
+            localStorage["wfrh_date_after" + userId] = dateAfter;
+        });
+        dateInput.id = "wayfarerrhdateafter";
+        dateInput.classList.add('wayfarercc_date_input');
+
+        const dateAfterLabel = document.createElement("label");
+        dateAfterLabel.innerText = "Import After Date:";
+        dateAfterLabel.setAttribute("for", "wayfarerrhdateafter");
+        dateAfterLabel.classList.add('wayfareres_settings_label');
+        dateAfterLabel.title = "Any reviews in the import file prior to the selected date will not be imported.."
+
+        let locationInput = document.createElement('input');
+        let location = localStorage["wfrh_location_" + userId];
+        if (location === undefined || location === null || location === "" || location === "false"){
+            location = "0,0";
+        }
+        locationInput.value = location;
+        locationInput.addEventListener('change', function () {
+            const userId = getUserId();
+            location = this.value;
+            localStorage["wfrh_location_" + userId] = location;
+        });
+        locationInput.id = "wayfarerrhlocation";
+        locationInput.classList.add('wayfarercc_gps_input');
+
+        const locationLabel = document.createElement("label");
+        locationLabel.innerText = "Filter Location Center:";
+        locationLabel.setAttribute("for", "wayfarerrhlocation");
+        locationLabel.classList.add('wayfareres_settings_label');
+        locationLabel.title = "If location and range are set, displayed values will be filtered to those within the given number of kilometers to the location provided."
+
+        let rangeInput = document.createElement('input');
+        rangeInput.setAttribute("type", "number");
+        rangeInput.setAttribute("size", '4');
+        let range = localStorage["wfrh_range_" + userId];
+        if (range === undefined || range === null || range === "" || range === "false"){
+            range = 0;
+        }
+        rangeInput.value = range;
+        rangeInput.addEventListener('change', function () {
+            const userId = getUserId();
+            range = this.value;
+            localStorage["wfrh_range_" + userId] = range;
+        });
+        rangeInput.id = "wayfarerrhlocation";
+        rangeInput.classList.add('wayfarercc_input');
+
+        const rangeLabel = document.createElement("label");
+        rangeLabel.innerText = "Filter Location Range:";
+        rangeLabel.setAttribute("for", "wayfarerrhlocation");
+        rangeLabel.classList.add('wayfareres_settings_label');
+        rangeLabel.title = "If location and range are set, displayed values will be filtered to those within the given number of kilometers to the location provided."
+        
+
+        settingsDiv.appendChild(sectionLabel);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(dateAfterLabel);
+        settingsDiv.appendChild(dateInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(locationLabel);
+        settingsDiv.appendChild(locationInput);
+        settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(rangeLabel);
+        settingsDiv.appendChild(rangeInput);
+        settingsDiv.appendChild(document.createElement('br'));
+    })
+
     function insertAfter(newNode, referenceNode) {
         referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    }
+
+    function getUserId() {
+        var els = document.getElementsByTagName("image");
+        for (var i = 0; i < els.length; i++) {
+           const element = els[i];
+           const attribute = element.getAttribute("href");
+           let fields = attribute.split('/');
+           let userId = fields[fields.length-1];
+           fields = userId.split('=');
+           userId = fields[0];
+           return userId;
+        }
+        return "temporary_default_userid";
     }
 
     // Returns an copy of obj containing only the keys specified in the keys array.
@@ -353,6 +566,44 @@
         .dark .wfrh-idb button {
             background-color: #404040;
             color: #20B8E3;
+        }
+
+        .wayfarerrh__bold {
+            margin:  2px 12px;
+            padding: 2px 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: black;
+        }
+
+        .wayfarercc_date_input {
+            margin:  2px 12px;
+            padding: 2px 12px;
+            width: 180px;
+            background-color: #FFFFFF;
+            color: black;
+        }
+
+        .wayfarercc_gps_input {
+            margin:  2px 12px;
+            padding: 2px 12px;
+            width: 250px;
+            background-color: #FFFFFF;
+            color: black;
+        }
+
+        .wayfarercc_input {
+            margin:  2px 12px;
+            padding: 2px 12px;
+            background-color: #FFFFFF;
+            color: black;
+        }
+
+        .wayfareres_settings_label {
+            margin:  2px 12px;
+            padding: 2px 12px;
+            color: black;
+            font-size: 16px;
         }
         `;
         const style = document.createElement('style');
