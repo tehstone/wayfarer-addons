@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Reverse Image Search
-// @version      0.2.1
+// @version      0.3.0
 // @description  Add reverse image search links to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-reverse-image-search.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -89,12 +89,12 @@
     });
 
   const addImageSearchLinks = (before, data) => {
-    const mainUrl = encodeURI(`${data['imageUrl']}=s600`);
-    const mainSearchUrl = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl:${mainUrl}&idpbck=1&selectedindex=0`
+    const mainUrl = encodeURIComponent(`${data['imageUrl']}`);
+    const mainSearchUrl = `https://lens.google.com/uploadbyurl?url=${mainUrl}`
     addLink(mainSearchUrl, 'div.review-cards--inner:nth-child(1) > app-should-be-wayspot:nth-child(1) > wf-review-card:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
 
-    const supportingUrl = encodeURI(`${data['supportingImageUrl']}=s600`);
-    const supportingSearchUrl = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl:${supportingUrl}&idpbck=1&selectedindex=0`
+    const supportingUrl = encodeURIComponent(`${data['supportingImageUrl']}`);
+    const supportingSearchUrl = `https://lens.google.com/uploadbyurl?url=${supportingUrl}`
     addLink(supportingSearchUrl, '.supporting-info-review-card > wf-review-card:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
   }
 
@@ -117,14 +117,15 @@
       if (photoEl === null || photoEl === undefined) {
         break;
       }
-      const url = encodeURI(`${data['newPhotos'][i-1]['value']}`);
-      const searchUrl = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIIRP&sbisrc=UrlPaste&q=imgurl:${url}&idpbck=1&selectedindex=0`
+      const url = encodeURIComponent(`${data['newPhotos'][i-1]['value']}`);
+      console.log("here")
+      const searchUrl = `https://lens.google.com/uploadbyurl?url=${url}`
       const linkSpan = document.createElement('span');
       const link = document.createElement('a');
       link.href = searchUrl;
       link.target = 'wayfareropenin';
       link.textContent = 'Reverse Image Search';
-      link.preventDefault();
+      //link.preventDefault();
       linkSpan.appendChild(link);
       photoEl.insertBefore(linkSpan, photoEl.children[0]);
     }
