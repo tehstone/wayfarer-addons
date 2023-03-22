@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.4
+// @version      0.8.5
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -747,7 +747,7 @@
             return;
         }
         let smartButton = document.getElementById("wayfarerrtssbutton_0");
-        if (smartButton === null && smartButton === undefined) {
+        if (smartButton === null || smartButton === undefined) {
             const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
             buttonParts[0].click();
         } else {
