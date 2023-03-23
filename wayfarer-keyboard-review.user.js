@@ -501,8 +501,7 @@
 
     function showFullSupportingInfo() {
         if (document.getElementsByTagName('mat-dialog-container').length){
-            const parent = document.getElementsByClassName('cdk-overlay-container')[0];
-            while (parent.firstChild) { parent.removeChild(parent.firstChild); }
+            document.querySelector('div.cdk-overlay-backdrop.cdk-overlay-dark-backdrop.cdk-overlay-backdrop-showing').click();
             return;
         }
         const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200');
