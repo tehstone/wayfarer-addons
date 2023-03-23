@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.6
+// @version      0.8.7
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -500,9 +500,14 @@
     }
 
     function showFullSupportingInfo() {
-        if (document.getElementsByTagName('mat-dialog-container').length) return;
-        const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200');
-        if (supportingText) supportingText.click();
+        if (document.getElementsByTagName('mat-dialog-container').length){
+            document.querySelector('div.cdk-overlay-backdrop.cdk-overlay-dark-backdrop.cdk-overlay-backdrop-showing').click();
+            return;
+        }
+        const supportingText = document.querySelector('div.cursor-pointer');
+        if (supportingText) {
+            supportingText.click();
+        }
     }
 
     function zoomInOnMaps() {
