@@ -500,7 +500,11 @@
     }
 
     function showFullSupportingInfo() {
-        if (document.getElementsByTagName('mat-dialog-container').length) return;
+        if (document.getElementsByTagName('mat-dialog-container').length){
+            const parent = document.getElementsByClassName('cdk-overlay-container')[0];
+            while (parent.firstChild) { parent.removeChild(parent.firstChild); }
+            return;
+        }
         const supportingText = document.querySelector('app-supporting-info .wf-review-card__body .bg-gray-200');
         if (supportingText) supportingText.click();
     }
