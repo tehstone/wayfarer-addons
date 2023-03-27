@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.7.2
+// @version      0.7.3
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -213,7 +213,6 @@ function init() {
             resetButton.onclick = function() {
                 map.setZoom(17);
                 drawCloseCircle();
-                drawMoveCircle();
                 if (isDisplayGridEnabled()) {
                     addS2Highlight();
                 }
@@ -245,7 +244,6 @@ function init() {
                 if (t) {
                     if (t.lat) {
                         drawCloseCircleAtCoords(t['lat'], t['lng']);
-                        drawMoveCircleAtCoords(t['lat'], t['lng']);
                         if (isDisplayGridEnabled()) {
                             addS2HighlightAtCoords(t['lat'], t['lng']);
                         }
