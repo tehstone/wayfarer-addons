@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.5.0
+// @version      0.6.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2023 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -79,21 +79,7 @@ function init() {
         }
     }
 
-    const awaitElement = get => new Promise((resolve, reject) => {
-        let triesLeft = 10;
-        const queryLoop = () => {
-            const ref = get();
-            if (ref) resolve(ref);
-            else if (!triesLeft) reject();
-            else setTimeout(queryLoop, 100);
-            triesLeft--;
-        }
-        queryLoop();
-    });
-
     function addNominationDetails() {
-        const ref = document.querySelector('app-nominations-list');
-
         awaitElement(() => document.querySelector('app-nominations-list'))
             .then((ref) => {
                 addNotificationDiv();
@@ -171,13 +157,15 @@ function init() {
                 const collapsibleContent = document.createElement("div");
                 collapsibleContent.setAttribute("class", "collapsible-content-ns");
 
-                const baseCount = nomCount - withdrawnCount - appealedCount - inVoteCount - inQueueCount - niaReviewCount;
+                const totalReviewed = parseInt(acceptedCount) + parseInt(deniedCount) + parseInt(dupeCount);
                 let html = "";
+                console.log("click here!!!!!!!!!!")
                 html += "Total Nominations: " + parseInt(nomCount) +
-                    "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round(acceptedCount/baseCount*100)) + "%)" +
-                    "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round(deniedCount/baseCount*100)) + "%)" +
+                    "<br/>Total Reviewed: " + parseInt(totalReviewed) +
+                    "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round((acceptedCount/totalReviewed)*100000)/1000) + "%)" +
+                    "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round((deniedCount/totalReviewed)*100000)/1000) + "%)" +
                     "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
-                    "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round(dupeCount/baseCount*100)) + "%)" +
+                    "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round((dupeCount/totalReviewed)*100000)/1000) + "%)" +
                     "<br/>NIA Review: " + parseInt(niaReviewCount) +
                     "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
                     "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
@@ -274,7 +262,6 @@ function init() {
 
     function convertToCSV(objArray) {
         let array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
-        console.log(array);
         let str = 'id,group,type,title,description,lat,lng,city,state,day,order,imageUrl,nextUpgrade,upgraded,status,isMutable,isNianticControlled,statement,supportingImageUrl,rejectReasons,canAppeal,isClosed,appealNotes,canHold,canReleaseHold\r\n';
 
         for (let i = 0; i < array.length; i++) {
@@ -296,70 +283,63 @@ function init() {
     }
 
     function checkAppealStatus(canAppeal) {
-        const ref = document.querySelector('wf-logo');
-        if (!ref) {
-            setTimeout(checkAppealStatus, 200, canAppeal);
-            return;
-        }
+        awaitElement(() => document.querySelector('wf-logo')).then(ref => {
+            const div = document.createElement('div');
+            div.className = 'wayfarernost';
 
-        const div = document.createElement('div');
-        div.className = 'wayfarernost';
+            let appealLabel = document.createElement('p');
+            appealLabel.textContent = 'Appeal eligible: ';
+            let appeal = document.createElement('p');
 
-        let appealLabel = document.createElement('p');
-        appealLabel.textContent = 'Appeal eligible: ';
-        let appeal = document.createElement('p');
+            if (canAppeal) {
+                appeal.textContent = 'Yes';
+            } else {
+                appeal.textContent = 'No';
+            }
 
-        if (canAppeal) {
-            appeal.textContent = 'Yes';
-        } else {
-            appeal.textContent = 'No';
-        }
+            div.appendChild(appealLabel);
+            div.appendChild(appeal);
 
-        div.appendChild(appealLabel);
-        div.appendChild(appeal);
-
-        const container = ref.parentNode.parentNode;
-        console.log(document.querySelector('.wayfarernost'));
-        if (document.querySelector('.wayfarernost') === null) {
-            container.appendChild(div);
-        }
+            const container = ref.parentNode.parentNode;
+            console.log(document.querySelector('.wayfarernost'));
+            if (document.querySelector('.wayfarernost') === null) {
+                container.appendChild(div);
+            }
+        });
     }
 
     function addUpgradeSetting() {
-        const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
-        const insDiv = document.querySelector(".mt-2");
-        if (listEl === undefined || listEl === null || insDiv === undefined) {
-            setTimeout(addCounter, 200);
-            return;
-        }
+        awaitElement(() => document.querySelector(".cdk-virtual-scroll-content-wrapper")).then(ref => {
+            const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+            const insDiv = document.querySelector(".mt-2");
+            const userId = getUserId();
 
-        const userId = getUserId();
+            let upgradeNotifyChkbox = document.createElement("INPUT");
+            upgradeNotifyChkbox.setAttribute("type", "checkbox");
 
-        let upgradeNotifyChkbox = document.createElement("INPUT");
-        upgradeNotifyChkbox.setAttribute("type", "checkbox");
+            upgradeNotifyChkbox.id = 'wayfarernsupgradenotifychkbox';
 
-        upgradeNotifyChkbox.id = 'wayfarernsupgradenotifychkbox';
+            const upgradeNotifyChkboxLabel = document.createElement("label");
+            upgradeNotifyChkboxLabel.innerText = "Notify when no Upgrade Next set:";
+            upgradeNotifyChkboxLabel.setAttribute("for", "wayfarernsupgradenotifychkbox");
 
-        const upgradeNotifyChkboxLabel = document.createElement("label");
-        upgradeNotifyChkboxLabel.innerText = "Notify when no Upgrade Next set:";
-        upgradeNotifyChkboxLabel.setAttribute("for", "wayfarernsupgradenotifychkbox");
+            insDiv.insertBefore(upgradeNotifyChkbox, insDiv.children[0]);
+            insDiv.insertBefore(upgradeNotifyChkboxLabel, insDiv.children[0]);
 
-        insDiv.insertBefore(upgradeNotifyChkbox, insDiv.children[0]);
-        insDiv.insertBefore(upgradeNotifyChkboxLabel, insDiv.children[0]);
+            let upgradeNotify = localStorage.getItem(`wfns_upgrade_notify_${userId}`);
+            if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === ""){
+                upgradeNotify = false;
+            }
+            upgradeNotify = upgradeNotify === "true";
 
-        let upgradeNotify = localStorage.getItem(`wfns_upgrade_notify_${userId}`);
-        if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === ""){
-            upgradeNotify = false;
-        }
-        upgradeNotify = upgradeNotify === "true";
+            if (upgradeNotify) {
+            	upgradeNotifyChkbox.checked = true;
+            }
 
-        if (upgradeNotify) {
-        	upgradeNotifyChkbox.checked = true;
-        }
-
-        upgradeNotifyChkbox.addEventListener('click', e => {
-            localStorage.setItem(`wfns_upgrade_notify_${userId}`, e.target.checked);
-            console.log(e.target.checked);
+            upgradeNotifyChkbox.addEventListener('click', e => {
+                localStorage.setItem(`wfns_upgrade_notify_${userId}`, e.target.checked);
+                console.log(e.target.checked);
+            });
         });
     }
 
@@ -410,6 +390,18 @@ function init() {
         }
         return "temporary_default_userid";
     }
+
+    const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
+        }
+        queryLoop();
+    });
 
     function addCss() {
         const css = `
