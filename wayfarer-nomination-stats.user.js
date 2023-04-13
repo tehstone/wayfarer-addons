@@ -162,18 +162,15 @@ function init() {
                 console.log("click here!!!!!!!!!!")
                 html += "Total Nominations: " + parseInt(nomCount) +
                     "<br/>Total Reviewed: " + parseInt(totalReviewed) +
-                    "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round((acceptedCount/totalReviewed)*100000)/1000) + "%)" +
-                    "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round((deniedCount/totalReviewed)*100000)/1000) + "%)" +
+                    "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round((acceptedCount/totalReviewed)*10000)/100) + "%)" +
+                    "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round((deniedCount/totalReviewed)*10000)/100) + "%)" +
                     "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
-                    "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round((dupeCount/totalReviewed)*100000)/1000) + "%)" +
+                    "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round((dupeCount/totalReviewed)*10000)/100) + "%)" +
                     "<br/>NIA Review: " + parseInt(niaReviewCount) +
                     "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
                     "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
                     "<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
-                    "<br/>On Hold: " + parseInt(heldCount) +
-                    "<br/>Accepted ratio: " + Math.round(10*(1/(acceptedCount/(deniedCount+appealedCount+dupeCount))))/10 + "<br/>";
-
-
+                    "<br/>On Hold: " + parseInt(heldCount) + "<br/>";
 
                 const div = document.createElement('div');
                 div.classList.add('wayfarernd');
