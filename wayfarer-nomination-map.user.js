@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.4.1
+// @version      0.4.2
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -56,6 +56,7 @@ function init() {
         "DUPLICATE",
         "REJECTED",
         "NIANTIC_REVIEW",
+        "HELD",
         "upgraded",
         "upgradeNext"];
 
@@ -67,7 +68,6 @@ function init() {
     let nominationMap;
     let nominationCluster = null;
 
-    let tryNumber = 10;
     let nominations;
     let countText;
 
@@ -109,6 +109,7 @@ function init() {
             addCounter();
             initPrimaryListener();
             clickFirst();
+            initNominationMap();
 
         } catch (e)    {
             console.log(e); // eslint-disable-line no-console
@@ -116,28 +117,27 @@ function init() {
     }
 
     function addCounter() {
-        const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
-        const insDiv = document.querySelector(".mt-2");
-        if (listEl === undefined || listEl === null || insDiv === undefined) {
-            setTimeout(addCounter, 200);
-            return;
-        }
+        awaitElement(() => document.querySelector(".cdk-virtual-scroll-content-wrapper") ||
+            document.querySelector(".mt-2")).then(ref => {
+            const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+            const insDiv = document.querySelector(".mt-2");
 
-        const searchInput = document.querySelector("input.w-full");
-        if (searchInput !== undefined) {
-            searchInput.addEventListener("keyup", debounce( () => {
-                updateMapFilter();
-            }, 1000))
-        }
+            const searchInput = document.querySelector("input.w-full");
+            if (searchInput !== undefined) {
+                searchInput.addEventListener("keyup", debounce( () => {
+                    updateMapFilter();
+                }, 1000))
+            }
 
-        setTimeout(() => {
-            const count = listEl["__ngContext__"][3][26].length;
+            setTimeout(() => {
+                const count = listEl["__ngContext__"][3][26].length;
 
-            countText = document.createElement('div');
-            countText.innerHTML = `Count: ${count}`;
-            countText.classList.add("wayfarernm_text");
-            insDiv.insertBefore(countText, insDiv.children[0]);
-        }, 1000);
+                countText = document.createElement('div');
+                countText.innerHTML = `Count: ${count}`;
+                countText.classList.add("wayfarernm_text");
+                insDiv.insertBefore(countText, insDiv.children[0]);
+            }, 1000);
+        });
     }
 
     function addMap(mapElement) {
@@ -149,8 +149,7 @@ function init() {
             zoom: 8,
             ...mapSettings,
         });
-
-        updateMap();
+        updateMap(true);
     }
 
     function debounce(callback, wait) {
@@ -167,12 +166,12 @@ function init() {
             const count = listEl["__ngContext__"][3][26].length;
             nominations = listEl["__ngContext__"][3][26];
             countText.innerHTML = `Count: ${count}`;
-            updateMap();
+            updateMap(true);
         }
         window.dispatchEvent(new Event("WFNM_MapFilterChange"));
     }
 
-    function updateMap() {
+    function updateMap(reset) {
         if (nominationCluster !== null)
             nominationCluster.clearMarkers();
 
@@ -197,6 +196,10 @@ function init() {
                 input.value = nomination.title;
                 input.dispatchEvent(new Event('input'));
                 setTimeout(clickFirst, 500);
+                setTimeout(() => {
+                    console.log("calling updatemap with false")
+                    updateMap(false)
+                }, 500);
             });
             bounds.extend(latLng);
             return marker;
@@ -208,8 +211,10 @@ function init() {
             maxZoom: 10,
         });
 
-        nominationMap.fitBounds(bounds);
-
+        if (reset === true) {
+            console.log("resetting bounds")
+            nominationMap.fitBounds(bounds);
+        }
 
         addS2Overlay(nominationMap, nomS2Cell, nomS2Color, nomSecondS2Cell, nomS2SecondColor);
     }
@@ -251,31 +256,23 @@ function init() {
     }
 
     function initPrimaryListener() {
-        const filterBtn = document.querySelector(".cursor-pointer");
-        if (filterBtn === undefined) {
-            setTimeout(initPrimaryListener, 200);
-            return;
-        }
-        filterBtn.addEventListener('click', function() {
-        	const modal = document.getElementsByTagName("app-nominations-sort-modal");
-            const els = modal[0].getElementsByClassName("wf-button--primary");
-	        for (let i = 0; i < els.length; i++) {
-	            els[i].addEventListener('click', function() {
-                    setTimeout(updateMapFilter, 250);
-	            });
-	        }
+        awaitElement(() => document.querySelector(".cursor-pointer")).then(ref => {
+            ref.addEventListener('click', function() {
+            	const modal = document.getElementsByTagName("app-nominations-sort-modal");
+                const els = modal[0].getElementsByClassName("wf-button--primary");
+    	        for (let i = 0; i < els.length; i++) {
+    	            els[i].addEventListener('click', function() {
+                        setTimeout(updateMapFilter, 250);
+    	            });
+    	        }
+            });
         });
     }
 
     function clickFirst() {
-        const listHolder = document.getElementsByClassName("cdk-virtual-scroll-content-wrapper");
-        if (listHolder[0] === undefined || listHolder[0].children === undefined || listHolder[0].children.length < 1) {
-            setTimeout(clickFirst, 200);
-            return;
-        }
-        listHolder[0].children[0].click();
-        
-        initNominationMap();
+        awaitElement(() => document.getElementsByClassName("cdk-virtual-scroll-content-wrapper")).then(ref => {
+            ref[0].children[0].click();
+        });
     }
 
     function initNominationMap() {
@@ -290,7 +287,7 @@ function init() {
             document.getElementsByTagName("head")[0].appendChild(styleElem);
             addMap(createElements());
         } else {
-            updateMap();
+            updateMap(true);
         } 
     }
 
@@ -324,6 +321,18 @@ function init() {
         }
         return "temporary_default_userid";
       }
+
+    const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
+        }
+        queryLoop();
+    });
 
     function addCss() {
         const css = `
