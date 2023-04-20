@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.6.0
+// @version      0.6.1
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -30,7 +30,6 @@
 /* eslint no-var: "error" */
 
 function init() {
-    let tryNumber = 10;
     let nominations;
 
     /**
@@ -164,12 +163,12 @@ function init() {
                     "<br/>Total Reviewed: " + parseInt(totalReviewed) +
                     "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round((acceptedCount/totalReviewed)*10000)/100) + "%)" +
                     "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round((deniedCount/totalReviewed)*10000)/100) + "%)" +
-                    "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
                     "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round((dupeCount/totalReviewed)*10000)/100) + "%)" +
-                    "<br/>NIA Review: " + parseInt(niaReviewCount) +
                     "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
                     "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
+                    "<br/>NIA Review: " + parseInt(niaReviewCount) +
                     "<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
+                    "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
                     "<br/>On Hold: " + parseInt(heldCount) + "<br/>";
 
                 const div = document.createElement('div');
