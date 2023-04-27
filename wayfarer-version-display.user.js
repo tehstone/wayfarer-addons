@@ -58,9 +58,9 @@
             const json = JSON.parse(this.response);
             if (!json) return;
             if (json.version) {
-                const cleanVersion = json.version.replace('release-wayfarer-web-', '');
+                const cleanVersion = json.version.replace(/[A-Za-z-]*/, '');
                 box.textContent = cleanVersion;
-                box.title = cleanVersion;
+                box.title = json.version;
                 if (!version) version = json.version;
                 else if (version !== json.version) {
                     const css = `
