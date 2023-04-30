@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.5
+// @version      0.1.6
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -15,7 +15,7 @@
 
 // ==/UserScript==
 
-// Copyright 2022 tehstone, bilde
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -194,6 +194,7 @@
 
     const reviewContent = (review) => {
       const {
+                id,
                 title,
                 imageUrl,
                 description,
@@ -247,6 +248,9 @@
                     ${getDD("Review Date", getFormattedDate(ts, true))}
                   </dl>
                   ${renderScores(review)}
+                  <dl class="dl-horizontal">
+                    ${getDD("ID", id)}
+                  </dl>
                 </div>
               </div>
             </div>
