@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.7
+// @version      0.1.8
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -248,7 +248,7 @@
             )}
                     ${getDD("Review Date", getFormattedDate(ts, true))}
                   </dl>
-                  ${renderScores(review)}
+                  <dt class="bbold">Review</dt><dd>${renderScores(review)}</dd>
                   <dl class="dl-horizontal">
                     ${getDD("ID", id)}
                   </dl>
@@ -282,7 +282,7 @@
             )}
                     ${getDD("Review Date", getFormattedDate(ts, true))}
                   </dl>
-                  <dt class="bbold">Skipped/Timed Out</dt><dd></dd>
+                  <dt class="bbold">Review</dt><dd>Skipped/Timed Out</dd>
                   <dl class="dl-horizontal">
                     ${getDD("ID", id)}
                   </dl>
