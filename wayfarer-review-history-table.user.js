@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.6
+// @version      0.1.7
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -205,30 +205,31 @@
                 ts,
             } = review;
         const index = 0;
-        const {
-            comment,
-            newLocation,
-            quality,
-            spam,
-            rejectReason,
-            what,
-            duplicate,
-        } = review.review;
+        if (review.review) {
+            const {
+                comment,
+                newLocation,
+                quality,
+                spam,
+                rejectReason,
+                what,
+                duplicate,
+            } = review.review;
 
-        const score = spam ? 1 : quality || 0;
-        const status = duplicate ? "Duplicate" : review.review === "skipped" ? "Skipped" : "Timed Out/Pending";
+            const score = spam ? 1 : quality || 0;
+            const status = duplicate ? "Duplicate" : review.review === "skipped" ? "Skipped" : "Timed Out/Pending";
 
-        return `<div class="panel panel-default review-details">
+            return `<div class="panel panel-default review-details">
           <div class="panel-heading">${title} ${score ? getStarRating(score) : status}</div>
           <div class="panel-body">
               <div class="row">
                 <dl class="dl-horizontal">
                   <div class="col-xs-4"><a target="${getTarget(
-                      "images"
-                  )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${imageUrl}" class="img-responsive" alt="${title}"></a>
+                "images"
+            )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${imageUrl}" class="img-responsive" alt="${title}"></a>
                   <a target="${getTarget(
-                      "images"
-                  )}" href="${supportingImageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
+                "images"
+            )}" href="${supportingImageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
                   </div>
                 </dl>
                 <br>
@@ -242,9 +243,9 @@
                     ${getDD("Reject Reason", rejectReason)}
                     ${getDD("What is it?", what)}
                     ${getDD(
-                    "Location",
-                    getIntelLink(lat, lng, `Open in Intel`)
-                    )}
+                "Location",
+                getIntelLink(lat, lng, `Open in Intel`)
+            )}
                     ${getDD("Review Date", getFormattedDate(ts, true))}
                   </dl>
                   ${renderScores(review)}
@@ -255,6 +256,41 @@
               </div>
             </div>
           </div>`;
+        } else {
+            return `<div class="panel panel-default review-details">
+          <div class="panel-heading">${title}</div>
+          <div class="panel-body">
+              <div class="row">
+                <dl class="dl-horizontal">
+                  <div class="col-xs-4"><a target="${getTarget(
+                "images"
+            )}" href="${imageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${imageUrl}" class="img-responsive" alt="${title}"></a>
+                  <a target="${getTarget(
+                "images"
+            )}" href="${supportingImageUrl}=s0"><img style="max-width: 40%; max-height: 300px; padding: 5px; float: left;" src="${supportingImageUrl}" class="img-responsive" alt="${title}"></a>
+                  </div>
+                </dl>
+                <br>
+                <div class="col-xs-12 col-sm-8" style="float: left; padding: 5px;">
+                  <dl class="dl-horizontal">
+                    ${getDD("Title", title)}
+                    ${getDD("Description", description)}
+                    ${getDD("Statement", statement)}
+                    ${getDD(
+                "Location",
+                getIntelLink(lat, lng, `Open in Intel`)
+            )}
+                    ${getDD("Review Date", getFormattedDate(ts, true))}
+                  </dl>
+                  <dt class="bbold">Skipped/Timed Out</dt><dd></dd>
+                  <dl class="dl-horizontal">
+                    ${getDD("ID", id)}
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }
     }
 
     const getDD = (term, definition) =>
@@ -419,8 +455,14 @@
 
     (() => {
       const css = `
-              bbold {
+              dt.bbold {
                 font-weight: bold;
+                color: #ff4713;
+              }
+
+              .dark dt.bbold {
+                font-weight: bold;
+                color: #20B8E3;
               }
               table.dataTable {
               clear: both;
