@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.1.3
+// @version      0.2.0
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -30,6 +30,17 @@
 /* eslint no-var: "error" */
 
 (function() {
+
+    const CURRENT_EVENT = {
+        from: 1684929600000,
+        to: 1686182340000,
+        regions: ['ES', 'IC', 'EA'],
+        label: '🇪🇸 Challenge:',
+        color: 'goldenrod',
+        counter: -1,
+        currentValid: false,
+    };
+
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
      */
@@ -50,10 +61,14 @@
         if (e.target.status == 202) {
             let count = parseInt(sessionStorage.getItem('wfrcCounter') || '0');
             sessionStorage.setItem('wfrcCounter', ++count);
+            if (CURRENT_EVENT.currentValid) {
+                CURRENT_EVENT.currentValid = false;
+                CURRENT_EVENT.counter++;
+            }
         }
     }
 
-    function injectCounter() {
+    function injectCounter(e) {
         const ref = document.querySelector('wf-logo');
         if (!ref) {
             setTimeout(injectCounter, 200);
@@ -82,6 +97,45 @@
 
         const container = ref.parentNode.parentNode;
         container.appendChild(div);
+
+        const now = Date.now();
+        if (CURRENT_EVENT && now >= CURRENT_EVENT.from && now <= CURRENT_EVENT.to && unsafeWindow.wft_plugins_api && unsafeWindow.wft_plugins_api.openIn) {
+            const WFTApi = unsafeWindow.wft_plugins_api;
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (json && !json.captcha && json.result) {
+                const nom = json.result;
+                if (nom.type === 'NEW' && WFTApi.openIn.getApplicableRegions(nom.lat, nom.lng).some(r => CURRENT_EVENT.regions.includes(r))) {
+                    CURRENT_EVENT.currentValid = true;
+                }
+            }
+            const renderEventCounter = () => {
+                const div = document.createElement('div');
+                div.className = 'wayfarerrctr';
+                let countLabel = document.createElement('p');
+                countLabel.textContent = CURRENT_EVENT.label;
+                let counter = document.createElement('p');
+                counter.textContent = CURRENT_EVENT.counter + '';
+                counter.style.color = CURRENT_EVENT.color;
+                div.appendChild(countLabel);
+                div.appendChild(counter);
+                const container = ref.parentNode.parentNode;
+                container.appendChild(div);
+            };
+            if (CURRENT_EVENT.counter < 0) {
+                if (WFTApi.reviewHistory) {
+                    WFTApi.reviewHistory.getAll().then(h => {
+                        CURRENT_EVENT.counter = h.filter(n => n.type === 'NEW' && n.ts >= CURRENT_EVENT.from && n.ts <= CURRENT_EVENT.to && n.review && WFTApi.openIn.getApplicableRegions(n.lat, n.lng).some(r => CURRENT_EVENT.regions.includes(r))).length;
+                        renderEventCounter();
+                    });
+                } else {
+                    CURRENT_EVENT.counter = 0;
+                    renderEventCounter();
+                }
+            } else {
+                renderEventCounter();
+            }
+        }
     }
 
     (function() {

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.6.9
+// @version      0.6.10
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -975,6 +975,22 @@
             }
         });
 
+        const getGeofenceMemberships = (lat, lng) => {
+            const membership = {}
+            Object.keys(geofences).forEach(region => {
+                membership[region] = isWithinBounds(geofences[region], { lat, lng });
+            });
+            return membership;
+        };
+
+        if (!unsafeWindow.wft_plugins_api) unsafeWindow.wft_plugins_api = {};
+        unsafeWindow.wft_plugins_api.openIn = {
+            getApplicableRegions: (lat, lng) => {
+                const membership = getGeofenceMemberships(lat, lng);
+                return Object.keys(membership).filter(k => membership[k]);
+            }
+        };
+
         const addOpenButtons = (before, { lat, lng, title, description, guid }) => {
             const box = document.createElement('div');
             box.classList.add('wayfareropenin__container');
@@ -985,10 +1001,7 @@
             label.style.fontWeight = 'bold';
             globalBox.appendChild(label);
 
-            const membership = {}
-            Object.keys(geofences).forEach(region => {
-                membership[region] = isWithinBounds(geofences[region], { lat, lng });
-            });
+            const membership = getGeofenceMemberships(lat, lng);
 
             const regionBoxes = {}
             Object.keys(membership).forEach(region => {
