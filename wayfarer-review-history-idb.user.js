@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History
-// @version      0.4.3
+// @version      0.4.4
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -159,8 +159,9 @@
         queryLoop();
     });
 
-    if (!unsafeWindow.wft_plugins_api) unsafeWindow.wft_plugins_api = {};
-    unsafeWindow.wft_plugins_api.reviewHistory = {
+    const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+    if (!windowRef.wft_plugins_api) windowRef.wft_plugins_api = {};
+    windowRef.wft_plugins_api.reviewHistory = {
         getAll: () => new Promise((resolve, reject) => getIDBInstance().then(db => {
             const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
             tx.oncomplete = event => db.close();

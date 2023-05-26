@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.6.10
+// @version      0.6.11
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -39,6 +39,7 @@
 /* eslint no-var: "error" */
 
 (function() {
+    const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const providers = [
         {
             label: 'Google',
@@ -446,10 +447,10 @@
             url: 'https://www.geoland.at/webgisviewer/geoland/map/Geoland_Viewer/Geoland',
             regions: ['AT'],
             onload: data => {
-                awaitElement(() => unsafeWindow.webgis.maps.map).then(ref => {
+                awaitElement(() => windowRef.webgis.maps.map).then(ref => {
                     const { lat, lng } = data.latLng;
                     const setLoc = () => {
-                        ref = unsafeWindow.webgis.maps.map;
+                        ref = windowRef.webgis.maps.map;
                         const ortho = document.getElementById('basemap_of');
                         try {
                             if (ref.setScale && ortho) setTimeout(() => {
@@ -473,7 +474,7 @@
             regions: ['BA'],
             projection: 'EPSG:3908',
             onload: data => {
-                awaitElement(() => unsafeWindow.map).then(ref => {
+                awaitElement(() => windowRef.map).then(ref => {
                     const { lat, lng } = data.latLng;
                     ref.getView().setCenter([ lng, lat ]);
                     ref.getView().setZoom(20);
@@ -489,7 +490,7 @@
             onload: data => {
                 // There is a permalink feature on this map, but it does not appear to work.
                 awaitIndefinitely(() => document.querySelector('div[data-layername="Orthophoto 50cm"]')).then(ref => {
-                    awaitIndefinitely(() => unsafeWindow.map).then(map => {
+                    awaitIndefinitely(() => windowRef.map).then(map => {
                         const { lat, lng } = data.latLng;
                         try {
                             map.setCenter(new OpenLayers.LonLat(lng, lat), 17);
@@ -518,7 +519,7 @@
             projection: 'EPSG:25832',
             regions: ['DE_BW'],
             onload: data => {
-                awaitElement(() => unsafeWindow.hasOwnProperty('flexgis-core') ? unsafeWindow['flexgis-core'] : false).then(ref => {
+                awaitElement(() => windowRef.hasOwnProperty('flexgis-core') ? windowRef['flexgis-core'] : false).then(ref => {
                     awaitIndefinitely(() => [1, 2].includes(ref.fgMap.status)).then(() => {
                         const { lat, lng } = data.latLng;
                         ref.fgMapService.getView().setCenter([ lng, lat ]);
@@ -553,10 +554,10 @@
                     const { lat, lng } = data.latLng;
                     const setLoc = () => {
                         try {
-                            if (unsafeWindow.map.graphics) setTimeout(() => {
+                            if (windowRef.map.graphics) setTimeout(() => {
                                 refs.lat.value = lat;
                                 refs.lon.value = lng;
-                                unsafeWindow.coordinate.getCoorPoint();
+                                windowRef.coordinate.getCoorPoint();
                                 awaitElement(() => document.getElementById('ortofoto_colore_12')).then(ortho => {
                                     ortho.dispatchEvent(new MouseEvent('dblclick'));
                                 });
@@ -585,7 +586,7 @@
                     const { lat, lng } = data.latLng;
                     const setLoc = () => {
                         try {
-                            if (unsafeWindow.GeometryEngineService) {
+                            if (windowRef.GeometryEngineService) {
                                 refs.cP.value = 'Google';
                                 refs.cX.value = lat;
                                 refs.cY.value = lng;
@@ -983,8 +984,8 @@
             return membership;
         };
 
-        if (!unsafeWindow.wft_plugins_api) unsafeWindow.wft_plugins_api = {};
-        unsafeWindow.wft_plugins_api.openIn = {
+        if (!windowRef.wft_plugins_api) windowRef.wft_plugins_api = {};
+        windowRef.wft_plugins_api.openIn = {
             getApplicableRegions: (lat, lng) => {
                 const membership = getGeofenceMemberships(lat, lng);
                 return Object.keys(membership).filter(k => membership[k]);

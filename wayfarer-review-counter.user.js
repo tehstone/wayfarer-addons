@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.2.0
+// @version      0.2.1
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -99,8 +99,9 @@
         container.appendChild(div);
 
         const now = Date.now();
-        if (CURRENT_EVENT && now >= CURRENT_EVENT.from && now <= CURRENT_EVENT.to && unsafeWindow.wft_plugins_api && unsafeWindow.wft_plugins_api.openIn) {
-            const WFTApi = unsafeWindow.wft_plugins_api;
+        const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        if (CURRENT_EVENT && now >= CURRENT_EVENT.from && now <= CURRENT_EVENT.to && windowRef.wft_plugins_api && windowRef.wft_plugins_api.openIn) {
+            const WFTApi = windowRef.wft_plugins_api;
             const response = this.response;
             const json = JSON.parse(response);
             if (json && !json.captcha && json.result) {
