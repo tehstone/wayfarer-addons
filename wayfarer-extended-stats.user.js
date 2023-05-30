@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.5.5
+// @version      0.6.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
+// @run-at       document-start
 // ==/UserScript==
 
 // Copyright 2022 tehstone, bilde
@@ -30,8 +31,12 @@
 /* eslint no-var: "error" */
 
 function init() {
+    const uuid = '04dae49a-ee23-4a62-a18e-bcfa2fbffaed'; // randomly generated, unique to this userscript, please don't re-use in other scripts
+
     let tryNumber = 10;
     let stats;
+    let wddAuthMessageHandler = null;
+    let userHash = 0;
 
     let selection = localStorage['wfcc_count_type_dropdown'];
       if (!selection) {
@@ -39,15 +44,28 @@ function init() {
         localStorage['wfcc_count_type_dropdown'] = selection;
       }
 
+    // https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js
+    const cyrb53 = function(str, seed = 0) {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+        return 4294967296 * (2097151 & h2) + (h1>>>0);
+    };
+
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
      */
     (function (open) {
         XMLHttpRequest.prototype.open = function (method, url) {
-            if (url == '/api/v1/vault/profile') {
-                if (method == 'GET') {
-                    this.addEventListener('load', parseStats, false);
-                }
+            if (url == '/api/v1/vault/profile' && method == 'GET') {
+                this.addEventListener('load', parseStats, false);
+            } else if (url == '/api/v1/vault/properties' && method == 'GET') {
+                this.addEventListener('load', parseProps, false);
             }
             open.apply(this, arguments);
         };
@@ -79,6 +97,22 @@ function init() {
             });
 
         } catch (e)    {
+            console.warn(e); // eslint-disable-line no-console
+        }
+    }
+
+    function parseProps(e) {
+        try {
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (!json) return;
+            if (json.captcha) return;
+            const props = json.result;
+            if (props) {
+                // Get a user ID to properly handle browsers shared between several users. Store a hash only, for privacy.
+                userHash = cyrb53(props.socialProfile.email);
+            }
+        } catch (e) {
             console.warn(e); // eslint-disable-line no-console
         }
     }
@@ -226,6 +260,50 @@ function init() {
         offsetAgreementsLabel.classList.add('wayfareres_settings_label');
         offsetAgreementsLabel.title = "If you earned agreements prior to the release of Upgrades or have other cases where your agreement count is off by a known amount enter that amount here."
 
+        const wddAutoImportBox = document.createElement('span');
+        wddAutoImportBox.classList.add('wayfarercc_input');
+        wddAutoImportBox.classList.add('wayfareres_autoimport_box');
+        const wddImportLSKey = "wfes_wdd_auth_data_" + userId;
+        const renderUser = box => {
+            const dataStr = localStorage[wddImportLSKey];
+            if (!dataStr) return;
+            const wddAuthData = JSON.parse(dataStr);
+            const avatar = document.createElement('img');
+            avatar.src = wddAuthData.avatar;
+            box.appendChild(avatar);
+            const name = document.createElement('span');
+            name.textContent = wddAuthData.name;
+            box.appendChild(name);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://apps.varden.info/wfptools/wdd/post-stats.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                id: wddAuthData.id,
+                data: makeStats()
+            }));
+        }
+        const wddAuthImportLabel = document.createElement('span');
+        wddAuthImportLabel.textContent = 'Auto-submit to WDD:';
+        wddAuthImportLabel.title = "You can use this function to auto-submit your stats to King Clippy's leaderboards if you are part of the Wayfarer Discussion Discord.";
+        wddAuthImportLabel.classList.add('wayfareres_settings_label');
+        if (localStorage.hasOwnProperty(wddImportLSKey)) {
+            renderUser(wddAutoImportBox);
+        } else {
+            const wddAuthButton = document.createElement('button');
+            wddAuthButton.textContent = 'Authenticate';
+            wddAuthButton.addEventListener('click', () => {
+                const wddAuthWindow = window.open('https://apps.varden.info/wfptools/wdd/');
+                wddAuthMessageHandler = ({ data }) => {
+                    wddAuthWindow.close();
+                    wddAutoImportBox.removeChild(wddAuthButton);
+                    localStorage[wddImportLSKey] = JSON.stringify(data);
+                    renderUser(wddAutoImportBox);
+                };
+            });
+            wddAutoImportBox.appendChild(wddAuthButton);
+        }
+
         const helpLabel = document.createElement("label");
         helpLabel.innerText = "Hover mouse over each item for an explanation.";
         helpLabel.classList.add('wayfareres_settings_label');
@@ -243,6 +321,9 @@ function init() {
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(offsetAgreementsLabel);
         settingsDiv.appendChild(offsetAgreementsInput);
+        /*settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(wddAuthImportLabel);
+        settingsDiv.appendChild(wddAutoImportBox);*/
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(helpLabel);
         settingsDiv.appendChild(document.createElement('br'));
@@ -381,71 +462,73 @@ function init() {
         referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
     }
 
+    const makeStats = () => {
+        const {performance, finished, accepted, rejected, duplicated, available, progress, total} = stats;
+        let total_agreements = getTotalAgreementCount(stats);
+        const base_agreements = accepted + rejected + duplicated;
+        let other = total_agreements - base_agreements;
+
+        let count_type = localStorage['wfcc_count_type_dropdown'];
+        if (count_type === "badgestat") {
+            count_type = "facts";
+        } else if (count_type === "upgradecount" ) {
+            count_type = "aprox";
+        } else {
+            count_type = "simple";
+            other = 0;
+        }
+
+        const userId = getUserId();
+        let badgeCount = localStorage["wfcc_badge_count_" + userId];
+        if (badgeCount === undefined || badgeCount === null || badgeCount === "" || badgeCount === "false"){
+            badgeCount = 0;
+        } else {
+            badgeCount = parseInt(badgeCount);
+        }
+        let bonusUpgrade = parseInt(localStorage["wfcc_bonus_upgrade_" + userId]);
+        if (bonusUpgrade === undefined || bonusUpgrade === null || bonusUpgrade === "" || bonusUpgrade === "false" || isNaN(bonusUpgrade)){
+            bonusUpgrade = 0;
+        }
+        let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
+        if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false" || isNaN(offsetAgreements)){
+            offsetAgreements = 0;
+        }
+
+        const exportData = {
+            "current_rating": performance,
+            "total_nominations": finished,
+            "total_agreements": total_agreements,
+            "accepted": accepted,
+            "rejected": rejected,
+            "duplicates": duplicated,
+            "other": other,
+            "upgrades_available": available,
+            "current_progress": progress,
+            "upgrades_redeemed": total,
+            "extended_type": count_type,
+            "badge_count": badgeCount,
+            "bonus_upgrades": bonusUpgrade,
+            "agreement_offset": offsetAgreements
+        };
+        return exportData;
+        };
+
     function exportStats() {
-      const {performance, finished, accepted, rejected, duplicated, available, progress, total} = stats;
-      let total_agreements = getTotalAgreementCount(stats);
-      const base_agreements = accepted + rejected + duplicated;
-      let other = total_agreements - base_agreements;
-
-      let count_type = localStorage['wfcc_count_type_dropdown'];
-      if (count_type === "badgestat") {
-          count_type = "facts";
-      } else if (count_type === "upgradecount" ) {
-          count_type = "aprox";
-      } else {
-          count_type = "simple";
-          other = 0;
-      }
-
-      const userId = getUserId();
-      let badgeCount = localStorage["wfcc_badge_count_" + userId];
-      if (badgeCount === undefined || badgeCount === null || badgeCount === "" || badgeCount === "false"){
-        badgeCount = 0;
-      } else {
-        badgeCount = parseInt(badgeCount);
-      }
-      let bonusUpgrade = parseInt(localStorage["wfcc_bonus_upgrade_" + userId]);
-      if (bonusUpgrade === undefined || bonusUpgrade === null || bonusUpgrade === "" || bonusUpgrade === "false" || isNaN(bonusUpgrade)){
-          bonusUpgrade = 0;
-      }
-      let offsetAgreements = parseInt(localStorage["wfcc_offset_agreements_" + userId]);
-      if (offsetAgreements === undefined || offsetAgreements === null || offsetAgreements === "" || offsetAgreements === "false" || isNaN(offsetAgreements)){
-          offsetAgreements = 0;
-      }
-
-      const exportData = {
-        "current_rating": performance,
-        "total_nominations": finished,
-        "total_agreements": total_agreements,
-        "accepted": accepted,
-        "rejected": rejected,
-        "duplicates": duplicated,
-        "other": other,
-        "upgrades_available": available,
-        "current_progress": progress,
-        "upgrades_redeemed": total,
-        "extended_type": count_type,
-        "badge_count": badgeCount,
-        "bonus_upgrades": bonusUpgrade,
-        "agreement_offset": offsetAgreements
-      }
-
+      const exportData = makeStats();
       navigator.clipboard.writeText(JSON.stringify(exportData));
     }
 
     function getUserId() {
-        var els = document.getElementsByTagName("image");
-        for (var i = 0; i < els.length; i++) {
-           const element = els[i];
-           const attribute = element.getAttribute("href");
-           let fields = attribute.split('/');
-           let userId = fields[fields.length-1];
-           fields = userId.split('=');
-           userId = fields[0];
-           return userId;
-        }
-        return "temporary_default_userid";
+        return userHash + '';
     }
+
+    window.addEventListener('message', e => {
+        if (e.data.uuid !== uuid) return;
+        if (e.origin === 'https://apps.varden.info' && wddAuthMessageHandler) {
+            wddAuthMessageHandler(e.data);
+            wddAuthMessageHandler = null;
+        }
+    });
 
     function addCss() {
         const css = `
@@ -624,11 +707,33 @@ function init() {
                 font-weight: bold;
                 color: black;
             }
+
+            .wayfareres_autoimport_box {
+                background-color: #eee !important;
+                font-weight: bold;
+            }
+
+            .wayfareres_autoimport_box img {
+                height: 1em;
+                display: inline-block;
+                margin-right: 5px;
+                margin-top: -4px;
+            }
             `;
         const style = document.createElement('style');
         style.type = 'text/css';
         style.innerHTML = css;
-        document.querySelector('head').appendChild(style);
+
+        // We're loading this script on document-start, which means <head> does not exist yet.
+        // Wait for it to start existing before we try to add the CSS to it.
+        const tryAdd = setInterval(() => {
+            const head = document.querySelector('head');
+            if (head) {
+                clearInterval(tryAdd);
+                console.log('Injecting styles...');
+                head.appendChild(style);
+            }
+        }, 100);
     }
 }
 
