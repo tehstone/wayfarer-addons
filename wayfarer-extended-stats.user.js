@@ -321,9 +321,9 @@ function init() {
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(offsetAgreementsLabel);
         settingsDiv.appendChild(offsetAgreementsInput);
-        settingsDiv.appendChild(document.createElement('br'));
+        /*settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(wddAuthImportLabel);
-        settingsDiv.appendChild(wddAutoImportBox);
+        settingsDiv.appendChild(wddAutoImportBox);*/
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(helpLabel);
         settingsDiv.appendChild(document.createElement('br'));
