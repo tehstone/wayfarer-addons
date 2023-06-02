@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.2.2
+// @version      0.2.3
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2021 tehstone
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -50,13 +50,13 @@
                 label: '🇮🇩',
                 regions: ['ID'],
                 from: Date.parse('2023-05-30T22:00Z'),
-                to: Date.parse('2023-06-02T19:00Z'),
+                to: Date.parse('2023-06-02T00:00Z'),
                 counter: 0
             },
             {
                 label: '🇧🇷',
                 regions: ['BR'],
-                from: Date.parse('2023-06-02T19:00Z'),
+                from: Date.parse('2023-06-02T00:00Z'),
                 to: Date.parse('2023-06-05T19:00Z'),
                 counter: 0
             },
