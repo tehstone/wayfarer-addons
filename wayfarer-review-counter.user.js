@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.2.3
+// @version      0.2.4
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -43,27 +43,27 @@
                 label: '🇪🇸',
                 regions: ['ES', 'IC', 'EA'],
                 from: Date.parse('2023-05-24T12:00Z'),
-                to: Date.parse('2023-05-30T22:00Z'),
+                to: Date.parse('2023-05-30T22:27Z'),
                 counter: 0
             },
             {
                 label: '🇮🇩',
                 regions: ['ID'],
-                from: Date.parse('2023-05-30T22:00Z'),
-                to: Date.parse('2023-06-02T00:00Z'),
+                from: Date.parse('2023-05-30T22:27Z'),
+                to: Date.parse('2023-06-02T00:06Z'),
                 counter: 0
             },
             {
                 label: '🇧🇷',
                 regions: ['BR'],
-                from: Date.parse('2023-06-02T00:00Z'),
-                to: Date.parse('2023-06-05T19:00Z'),
+                from: Date.parse('2023-06-02T00:06Z'),
+                to: Date.parse('2023-06-04T18:33Z'),
                 counter: 0
             },
             {
                 label: '🇮🇳',
                 regions: ['IN'],
-                from: Date.parse('2023-06-05T19:00Z'),
+                from: Date.parse('2023-06-04T18:33Z'),
                 to: Date.parse('2023-06-07T19:00Z'),
                 counter: 0
             }
