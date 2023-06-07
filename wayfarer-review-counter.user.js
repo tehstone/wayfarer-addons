@@ -71,7 +71,7 @@
                 label: '🗺️',
                 regions: ['ES', 'IC', 'EA', 'IN', 'BR', 'ID'],
                 from: Date.parse('2023-06-05T22:01Z'),
-                to: Date.parse('2023-06-07T19:00Z'),
+                to: Date.parse('2023-06-07T11:59Z'),
                 counter: 0
             }
         ]
