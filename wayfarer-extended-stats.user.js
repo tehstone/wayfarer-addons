@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.7.0
+// @version      0.7.1
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -319,7 +319,8 @@ function init() {
                     'Membership in the Wayfarer Discussion Discord (WDD) is required to use this function.'
                     + '\n\nPRIVACY NOTICE\nBy using this function, your stats will be automatically submitted to WDD and King Clippy. '
                     + 'Whenever such a submission occurs, the submission will be logged in WDD alongside your Discord ID and the exact timestamp '
-                    + 'of the submission. The submission log is visible to WDD administrators, who may access these logs at any time, for any purpose.'
+                    + 'of the submission. The submission log is visible to WDD administrators, who may access these logs at any time, for any purpose. '
+                    + 'Additionally, all stats submissions are publicly visible to everyone in the #clippys-corner channel in WDD.'
                     + '\n\nSubmissions are processed through a third-party web service operated by the WDD administrators. When you authenticate '
                     + 'your Discord account through WF Extended Stats, this web service will validate your Discord credentials and verify your membership '
                     + 'in WDD. If successful, your browser is issued an encrypted token (ticket) that identifies your Discord account. '
