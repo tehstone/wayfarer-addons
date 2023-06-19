@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Extended Stats
-// @version      0.6.0
+// @version      0.7.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-extended-stats.user.js
@@ -264,6 +264,7 @@ function init() {
         wddAutoImportBox.classList.add('wayfarercc_input');
         wddAutoImportBox.classList.add('wayfareres_autoimport_box');
         const wddImportLSKey = "wfes_wdd_auth_data_" + userId;
+        const wddImportLastDate = "wfes_wdd_last_submit_" + userId;
         const renderUser = box => {
             const dataStr = localStorage[wddImportLSKey];
             if (!dataStr) return;
@@ -274,7 +275,27 @@ function init() {
             const name = document.createElement('span');
             name.textContent = wddAuthData.name;
             box.appendChild(name);
+            const dcButton = document.createElement('button');
+            dcButton.innerHTML = '&#x274C;';
+            dcButton.addEventListener('click', () => {
+                if (confirm('Are you sure you wish to stop auto-submitting your stats to WDD?')) {
+                    localStorage.removeItem(wddImportLSKey);
+                    location.reload();
+                }
+            });
+            dcButton.style.marginLeft = '5px';
+            box.appendChild(dcButton);
+            sendToKingClippy();
+        }
 
+        const sendToKingClippy = () => {
+            const now = Date.now();
+            const dataStr = localStorage[wddImportLSKey];
+            if (!dataStr) return;
+            const lastImport = parseInt(localStorage[wddImportLastDate] || '0');
+            if (now - lastImport < 3600000) return;
+            localStorage[wddImportLastDate] = now + '';
+            const wddAuthData = JSON.parse(dataStr);
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'https://apps.varden.info/wfptools/wdd/post-stats.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -282,7 +303,8 @@ function init() {
                 id: wddAuthData.id,
                 data: makeStats()
             }));
-        }
+        };
+
         const wddAuthImportLabel = document.createElement('span');
         wddAuthImportLabel.textContent = 'Auto-submit to WDD:';
         wddAuthImportLabel.title = "You can use this function to auto-submit your stats to King Clippy's leaderboards if you are part of the Wayfarer Discussion Discord.";
@@ -293,13 +315,30 @@ function init() {
             const wddAuthButton = document.createElement('button');
             wddAuthButton.textContent = 'Authenticate';
             wddAuthButton.addEventListener('click', () => {
-                const wddAuthWindow = window.open('https://apps.varden.info/wfptools/wdd/');
-                wddAuthMessageHandler = ({ data }) => {
-                    wddAuthWindow.close();
-                    wddAutoImportBox.removeChild(wddAuthButton);
-                    localStorage[wddImportLSKey] = JSON.stringify(data);
-                    renderUser(wddAutoImportBox);
-                };
+                if (confirm(
+                    'Membership in the Wayfarer Discussion Discord (WDD) is required to use this function.'
+                    + '\n\nPRIVACY NOTICE\nBy using this function, your stats will be automatically submitted to WDD and King Clippy. '
+                    + 'Whenever such a submission occurs, the submission will be logged in WDD alongside your Discord ID and the exact timestamp '
+                    + 'of the submission. The submission log is visible to WDD administrators, who may access these logs at any time, for any purpose.'
+                    + '\n\nSubmissions are processed through a third-party web service operated by the WDD administrators. When you authenticate '
+                    + 'your Discord account through WF Extended Stats, this web service will validate your Discord credentials and verify your membership '
+                    + 'in WDD. If successful, your browser is issued an encrypted token (ticket) that identifies your Discord account. '
+                    + 'The token is used by the web service to connect your submitted statistics to your Discord account. The web service will '
+                    + 'NEVER have access to your Discord password.'
+                    + '\n\nClicking OK in this dialog box indicates your consent to data processing in accordance with these terms. '
+                    + 'If you do not consent to these terms, please press Cancel now. If you wish to withdraw your consent in the future, '
+                    + 'please contact WDD staff, who will assist you in purging your data from WDD.')) {
+                    const wddAuthWindow = window.open('https://apps.varden.info/wfptools/wdd/');
+                    wddAuthMessageHandler = ({ data }) => {
+                        wddAuthWindow.close();
+                        wddAutoImportBox.removeChild(wddAuthButton);
+                        localStorage[wddImportLSKey] = JSON.stringify(data);
+                        renderUser(wddAutoImportBox);
+                        setTimeout(() => {
+                            alert('Connection successful! Please note that stats are only submitted to WDD when you visit the Profile page in Wayfarer (this page). If you do not visit this page, your statistics will not be submitted.');
+                        }, 10);
+                    };
+                }
             });
             wddAutoImportBox.appendChild(wddAuthButton);
         }
@@ -321,9 +360,9 @@ function init() {
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(offsetAgreementsLabel);
         settingsDiv.appendChild(offsetAgreementsInput);
-        /*settingsDiv.appendChild(document.createElement('br'));
+        settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(wddAuthImportLabel);
-        settingsDiv.appendChild(wddAutoImportBox);*/
+        settingsDiv.appendChild(wddAutoImportBox);
         settingsDiv.appendChild(document.createElement('br'));
         settingsDiv.appendChild(helpLabel);
         settingsDiv.appendChild(document.createElement('br'));
