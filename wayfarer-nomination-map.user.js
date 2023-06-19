@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.4.2
+// @version      0.4.3
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
@@ -106,10 +106,11 @@ function init() {
                 alert('Wayfarer\'s response didn\'t include nominations.');
                 return;
             }
+            addLoadSetting();
             addCounter();
             initPrimaryListener();
-            clickFirst();
             initNominationMap();
+            checkAutoLoad();
 
         } catch (e)    {
             console.log(e); // eslint-disable-line no-console
@@ -269,6 +270,55 @@ function init() {
         });
     }
 
+    function addLoadSetting() {
+        awaitElement(() => document.querySelector(".cdk-virtual-scroll-content-wrapper")).then(ref => {
+            const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
+            const insDiv = document.querySelector(".mt-2");
+            const userId = getUserId();
+
+            let loadFirstChkbox = document.createElement("INPUT");
+            loadFirstChkbox.setAttribute("type", "checkbox");
+
+            loadFirstChkbox.id = 'wayfarernmloadfirstchkbox';
+
+            const loadFirstChkboxLabel = document.createElement("label");
+            loadFirstChkboxLabel.innerText = "Load first wayspot detail automatically:";
+            loadFirstChkboxLabel.setAttribute("for", "wayfarernmloadfirstchkbox");
+
+            insDiv.insertBefore(loadFirstChkbox, insDiv.children[0]);
+            insDiv.insertBefore(loadFirstChkboxLabel, insDiv.children[0]);
+            insDiv.insertBefore(document.createElement("br"), insDiv.children[0]);
+
+            let loadFirst = localStorage.getItem(`wfnm_load_first_${userId}`);
+            if (loadFirst === undefined || loadFirst === null || loadFirst === ""){
+                loadFirst = true;
+            }
+            loadFirst = loadFirst === "true";
+
+            if (loadFirst) {
+                loadFirstChkbox.checked = true;
+            }
+
+            loadFirstChkbox.addEventListener('click', e => {
+                localStorage.setItem(`wfnm_load_first_${userId}`, e.target.checked);
+                console.log(e.target.checked);
+            });
+        });
+    }
+
+    function checkAutoLoad() {
+        const userId = getUserId();
+        let loadFirst = localStorage.getItem(`wfnm_load_first_${userId}`);
+        if (loadFirst === undefined || loadFirst === null || loadFirst === ""){
+            loadFirst = true;
+        }
+        loadFirst = loadFirst === "true";
+
+        if (loadFirst) {
+            clickFirst();
+        }
+    }
+
     function clickFirst() {
         awaitElement(() => document.getElementsByClassName("cdk-virtual-scroll-content-wrapper")).then(ref => {
             ref[0].children[0].click();
@@ -277,7 +327,7 @@ function init() {
 
     function initNominationMap() {
         if (typeof(google) === 'undefined' || nominations === []) {
-            setTimeout(initNominationMap, 100);
+            setTimeout(initNominationMap, 250);
             return;
         }
 
