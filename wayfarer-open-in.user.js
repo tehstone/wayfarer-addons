@@ -54,6 +54,10 @@
             url: 'https://intel.ingress.com/intel?ll=%lat%,%lng%&z=18'
         },
         {
+            label: 'Lightship',
+            url: 'https://lightship.dev/account/geospatial-browser/%lat%,%lng%,18,,'
+        },
+        {
             label: 'Bing',
             url: 'https://www.bing.com/maps?cp=%lat%~%lng%&lvl=17&style=h'
         },
