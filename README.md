@@ -122,6 +122,7 @@ Adds direct links to external map providers wherever maps are displayed in Wayfa
 - Google Maps
 - OpenStreetMap
 - Ingress Intel
+- Lightship
 - Bing Maps
 - Yandex.Maps
 
