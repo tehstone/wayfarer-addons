@@ -372,6 +372,18 @@
         },
         {
             // Norway
+            label: 'Finn.no kart',
+            url: 'https://kart.finn.no/?lng=%lng%&lat=%lat%&zoom=16&mapType=norortho&showPin=1',
+            regions: ['NO']
+        },
+        {
+            // Norway
+            label: '1881.no kart',
+            url: 'https://kart.1881.no/?lat=%lat%&lon=%lon%&z=16&v=1&r=&o=&layer=',
+            regions: ['NO']
+        },
+        {
+            // Norway
             label: 'Gule Sider',
             url: 'https://kart.gulesider.no/?c=%lat%,%lng%&z=18&l=aerial&g=%lat%,%lng%',
             regions: ['NO']
