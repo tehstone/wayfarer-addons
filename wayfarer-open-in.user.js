@@ -379,7 +379,7 @@
         {
             // Norway
             label: '1881.no kart',
-            url: 'https://kart.1881.no/?lat=%lat%&lon=%lon%&z=16&v=1&r=&o=&layer=',
+            url: 'https://kart.1881.no/?lat=%lat%&lon=%lng%&z=16&v=1&r=&o=&layer=',
             regions: ['NO']
         },
         {
