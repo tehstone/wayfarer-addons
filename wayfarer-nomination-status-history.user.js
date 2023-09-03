@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.8.8
+// @version      0.8.9
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -362,7 +362,7 @@
                     if (nom.status != saved.status) {
                         history.push({ timestamp: Date.now(), status: nom.status });
                         // For most status updates, it's also desired to send a notification to the user.
-                        if (nom.status !== 'HELD' && saved.status !== 'HELD') {
+                        if (nom.status !== 'HELD' && (saved.status !== 'HELD' && nom.status !== 'NOMINATED')) {
                             const { text, color } = getStatusNotificationText(nom.status);
                             createNotification(`${nom.title} ${text}`, color);
                         }
