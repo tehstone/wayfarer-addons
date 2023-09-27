@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.2.7
+// @version      0.3.0
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -32,46 +32,32 @@
 (function() {
 
     const CURRENT_EVENT = {
-        from: Date.parse('2023-05-24T12:00Z'),
-        to: Date.parse('2023-06-09T19:00Z'),
+        from: Date.parse('2023-09-27T19:00Z'),
+        to: Date.parse('2023-10-08T19:00Z'),
         label: 'Challenge:',
         color: 'goldenrod',
         currentValid: -1,
         initialized: false,
         parts: [
             {
-                label: '🇪🇸',
-                regions: ['ES', 'IC', 'EA'],
-                from: Date.parse('2023-05-24T12:00Z'),
-                to: Date.parse('2023-05-30T22:27Z'),
+                label: '🇮🇹',
+                regions: ['IT'],
+                from: Date.parse('2023-09-27T19:00Z'),
+                to: Date.parse('2023-09-29T19:00Z'),
                 counter: 0
             },
             {
-                label: '🇮🇩',
-                regions: ['ID'],
-                from: Date.parse('2023-05-30T22:27Z'),
-                to: Date.parse('2023-06-02T00:06Z'),
+                label: '🇫🇷',
+                regions: ['FR'],
+                from: Date.parse('2023-09-29T19:00Z'),
+                to: Date.parse('2023-10-02T19:00Z'),
                 counter: 0
             },
             {
-                label: '🇧🇷',
-                regions: ['BR'],
-                from: Date.parse('2023-06-02T00:06Z'),
-                to: Date.parse('2023-06-04T18:33Z'),
-                counter: 0
-            },
-            {
-                label: '🇮🇳',
-                regions: ['IN'],
-                from: Date.parse('2023-06-04T18:33Z'),
-                to: Date.parse('2023-06-05T22:01Z'),
-                counter: 0
-            },
-            {
-                label: '🗺️',
-                regions: ['ES', 'IC', 'EA', 'IN', 'BR', 'ID'],
-                from: Date.parse('2023-06-05T22:01Z'),
-                to: Date.parse('2023-06-07T23:59Z'),
+                label: '🇩🇪',
+                regions: ['DE'],
+                from: Date.parse('2023-10-02T19:00Z'),
+                to: Date.parse('2023-10-04T19:00Z'),
                 counter: 0
             }
         ]
