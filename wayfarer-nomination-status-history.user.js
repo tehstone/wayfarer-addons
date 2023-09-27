@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.8.7
+// @version      0.8.8
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1138,7 +1138,7 @@
             PGO_TYPE_2: doc => tryNull(() => doc.querySelector('h2 ~ p:last-of-type').previousElementSibling.querySelector('img').src),
             WF_DECIDED: (regex, months) => doc => {
                 const mr = new RegExp(regex.source.split('(?<month>)').join(`(?<month>${months.join('|')})`));
-                const match = doc.querySelector('.em_font_20').textContent.trim().match(mr);
+                const match = (doc.querySelector('.em_font_20') || doc.querySelector('.em_org_u').firstChild).textContent.trim().match(mr);
                 const month = months.indexOf(match.groups.month) + 1;
                 const date = `${match.groups.year}-${('0' + month).slice(-2)}-${('0' + match.groups.day).slice(-2)}`;
                 // Wayfarer is in UTC, but emails are in local time. Work around this by also matching against the preceding
@@ -1201,6 +1201,12 @@
                 if (rejectText && text.includes(rejectText)) return eType.determineRejectType(nom, fh);
                 return null;
             },
+            WF_DECIDED_NIA: (acceptText, rejectText) => (doc, nom, fh) => {
+                const text = doc.querySelector('.em_org_u').textContent.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text.includes(acceptText)) return eType.ACCEPTED;
+                if (rejectText && text.includes(rejectText)) return eType.determineRejectType(nom, fh);
+                return null;
+            },
             WF_APPEAL_DECIDED: (acceptText, rejectText) => (doc, nom) => {
                 const text = doc.querySelector('.em_font_20').parentNode.nextElementSibling.textContent.replaceAll(/\s+/g, ' ').trim();
                 if (acceptText && text.includes(acceptText)) return eType.ACCEPTED;
@@ -1237,6 +1243,17 @@
                     'has decided not to accept your Wayspot nomination.'
                 ), image: [ eQuery.WF_DECIDED(
                     /^Thank you for your Wayspot nomination (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)!$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                ) ]
+            },
+            {
+                // Nomination decided (Wayfarer, NIA)
+                subject: /^Decision on you Wayfarer Nomination,/,
+                status: eStatusHelpers.WF_DECIDED_NIA(
+                    undefined, // Accepted - this email template has not been used for acceptances yet
+                    'did not meet the criteria required to be accepted and has been rejected'
+                ), image: [ eQuery.WF_DECIDED(
+                    /^Thank you for taking the time to nominate (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)\./,
                     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 ) ]
             },
