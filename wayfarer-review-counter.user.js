@@ -64,7 +64,7 @@
             {
                 label: '🇬🇧',
                 regions: ['GB'],
-                to: Date.parse('2023-09-30T16:30Z'),
+                from: Date.parse('2023-09-30T16:30Z'),
                 to: Date.parse('2023-10-04T19:00Z'),
                 counter: 0
             },
