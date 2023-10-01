@@ -64,7 +64,21 @@
             {
                 label: '🇬🇧',
                 regions: ['GB'],
-                from: Date.parse('2023-09-30T16:30Z'),
+                from: Date.parse('2023-09-27T19:00Z'),
+                to: Date.parse('2023-10-04T19:00Z'),
+                counter: 0
+            },
+             {
+                label: '🇩🇰',
+                regions: ['DK'],
+                from: Date.parse('2023-09-27T19:00Z'),
+                to: Date.parse('2023-10-04T19:00Z'),
+                counter: 0
+            },
+             {
+                label: '🇸🇪',
+                regions: ['SE'],
+                from: Date.parse('2023-09-27T19:00Z'),
                 to: Date.parse('2023-10-04T19:00Z'),
                 counter: 0
             },
