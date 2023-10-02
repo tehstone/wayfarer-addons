@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.3.8
+// @version      0.3.9
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -83,8 +83,29 @@
                 counter: 0
             },
             {
+                label: '🇪🇸',
+                regions: ['ES'],
+                from: Date.parse('2023-09-27T19:00Z'),
+                to: Date.parse('2023-10-04T19:00Z'),
+                counter: 0
+            },
+            {
+                label: '🇦🇹',
+                regions: ['AT'],
+                from: Date.parse('2023-09-27T19:00Z'),
+                to: Date.parse('2023-10-04T19:00Z'),
+                counter: 0
+            },
+            {
+                label: '🇨🇭',
+                regions: ['CH'],
+                from: Date.parse('2023-09-27T19:00Z'),
+                to: Date.parse('2023-10-04T19:00Z'),
+                counter: 0
+            },
+            {
                 label: '🗺️',
-                regions: ['IT', 'FR', 'DE_BB','DE_BY','DE_BE','DE_BW','DE_HB','DD_HE','DE_HH','DE_MV','DE_NI','DD_NW','DE_RP','DE_SH','DD_SL','DE_SN','DE_ST','DE_TH'],
+                regions: ['IT', 'FR', 'DE_BB','DE_BY','DE_BE','DE_BW','DE_HB','DD_HE','DE_HH','DE_MV','DE_NI','DD_NW','DE_RP','DE_SH','DD_SL','DE_SN','DE_ST','DE_TH', 'GB', 'DK', 'SE', 'ES', 'AT', 'CH'],
                 from: Date.parse('2023-09-27T19:00Z'),
                 to: Date.parse('2023-10-04T19:00Z'),
                 counter: 0
