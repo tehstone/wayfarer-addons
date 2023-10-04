@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.3.10
+// @version      0.3.11
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -100,13 +100,6 @@
                 label: '🇪🇸',
                 regions: ['ES'],
                 from: Date.parse('2023-9-27T19:00Z'),
-                to: Date.parse('2023-10-04T19:00Z'),
-                counter: 0
-            },
-            {
-                label: '🇪🇸',
-                regions: ['ES'],
-                from: Date.parse('2023-09-27T19:00Z'),
                 to: Date.parse('2023-10-04T19:00Z'),
                 counter: 0
             },
