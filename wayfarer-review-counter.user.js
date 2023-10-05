@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.3.13
+// @version      0.4.0
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -34,7 +34,7 @@
      const CURRENT_EVENT = 
     {
         from: Date.parse('2023-09-27T19:00Z'),
-        to: Date.parse('2023-10-08T19:00Z'),
+        to: Date.parse('2023-10-06T19:00Z'),
         label: 'Challenge:',
         color: 'goldenrod',
         currentValid: -1,
@@ -183,8 +183,8 @@
      */
     (function (open) {
         XMLHttpRequest.prototype.open = function (method, url) {
-            if (url == '/api/v1/vault/review') {
-                if (method == 'GET') {
+            if (method == 'GET') {
+                if (url == '/api/v1/vault/review' || url == '/api/v1/vault/home') {
                     this.addEventListener('load', injectCounter, false);
                 } else if (method == 'POST') {
                     this.addEventListener('load', incrementCounter, false);
@@ -212,33 +212,38 @@
             return;
         }
 
-        const div = document.createElement('div');
-        div.className = 'wayfarerrctr';
+        let counterDiv = document.getElementById("counterDiv");
+        if (counterDiv === null) {
+            const div = document.createElement('div');
+            div.className = 'wayfarerrctr';
+            div.id = 'counterDiv';
 
-        let countLabel = document.createElement('p');
-        countLabel.textContent = 'Review count: ';
-        let counter = document.createElement('p');
-        counter.textContent = sessionStorage.getItem('wfrcCounter') || '0';
-        div.appendChild(countLabel);
-        div.appendChild(counter);
+            let countLabel = document.createElement('p');
+            countLabel.textContent = 'Review count: ';
+            let counter = document.createElement('p');
+            counter.textContent = sessionStorage.getItem('wfrcCounter') || '0';
+            div.appendChild(countLabel);
+            div.appendChild(counter);
 
-        function confirmReset() { 
-            if (confirm('Reset review count?')) {
-              sessionStorage.setItem('wfrcCounter', 0);
-              counter.textContent = 0;
-            }  
+            function confirmReset() { 
+                if (confirm('Reset review count?')) {
+                  sessionStorage.setItem('wfrcCounter', 0);
+                  counter.textContent = 0;
+                }  
+            }
+                
+            countLabel.addEventListener('click', confirmReset);
+            counter.addEventListener('click', confirmReset);
+
+            const container = ref.parentNode.parentNode;
+            container.appendChild(div);
         }
-            
-        countLabel.addEventListener('click', confirmReset);
-        counter.addEventListener('click', confirmReset);
-
-        const container = ref.parentNode.parentNode;
-        container.appendChild(div);
 
         const now = Date.now();
         const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
         if (CURRENT_EVENT && now >= CURRENT_EVENT.from && now <= CURRENT_EVENT.to && windowRef.wft_plugins_api && windowRef.wft_plugins_api.openIn) {
             CURRENT_EVENT.currentValid = -1;
+            console.log("rc")
             const WFTApi = windowRef.wft_plugins_api;
             const response = this.response;
             const json = JSON.parse(response);
@@ -255,45 +260,49 @@
                 }
             }
             const renderEventCounter = () => {
-                const div = document.createElement('div');
-                div.classList.add('wayfarerrctr_event');
-                let countLabel = document.createElement('p');
-                countLabel.textContent = CURRENT_EVENT.label;
-                const evTable = document.createElement('table');
-                const evRow = document.createElement('tr');
-                evTable.appendChild(evRow);
-                div.appendChild(countLabel);
-                div.appendChild(evTable);
+                let eventCounterDiv = document.getElementById("eventCounterDiv");
+                if (eventCounterDiv === null) {
+                    const div = document.createElement('div');
+                    div.classList.add('wayfarerrctr_event');
+                    div.id = "eventCounterDiv"
+                    let countLabel = document.createElement('p');
+                    countLabel.textContent = CURRENT_EVENT.label;
+                    const evTable = document.createElement('table');
+                    const evRow = document.createElement('tr');
+                    evTable.appendChild(evRow);
+                    div.appendChild(countLabel);
+                    div.appendChild(evTable);
 
-                const counter = document.createElement('td');
-                counter.classList.add('wayfarerrctr_event_big');
-                counter.textContent = CURRENT_EVENT.parts.map(p => p.counter).reduce((a, b) => a + b) + '';
-                counter.style.color = CURRENT_EVENT.color;
-                evRow.appendChild(counter);
+                    const counter = document.createElement('td');
+                    counter.classList.add('wayfarerrctr_event_big');
+                    counter.textContent = CURRENT_EVENT.parts.map(p => p.counter).reduce((a, b) => a + b) + '';
+                    counter.style.color = CURRENT_EVENT.color;
+                    evRow.appendChild(counter);
 
-                if (CURRENT_EVENT.parts.length > 1) {
-                    let evPC;
-                    for (let i = 0; i < CURRENT_EVENT.parts.length; i++) {
-                        if (i % 2 == 0) {
-                            if (evPC) evRow.appendChild(evPC);
-                            evPC = document.createElement('td');
-                            evPC.classList.add('wayfarerrctr_event_ptCell');
+                    if (CURRENT_EVENT.parts.length > 1) {
+                        let evPC;
+                        for (let i = 0; i < CURRENT_EVENT.parts.length; i++) {
+                            if (i % 2 == 0) {
+                                if (evPC) evRow.appendChild(evPC);
+                                evPC = document.createElement('td');
+                                evPC.classList.add('wayfarerrctr_event_ptCell');
+                            }
+                            const evPP = document.createElement('p');
+                            evPP.classList.add('wayfarerrctr_event_ptLabel');
+                            evPP.textContent = CURRENT_EVENT.parts[i].label + ' ';
+                            const evPN = document.createElement('span');
+                            evPN.textContent = CURRENT_EVENT.parts[i].counter + '';
+                            evPN.style.color = now >= CURRENT_EVENT.parts[i].from && now <= CURRENT_EVENT.parts[i].to ? CURRENT_EVENT.color : '#7f7f7f';
+                            evPP.appendChild(evPN);
+                            evPC.appendChild(evPP);
                         }
-                        const evPP = document.createElement('p');
-                        evPP.classList.add('wayfarerrctr_event_ptLabel');
-                        evPP.textContent = CURRENT_EVENT.parts[i].label + ' ';
-                        const evPN = document.createElement('span');
-                        evPN.textContent = CURRENT_EVENT.parts[i].counter + '';
-                        evPN.style.color = now >= CURRENT_EVENT.parts[i].from && now <= CURRENT_EVENT.parts[i].to ? CURRENT_EVENT.color : '#7f7f7f';
-                        evPP.appendChild(evPN);
-                        evPC.appendChild(evPP);
+                        evRow.appendChild(evPC);
                     }
-                    evRow.appendChild(evPC);
-                }
 
-                const container = ref.parentNode.parentNode;
-                container.appendChild(div);
-            };
+                    const container = ref.parentNode.parentNode;
+                    container.appendChild(div);
+                }
+            }
             if (!CURRENT_EVENT.initialized) {
                 CURRENT_EVENT.initialized = true;
                 if (WFTApi.reviewHistory) {
@@ -318,6 +327,19 @@
             }
         }
     }
+
+
+    const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
+        }
+        queryLoop();
+    });
 
     (function() {
         const css = `
