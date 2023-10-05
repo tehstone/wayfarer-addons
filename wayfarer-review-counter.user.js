@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Counter
-// @version      0.4.0
+// @version      0.4.1
 // @description  Add review counter to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-counter.user.js
@@ -186,9 +186,9 @@
             if (method == 'GET') {
                 if (url == '/api/v1/vault/review' || url == '/api/v1/vault/home') {
                     this.addEventListener('load', injectCounter, false);
-                } else if (method == 'POST') {
-                    this.addEventListener('load', incrementCounter, false);
                 }
+            } else if (method == 'POST') {
+                this.addEventListener('load', incrementCounter, false);
             }
             open.apply(this, arguments);
         };
