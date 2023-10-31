@@ -975,7 +975,6 @@
             document.querySelector('app-review-edit') ||
             document.querySelector('app-review-photo')
         )).then(ref => {
-            console.log("switch for openin")
             switch (ref.tagName) {
                 case 'WF-REVIEW-CARD':
                     
