@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.1.8
+// @version      0.2.0
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -38,6 +38,39 @@
 
 (() => {
     const OBJECT_STORE_NAME = 'reviewHistory';
+    const FLOW_CHANGE_TIME = 1698674400000;
+    const REJECTION_MAPPINGS =
+        {
+            "PHOTO_BAD_BLURRY": "Blurry Photo",
+            "PHOTO_FACE": "Face or body parts",
+            "PHOTO_PLATE": "License plate",
+            "PHOTO_DIR": "Orientation",
+            "PHOTO_TAG": "Sumbitter identifiable",
+            "PHOTO_3P": "Third party photo",
+            "PHOTO_WATERMARK": "Watermark",
+            "PHOTO_BAD": "Low quality or inaccurate photo",
+            "EMOJI_TITLE": "Emoji or emoticon",
+            "MARKUP_TITLE": "URL or markup",
+            "TEXT_BAD_TITLE": "Low quality or inaccurate title",
+            "EMOJI_DESCRIPTION": "Emoji or emoticon",
+            "MARKUP_DESCRIPTION": "URL or markup",
+            "TEXT_BAD_DESCRIPTION": "Low quality or inaccurate title",
+            "ACCURACY_FAKE": "Fake nomination",
+            "ACCURACY_EXPLICIT": "Explicit Content",
+            "ACCURACY_PERSONAL": "Influencing Reviewers",
+            "ACCURACY_OFFENSIVE": "Offensive",
+            "ACCURACY_ABUSE": "Other abuse-related reasons",
+            "MISMATCH": "Inaccurate Location",
+            "PRIVATE": "Private property",
+            "INAPPROPRIATE": "Adult location",
+            "SCHOOL": "Schools",
+            "SENSITIVE": "Sensitive location",
+            "EMERGENCY": "Obstructs emergency operations",
+            "GENERIC": "Generic business",
+            "": ""
+        };
+    let l10n;
+
     GM_addStyle(GM_getResourceText("REMOTE_CSS"));
 
     (function (open) {
@@ -109,7 +142,7 @@
       const container = ratingNarRef.parentNode.parentNode;
       container.appendChild(tableContainer);
 
-      const l10n = getL10N();
+      l10n = getL10N();
       $(document).ready(function () {
       const table = $('#review-history').DataTable({
           data: reviewData,
@@ -146,14 +179,35 @@
                 width: "15%",
                 render: (...review) => {
                     if (review[0] !== null && review[0] !== undefined) {
-                        if (review[0].quality !== undefined ) {
-                            return `${review[0].quality}`;
-                        } else if (review[0].rejectReason != undefined) {
-                            return l10n[`reject.reason.${review[0].rejectReason.toLowerCase()}.short`];
-                        } else if (review[0].duplicate != undefined) {
-                            return "Duplicate";
+                        console.log("rendering item")
+                        if (review[2]['ts'] < FLOW_CHANGE_TIME) {
+                            if (review[0].quality !== undefined ) {
+                                return `${review[0].quality}`;
+                            } else if (review[0].rejectReason != undefined) {
+                                return l10n[`reject.reason.${review[0].rejectReason.toLowerCase()}.short`];
+                            } else if (review[0].duplicate != undefined) {
+                                return "Duplicate";
+                            } else {
+                                console.log(review[0]);
+                            }
                         } else {
-                            console.log(review[0]);
+                            if (review[0].quality !== undefined ) {
+                                return "Accepted";
+                            } else if (review[0].rejectReasons != undefined) {
+                                let rejections = [];
+                                review[0].rejectReasons.forEach(r => {
+                                    let rejectionText = l10n[`reject.reason.${r.toLowerCase()}.short`];
+                                    if (rejectionText === undefined || rejectionText === "") {
+                                        rejectionText = REJECTION_MAPPINGS[r];    
+                                    }
+                                    rejections.push(rejectionText);
+                                })
+                                return rejections.join(", ");
+                            } else if (review[0].duplicate != undefined) {
+                                return "Duplicate";
+                            } else {
+                                console.log(review[0]);
+                            }
                         }
                     } else {
                         return 'Skipped/Timed Out';
@@ -185,7 +239,7 @@
                 tr.removeClass("shown");
                 row.child.hide();
             } else {
-              tr.addClass("shown");
+                tr.addClass("shown");
                 row.child(reviewContent(review)).show();
             }
         });
@@ -327,34 +381,91 @@
         )}" rel="noreferrer" title="Open in Intel" href="https://intel.ingress.com/intel?ll=${lat},${lng}&z=21">${content}</a>`;
 
     const renderScores = ({ review }) => {
-        if (!review || typeof review === "string" || !review.quality) {
+        if (review['ts'] < FLOW_CHANGE_TIME) {
+            if (!review || typeof review === "string" || !review.quality) {
+                return "";
+            }   
+            return `
+            <table class="table table-condensed scores">
+              <thead>
+                  <tr>
+                      <th class="text-center">Score</th>
+                      <th class="text-center">Title</th>
+                      <th class="text-center">Cultural</th>
+                      <th class="text-center">Unique</th>
+                      <th class="text-center">Safety</th>
+                      <th class="text-center">Location</th>
+                  </tr>
+              </thead>
+              <tbody class="review-list">
+                <tr>
+                  <td class="text-center">${review.quality}</td>
+                  <td class="text-center">${review.description}</td>
+                  <td class="text-center">${review.cultural}</td>
+                  <td class="text-center">${review.uniqueness}</td>
+                  <td class="text-center">${review.safety}</td>
+                  <td class="text-center">${review.location}</td>
+                </tr>
+              </tbody>
+            </table>
+          `;
+      } else {
+        if (!review || typeof review === "string") {
             return "";
-        }
-        return `
-        <table class="table table-condensed scores">
-          <thead>
-              <tr>
-                  <th class="text-center">Score</th>
-                  <th class="text-center">Title</th>
-                  <th class="text-center">Cultural</th>
-                  <th class="text-center">Unique</th>
-                  <th class="text-center">Safety</th>
-                  <th class="text-center">Location</th>
-              </tr>
-          </thead>
-          <tbody class="review-list">
-            <tr>
-              <td class="text-center">${review.quality}</td>
-              <td class="text-center">${review.description}</td>
-              <td class="text-center">${review.cultural}</td>
-              <td class="text-center">${review.uniqueness}</td>
-              <td class="text-center">${review.safety}</td>
-              <td class="text-center">${review.location}</td>
-            </tr>
-          </tbody>
-        </table>
-      `;
+        } else if (!review.quality) {
+            let rejections = ['❌ Rejected for:'];
+            review.rejectReasons.forEach(r => {
+                let rejectionText = l10n[`reject.reason.${r.toLowerCase()}.short`];
+                if (rejectionText === undefined || rejectionText === "") {
+                    if (r in REJECTION_MAPPINGS) {
+                        rejectionText = REJECTION_MAPPINGS[r];
+                    } else {
+                        rejectionText = r;
+                    }
+                }
+                rejections.push(rejectionText);
+            })
+            return rejections.join("<br />");
+        } else {
+            return `
+                <table class="table table-condensed scores">
+                  <thead>
+                      <tr>
+                          <th class="text-center">Appropriate</th>
+                          <th class="text-center">Safe</th>
+                          <th class="text-center">Accurate</th>
+                          <th class="text-center">Permanent</th>
+                          <th class="text-center">Socialize</th>
+                          <th class="text-center">Exercise</th>
+                          <th class="text-center">Explore</th>
+                      </tr>
+                  </thead>
+                  <tbody class="review-list">
+                    <tr>
+                      <td class="text-center">${mapScore(review.quality)}</td>
+                      <td class="text-center">${mapScore(review.safety)}</td>
+                      <td class="text-center">${mapScore(review.location)}</td>
+                      <td class="text-center">${mapScore(review.uniqueness)}</td>
+                      <td class="text-center">${mapScore(review.socialize)}</td>
+                      <td class="text-center">${mapScore(review.exercise)}</td>
+                      <td class="text-center">${mapScore(review.cultural)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              `;
+          }
+      }
     };
+
+    function mapScore(score) {
+        if (score == 5) {
+            return '✔️';
+        } else if (score == 3) {
+            return 'IDK';
+        } else {
+            return '❌';
+        }
+    }
 
     function getOpenInButton(lat, lng, title) {
         //Create main dropdown menu ("button")
