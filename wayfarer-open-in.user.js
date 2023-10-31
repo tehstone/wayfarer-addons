@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.6.18
+// @version      0.7.0
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -17,7 +17,7 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.min.js
 // ==/UserScript==
 
-// Copyright 2022 tehstone, bilde
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -971,22 +971,25 @@
         });
 
         const injectReview = result => awaitElement(() => (
-            document.querySelector('app-should-be-wayspot') ||
+            document.getElementById('check-duplicates-card') ||
             document.querySelector('app-review-edit') ||
             document.querySelector('app-review-photo')
         )).then(ref => {
+            console.log("switch for openin")
             switch (ref.tagName) {
-                case 'APP-SHOULD-BE-WAYSPOT':
-                    awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
-                        .then((ref) => {
+                case 'WF-REVIEW-CARD':
+                    
+                    // awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
+                    //     .then((ref) => {
                         if (result.streetAddress) {
                             const addrBox = document.createElement('p');
                             addrBox.classList.add('wayfareropenin__address');
                             addrBox.textContent = result.streetAddress;
-                            ref.parentElement.insertBefore(addrBox, ref);
+                            //ref.parentElement.insertBefore(addrBox, ref);
+                            insertAfter(addrBox, ref.firstChild);
                         }
-                        addOpenButtons(ref, result);
-                    });
+                        addOpenButtons(ref.firstChild, result);
+                    // });
                     break;
                 case 'APP-REVIEW-EDIT':
                     awaitElement(() => document.querySelector('.review-edit-info .review-edit-info__info'))
@@ -1114,7 +1117,8 @@
             box.appendChild(globalBox);
             Object.keys(regionBoxes).forEach(region => { box.appendChild(regionBoxes[region]); });
 
-            before.parentElement.insertBefore(box, before);
+            insertAfter(box, before);
+            //before.parentElement.insertBefore(box, before);
             return box;
         }
 
@@ -1135,6 +1139,10 @@
                 }
             }
             return inside;
+        }
+
+        const insertAfter = (newNode, referenceNode) => {
+            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
         }
 
         (() => {
