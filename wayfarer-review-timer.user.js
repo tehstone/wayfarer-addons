@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.4.2
+// @version      0.5.0
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -81,13 +81,13 @@
                     console.log(e);
                 }
                 addSettings();
-                addSmartSubmitButton();
+                //addSmartSubmitButton();
             });
     }
 
     function initTimer(container, expiry) {
         awaitElement(() => (
-            document.querySelector('app-should-be-wayspot') ||
+            document.getElementById('appropriate-card')  ||
             document.querySelector('app-review-edit') ||
             document.querySelector('app-review-photo')
             )).then(ref => {
@@ -258,7 +258,13 @@
             smartSubmitEnabled = false;
         } else {
             smartSubmitEnabled = smartSubmitEnabled === "true";
+        }        
+
+        const new_review_ref = document.querySelector('#safety-and-accessability-card');
+        if (new_review_ref) {
+            smartSubmitEnabled = false;
         }
+        
 
         if (smartSubmitEnabled !== true) {
             return;
@@ -276,7 +282,7 @@
 
             if (smartSubmitButton === null) {
                 smartSubmitButton = document.createElement("button");
-                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled';
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary wfrt-smart-button';
                 smartSubmitButton.disabled = true;
                 smartSubmitButton.id = `wayfarerrtssbutton_${i}`;
                 smartSubmitButton.innerHTML = "Smart Submit";
@@ -308,7 +314,7 @@
             if (smartSubmitButton === null) {
                 const buttons = parent[0].getElementsByTagName('button');
                 smartSubmitButton = document.createElement("button");
-                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary';
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary wfrt-smart-button';
                 smartSubmitButton.style.marginLeft = "1.5rem";
                 smartSubmitButton.id = `wayfarerrtssbutton_d`;
                 smartSubmitButton.innerHTML = "Smart Submit";
@@ -577,16 +583,8 @@
                 color: #ddd;
               }
 
-              .wayfarercc__button {
-                background-color: #e5e5e5;
-                border: none;
-                color: #ff4713;
-                padding: 4px 10px;
-                margin: 1px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 16px;
+              .wfrt-smart-button {
+                color: #20B8E3;
               }
 
               .wayfarercc__hiddendl {
