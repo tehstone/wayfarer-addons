@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.7.0
+// @version      0.7.1
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -977,18 +977,13 @@
         )).then(ref => {
             switch (ref.tagName) {
                 case 'WF-REVIEW-CARD':
-                    
-                    // awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
-                    //     .then((ref) => {
-                        if (result.streetAddress) {
-                            const addrBox = document.createElement('p');
-                            addrBox.classList.add('wayfareropenin__address');
-                            addrBox.textContent = result.streetAddress;
-                            //ref.parentElement.insertBefore(addrBox, ref);
-                            insertAfter(addrBox, ref.firstChild);
-                        }
-                        addOpenButtons(ref.firstChild, result);
-                    // });
+                    if (result.streetAddress) {
+                        const addrBox = document.createElement('p');
+                        addrBox.classList.add('wayfareropenin__address');
+                        addrBox.textContent = result.streetAddress;
+                        insertAfter(addrBox, ref.firstChild);
+                    }
+                    addOpenButtons(ref.firstChild, result);
                     break;
                 case 'APP-REVIEW-EDIT':
                     awaitElement(() => document.querySelector('.review-edit-info .review-edit-info__info'))

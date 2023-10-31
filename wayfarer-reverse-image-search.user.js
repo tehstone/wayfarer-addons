@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Reverse Image Search
-// @version      0.3.0
+// @version      0.4.0
 // @description  Add reverse image search links to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-reverse-image-search.user.js
@@ -69,11 +69,12 @@
     });
 
   const checkReviewType = result => awaitElement(() => (
-        document.querySelector('app-should-be-wayspot') ||
+        document.getElementById('check-duplicates-card') ||
         document.querySelector('app-review-photo')
     )).then(ref => {
+        console.log("checkReviewType")
         switch (ref.tagName) {
-            case 'APP-SHOULD-BE-WAYSPOT':
+            case 'WF-REVIEW-CARD':
                 awaitElement(() => document.querySelector('#check-duplicates-card nia-map'))
                 .then((ref) => {
                     addImageSearchLinks(ref, result);
@@ -91,14 +92,15 @@
   const addImageSearchLinks = (before, data) => {
     const mainUrl = encodeURIComponent(`${data['imageUrl']}`);
     const mainSearchUrl = `https://lens.google.com/uploadbyurl?url=${mainUrl}`
-    addLink(mainSearchUrl, 'div.review-cards--inner:nth-child(1) > app-should-be-wayspot:nth-child(1) > wf-review-card:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
+    addLink(mainSearchUrl, 'app-photo-b.nomination-info-review-card > wf-review-card-b:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
 
     const supportingUrl = encodeURIComponent(`${data['supportingImageUrl']}`);
     const supportingSearchUrl = `https://lens.google.com/uploadbyurl?url=${supportingUrl}`
-    addLink(supportingSearchUrl, '.supporting-info-review-card > wf-review-card:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
+    addLink(supportingSearchUrl, 'app-supporting-info-b.nomination-info-review-card > wf-review-card-b:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)');
   }
 
   const addLink = (url, selector) => {
+    console.log("addLink ")
     const insertBeforeEl = document.querySelector(selector);
     if (insertBeforeEl !== null && insertBeforeEl !== undefined) {
       const linkSpan = document.createElement('span');
