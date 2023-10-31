@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.7.3
+// @version      0.9.0
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
 // @match        https://wayfarer.nianticlabs.com/*
+// @run-at       document-start
 // ==/UserScript==
 
-// Copyright 2022 tehstone, bilde
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -37,10 +38,23 @@ function init() {
     let closeCircle;
     let moveCircle;
     let cellShade;
-    let userId;
+    let userHash = 0;
 
     let pano = null;
     let listenSVFocus = false;
+
+    // https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js
+    const cyrb53 = function(str, seed = 0) {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+        return 4294967296 * (2097151 & h2) + (h1>>>0);
+    };
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
@@ -59,6 +73,8 @@ function init() {
                     pano.setVisible(false);
                     pano = null;
                 }
+            } else if (url == '/api/v1/vault/properties' && method == 'GET') {
+                this.addEventListener('load', parseProps, false);
             }
             open.apply(this, arguments);
         };
@@ -71,6 +87,23 @@ function init() {
             document.querySelector('mat-sidenav-content').scrollTo(0, 0);
         }
     });
+
+    function parseProps(e) {
+        try {
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (!json) return;
+            if (json.captcha) return;
+            const props = json.result;
+            if (props) {
+                // Get a user ID to properly handle browsers shared between several users. Store a hash only, for privacy.
+                userHash = cyrb53(props.socialProfile.email);
+                migrateProps();
+            }
+        } catch (e) {
+            console.warn(e); // eslint-disable-line no-console
+        }
+    }
 
     function parseCandidate(e) {
         try {
@@ -100,7 +133,7 @@ function init() {
 
     function checkPageType() {
         awaitElement(() =>
-                document.querySelector('app-should-be-wayspot') ||
+                document.getElementById('appropriate-card') ||
                 document.querySelector('app-review-edit'))
             .then((ref) => {
                 addMapMods();
@@ -109,6 +142,7 @@ function init() {
     };
 
     function addMapMods() {
+        console.log("addMapMods");
         if (typeof(google) === 'undefined') {
             setTimeout(addMapMods, 200);
             return;
@@ -132,7 +166,7 @@ function init() {
                     map.setZoom(17);
                     map.setCenter(ll);
 
-                    const displayType = localStorage["wfmm_map_display" + userId];
+                    const displayType = localStorage["wfmm_map_display_" + userId];
                     // if the selected type is map then we don't change anything
 
                     if (displayType === 'satellite') {
@@ -362,10 +396,10 @@ function init() {
                 insertAfter(settingsContainer, ref);
             }
 
-            let selection = localStorage["wfmm_map_display" + userId];
+            let selection = localStorage["wfmm_map_display_" + userId];
             if (!selection) {
                 selection = 'satellite';
-                localStorage["wfmm_map_display" + userId] = selection;
+                localStorage["wfmm_map_display_" + userId] = selection;
             }
 
             let displayGridInput = document.createElement('input');
@@ -518,7 +552,7 @@ function init() {
             select.innerHTML = mapTypes.map(item => `<option value="${item.name}" ${item.name == selection ? 'selected' : ''}>${item.title}</option>`).join('');
             select.addEventListener('change', function() {
                 selection = select.value;
-                localStorage["wfmm_map_display" + userId] = selection;
+                localStorage["wfmm_map_display_" + userId] = selection;
             });
             select.id = 'wayfarermmmapdisplay';
             select.classList.add('wayfarercc_select');
@@ -554,6 +588,10 @@ function init() {
     };
 
     function getUserId() {
+        return userHash + '';
+    }
+
+    function old_getUserId() {
         var els = document.getElementsByTagName("image");
         for (var i = 0; i < els.length; i++) {
             const element = els[i];
@@ -565,6 +603,75 @@ function init() {
             return userId;
         }
         return "temporary_default_userid";
+    }
+
+    function migrateProps() {
+        let userId = getUserId();
+        let migrated = localStorage["wfmm_data_migrated_" + userId];
+        if (migrated !== undefined && migrated !== null && migrated !== "") {
+            migrated = migrated === "true";
+        }
+
+        if (migrated) {
+            return;
+        }
+
+        awaitElement(() =>document.querySelector(".wf-upgrade-viz"))
+            .then((ref) => {
+                // migrate stored settings. this will be some extra calls for a time but will avoid one final "reset"
+                // todo: remove in a future update
+                const oldUserId = old_getUserId();
+                if (oldUserId === "temporary_default_userid") {
+                    return;
+                }
+
+                const newUserId = getUserId();
+
+                const displayType = localStorage["wfmm_map_display" + userId];
+                if (displayType !== undefined && displayType !== null && displayType !== "false" && displayType !== "") {
+                    localStorage["wfmm_map_display_" + newUserId] = displayType;
+                }
+
+                const displayGrid = localStorage["wfmm_grid_enabled_" + userId];
+                if (displayGrid !== undefined && displayGrid !== null && displayGrid !== "false" && displayGrid !== "") {
+                    localStorage["wfmm_grid_enabled_" + newUserId] = displayGrid;
+                }
+
+                const cellSize = localStorage["wfmm_cell_size_one_" + userId];
+                if (cellSize !== undefined && cellSize !== null && cellSize !== "false" && cellSize !== "") {
+                    localStorage["wfmm_cell_size_one_" + newUserId] = cellSize;
+                }
+
+                const cellColor = localStorage["wfmm_cell_color_one_" + userId];
+                    if (cellColor !== undefined && cellColor !== null && cellColor !== "false" && cellColor !== "") {
+                    localStorage["wfmm_cell_color_one_" + newUserId] = cellColor;
+                }
+
+                const secondGridEnabled = localStorage["wfmm_second_grid_enabled_" + userId];
+                    if (secondGridEnabled !== undefined && secondGridEnabled !== null && secondGridEnabled !== "false" && secondGridEnabled !== "") {
+                    localStorage["wfmm_second_grid_enabled_" + newUserId] = secondGridEnabled;
+                }
+
+                const cellSizeTwo = localStorage["wfmm_cell_size_two_" + userId];
+                if (cellSizeTwo !== undefined && cellSizeTwo !== null && cellSizeTwo !== "false" && cellSizeTwo !== "") {
+                    localStorage["wfmm_cell_size_two_" + newUserId] = cellSizeTwo;
+                }
+
+                const cellColorTwo = localStorage["wfmm_cell_color_two_" + userId];
+                    if (cellColorTwo !== undefined && cellColorTwo !== null && cellColorTwo !== "false" && cellColorTwo !== "") {
+                    localStorage["wfmm_cell_color_two_" + newUserId] = cellColorTwo;
+                }
+
+                // now clear out all old storage items for this plugin
+                Object.keys(localStorage)
+                 .filter(x => x.startsWith('wfmm_') && !x.includes(userId))
+                 .forEach(x => {
+                    console.log(`wfmm removing old storage key: ${x}`);
+                    localStorage.removeItem(x)
+                });
+
+                localStorage["wfmm_data_migrated_" + userId] = "true";
+            })
     }
 
     class S2Overlay {
