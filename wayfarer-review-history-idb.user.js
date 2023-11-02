@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History
-// @version      0.5.0
+// @version      0.5.1
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-history-idb.user.js
@@ -117,6 +117,21 @@
         }
         if (saveColumns.length) {
             const saveData = { ...filterObject(result, saveColumns), ts: Date.now(), userHash, review: null };
+            getIDBInstance().then(db => {
+                const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
+                tx.oncomplete = event => { db.close(); resolve(); };
+                tx.onerror = reject;
+                const objectStore = tx.objectStore(OBJECT_STORE_NAME);
+                const getReview = objectStore.get(result.id);
+                getReview.onsuccess = () => {
+                    if (getReview.result) {
+                        if(getReview.result.review) {
+                            alert(`You have reviewed this before! timestamp: ${getReview.result.ts}`);
+                        }
+                    }
+                };
+                getReview.onerror = reject;
+            }).catch(reject);
             getIDBInstance().then(db => {
                 const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
                 tx.oncomplete = event => { db.close(); resolve(); };
@@ -427,7 +442,7 @@
             dateAfter = new Date(dateAfter);
             dateInput.valueAsDate = dateAfter;
         }
-        
+
         dateInput.addEventListener('change', function () {
             const userId = getUserId();
             dateAfter = new Date(this.value);
@@ -483,7 +498,7 @@
         rangeLabel.setAttribute("for", "wayfarerrhlocation");
         rangeLabel.classList.add('wayfareres_settings_label');
         rangeLabel.title = "If location and range are set, displayed values will be filtered to those within the given number of kilometers to the location provided."
-        
+
 
         settingsDiv.appendChild(sectionLabel);
         settingsDiv.appendChild(document.createElement('br'));
