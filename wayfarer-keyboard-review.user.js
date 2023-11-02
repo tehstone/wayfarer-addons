@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      0.8.7
+// @version      2.0.0
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
 // @match        https://wayfarer.nianticlabs.com/*
+// @run-at       document-start
 // ==/UserScript==
 
-// Copyright 2022 tehstone, bilde
+// Copyright 2022 tehstone
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -31,807 +32,818 @@
 /* eslint indent: ['error', 2] */
 
 (function() {
-    let ratingElements = [];
-    let revPosition = 0;
-    let maxRevPosition = 6;
-    let rejectDepth = 0;
-    let rejectOuterIdx = 0;
-    let menuPosition = {};
-    let isReject = false;
-    let isDuplicate = false;
-    let reviewType = 'NEW';
-    let firstClick = true;
-    let candidate;
-    let locationMutationObserver = new MutationObserver(locationsMutated);
-    const markerSVG = "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg width='28px' height='61px' viewBox='0 0 28 61' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Ctitle%3EIcon-Pink%3C/title%3E%3Cg id='Icon-Pink' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E%3Cpath d='M15.5093388,20.7281993 C14.9275251,20.9855232 14.2863961,21.1311947 13.6095035,21.1311947 C12.9326109,21.1311947 12.2914819,20.9855232 11.7096682,20.7281993 C10.0593063,19.997225 8.90701866,18.3486077 8.90701866,16.4278376 C8.90701866,13.8310471 11.012713,11.726225 13.6095035,11.726225 C16.206294,11.726225 18.3119883,13.8310471 18.3119883,16.4278376 C18.3119883,18.3486077 17.1597007,19.997225 15.5093388,20.7281993 M22.3271131,7.71022793 C17.5121036,2.89609069 9.70603111,2.89609069 4.89189387,7.71022793 C1.3713543,11.2307675 0.437137779,16.3484597 2.06482035,20.7281993 L2.05435293,20.7281993 L2.15379335,20.9820341 L2.20525812,21.113749 L11.1688519,44.0984412 L11.1758302,44.0984412 C11.5561462,45.0736551 12.4990855,45.7671211 13.6095035,45.7671211 C14.7190492,45.7671211 15.6619885,45.0736551 16.0431768,44.0984412 L16.0492828,44.0984412 L25.0128766,21.1163658 L25.0669582,20.9776726 L25.1637818,20.7281993 L25.1541867,20.7281993 C26.7818692,16.3484597 25.8476527,11.2307675 22.3271131,7.71022793 M13.6095035,50.6946553 C11.012713,50.6946553 8.90701866,52.7994774 8.90701866,55.3962679 C8.90701866,57.9939306 11.012713,60.099625 13.6095035,60.099625 C16.206294,60.099625 18.3119883,57.9939306 18.3119883,55.3962679 C18.3119883,52.7994774 16.206294,50.6946553 13.6095035,50.6946553' id='F' stroke='%23FFFFFF' fill='%23BB00FF'%3E%3C/path%3E%3C/g%3E%3C/svg%3E";
-
+    let kdEvent = null;
+    let keySequence = null;
+    let wfGlobalLanguage = 'en';
+    let context = {
+        draw: null
+    };
 
     /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
      */
     (function (open) {
         XMLHttpRequest.prototype.open = function (method, url) {
-            if (url == '/api/v1/vault/review') {
-                if (method == 'GET') {
-                    this.addEventListener('load', checkResponse, false);
-                }
+            if (url == '/api/v1/vault/review' && method == 'GET') {
+                this.addEventListener('load', checkResponse, false);
+            } else if (url == '/api/v1/vault/properties' && method == 'GET') {
+                // NOTE: Requires @run-at document-start.
+                this.addEventListener('load', interceptProperties, false);
             }
             open.apply(this, arguments);
         };
     })(XMLHttpRequest.prototype.open);
 
-    function checkResponse(e) {
+    function interceptProperties() {
         try {
             const response = this.response;
             const json = JSON.parse(response);
-            if (!json) {
-                console.warn('Failed to parse response from Wayfarer');
-                return;
-            }
-            // ignore if it's related to captchas
-            if (json.captcha) return;
-
-            candidate = json.result;
-            if (!candidate) {
-                console.warn('Wayfarer\'s response didn\'t include a candidate.');
-                return;
-            }
-            addCss();
-            initKeyboardCtrl();
-
+            if (!json) return;
+            if (!json.result || !json.result.language) return;
+            wfGlobalLanguage = json.result.language;
+            console.log('Detected Wayfarer language:', wfGlobalLanguage);
         } catch (e) {
-            console.log(e); // eslint-disable-line no-console
+            console.error(e);
         }
     }
 
-     const awaitElement = get => new Promise((resolve, reject) => {
-                let triesLeft = 10;
-                const queryLoop = () => {
-                        const ref = get();
-                        if (ref) resolve(ref);
-                        else if (!triesLeft) reject();
-                        else setTimeout(queryLoop, 100);
-                        triesLeft--;
-                }
-                queryLoop();
-        });
+    function checkResponse() {
+        try {
+            const response = this.response;
+            const json = JSON.parse(response);
+            if (!json) return;
+            if (json.captcha) return;
+            if (!json.result) return;
+            initKeyboardCtrl(json.result);
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
-    function initKeyboardCtrl() {
-        awaitElement(() => (
-                document.querySelector('app-should-be-wayspot') ||
-                document.querySelector('app-review-edit') ||
-                document.querySelector('app-review-photo')
-        )).then(ref => {
-            resetState();
+    const awaitElement = get => new Promise((resolve, reject) => {
+        let triesLeft = 10;
+        const queryLoop = () => {
+            const ref = get();
+            if (ref) resolve(ref);
+            else if (!triesLeft) reject();
+            else setTimeout(queryLoop, 100);
+            triesLeft--;
+        }
+        queryLoop();
+    });
 
-            const ratingElementParts = document.getElementsByClassName("wf-review-card");
-            if (ratingElementParts.length < 1) {
-                setTimeout(initKeyboardCtrl, 100);
+    const waitForDialog = () => awaitElement(() => document.querySelector('mat-dialog-container > *'));
+
+    const getL10N = () => {
+        const i18n = JSON.parse(localStorage['@transloco/translations']);
+        return i18n[wfGlobalLanguage];
+    };
+
+    const getI18NPrefixResolver = prefix => {
+        const l10n = getL10N();
+        return id => l10n[prefix + id];
+    };
+
+    const freeHandler = () => {
+        document.removeEventListener('keydown', kdEvent);
+        kdEvent = null;
+        keySequence = null;
+    };
+
+    const setHandler = handler => {
+        if (kdEvent) freeHandler();
+        document.addEventListener('keydown', kdEvent = handler);
+        redrawUI();
+    }
+
+    (() => {
+        document.addEventListener('keyup', e => {
+            if (e.keyCode == 16) {
+                keySequence = null;
+                redrawUI();
             }
+        });
+    })();
 
+    const initKeyboardCtrl = candidate => {
+        if (kdEvent) {
+            console.warn('Keydown event was not freed!');
+            freeHandler();
+        };
+        console.log(candidate);
+        awaitElement(() => (
+            document.querySelector('app-review-new-b') ||
+            document.querySelector('app-review-edit') ||
+            document.querySelector('app-review-photo')
+        )).then(ref => {
             switch (ref.tagName) {
-                case 'APP-SHOULD-BE-WAYSPOT':
-                    for (let i = 0; i < ratingElementParts.length; i++) {
-                        if (i == 2 || i > 7) continue;
-                        ratingElements.push(ratingElementParts[i]);
-                    }
-                    reviewType = 'NEW';
-                    setTimeout(initWhatIsItClickListeners, 500);
+                case 'APP-REVIEW-NEW-B':
+                    initForNew(candidate);
                     break;
-
                 case 'APP-REVIEW-EDIT':
-                    for (let i = 0; i < ratingElementParts.length; i++) {
-                        if (ratingElementParts[i].parentNode.tagName == 'app-review-comments') break;
-                        ratingElements.push(ratingElementParts[i]);
-                    }
-                    reviewType = 'EDIT';
-                    labelLocationMarkers();
-                    addCurrentLocationMarker();
+                    //initForEdit(candidate);
                     break;
-
                 case 'APP-REVIEW-PHOTO':
-                    reviewType = 'PHOTO';
-                    ref.querySelectorAll('.photo-card').forEach(card => card.classList.add('kbdActiveElement'));
-                    document.addEventListener('keydown', keyDownEvent);
-                    return;
-            }
-
-            ratingElements[0].classList.add('kbdActiveElement');
-            ratingElements[0].focus();
-            ratingElements[0].scrollIntoView(false);
-            document.addEventListener('keydown', keyDownEvent);
-
-            // Add CSS styling to indicate options 4 and 5 for what is it if that question is mandatory
-            if (document.querySelector('.review-categorization > mat-button-toggle-group')) {
-                const catCard = document.getElementById('categorization-card');
-                if (catCard && !catCard.classList.contains('wbkb-yesno')) {
-                    catCard.classList.add('wbkb-yesno');
-                }
-            }
-
-            const dupeImages = document.querySelectorAll('app-check-duplicates img.cursor-pointer');
-            for (let i = 0; i < dupeImages.length && i < 26; i++) {
-                const dpbox = document.createElement('div');
-                dpbox.classList.add('kbdDupeImageBox');
-                dupeImages[i].parentNode.insertBefore(dpbox, dupeImages[i]);
-                const inner = document.createElement('div');
-                inner.textContent = String.fromCharCode(65 + i);
-                dpbox.appendChild(inner);
-            }
-
-            const dupeRef = document.querySelector('app-check-duplicates nia-map');
-            if (dupeRef) {
-                const dupeHelp = document.createElement('p');
-                dupeHelp.textContent = '\u2b06\ufe0f = Zoom in; \u2b07\ufe0f = Zoom out; [A-Z] = Open duplicate window';
-                dupeHelp.classList.add('kbdDupeHelp');
-                dupeRef.parentNode.insertBefore(dupeHelp, dupeRef.nextSibling);
+                    //initForPhoto(candidate);
+                    break;
             }
         });
-    }
+    };
 
-    function addOptionIdx(markers){
-        for (let i = 0; i < markers.length; i++){
-            markers[i].setAttribute('option-idx', i);
-        }
-    }
+    const makeKeyMap = map => e => {
+        let inputActive = false;
+        if (document.activeElement.tagName == 'TEXTAREA') inputActive = true;
+        if (document.activeElement.tagName == 'INPUT' && !['radio', 'checkbox'].includes(document.activeElement.type.toLowerCase())) inputActive = true;
+        if (inputActive && (e.code.startsWith('Numpad') || e.code.startsWith('Key') || e.code.startsWith('Digit'))) return;
 
-    function labelLocationMarkers() {
-        awaitElement(() => (
-            document.querySelector('app-select-location-edit agm-map div[role="button"]')
-        )).then(ref => {
-            addOptionIdx(document.querySelectorAll('app-select-location-edit agm-map div[role="button"]'));
-            locationMutationObserver.observe(ref.parentNode, {childList: true});
-        });
-    }
+        if (e.shiftKey && e.code.startsWith('Digit')) keySequence = '+' + e.code.substring(5);
+        let idx = keySequence ? keySequence + ',' : '';
+        if (!keySequence && e.shiftKey) idx += '+';
+        if (e.ctrlKey) idx += '^';
+        if (e.altKey) idx += '[';
 
-    function locationsMutated(mutationList, observer){
-        for (let i = 0; i < mutationList.length; i++){
-            if (mutationList[i].addedNodes.length > 0){
-                const markers = document.querySelectorAll('app-select-location-edit agm-map div[role="button"]');
-                if (markers.length == candidate.locationEdits.length){
-                    addOptionIdx(markers);
-                }
-                break;
-            }
-        }
-    }
-
-    function addCurrentLocationMarker() {
-        awaitElement(() => (
-                document.querySelector('app-select-location-edit nia-map')
-        )).then(ref => {
-            const gmap = document.querySelector("app-select-location-edit nia-map");
-            const mapCtx = gmap.__ngContext__.at(-1);
-            const map = mapCtx.componentRef.map;
-            new google.maps.Marker({
-              map: map,
-              position: {
-                lat: candidate.lat,
-                lng: candidate.lng
-              },
-              icon:  markerSVG
-            });
-        });
-    }
-
-    function initWhatIsItClickListeners() {
-        const whatIsItButtons = document.querySelectorAll('mat-button-toggle');
-        if (whatIsItButtons.length) {
-            for (let i = 0; i < whatIsItButtons.length; i+=2) {
-            whatIsItButtons[i].addEventListener('click', function(e) {
-                if (firstClick === true) {
-                    firstClick = false;
-                    const whatIsItButtons = document.querySelectorAll('.review-categorization > mat-button-toggle-group');;
-                    whatIsItButtons.forEach(group => {
-                        if (!group.querySelector('mat-button-toggle.mat-button-toggle-checked')) {
-                            group.querySelector('mat-button-toggle:nth-child(2) button').click();
-                      }
-                    });
-                    e.target.click();
-                  }
-            });
-          }
-        }
-    }
-
-    function keyDownEvent(e) {
-        let suppress = false;
-        if (['INPUT', 'TEXTAREA'].indexOf(document.activeElement.tagName) >= 0) {
-            const card = document.activeElement.closest('wf-review-card');
-            if (card && card.id == 'categorization-card') {
-                if (e.keyCode >= 97 && e.keyCode <= 105) { // 1-9 Num pad
-                    suppress = handleCustomWhatIf(card, e.keyCode - 97);
-                } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
-                    suppress = handleCustomWhatIf(card, e.keyCode - 49);
-                } else if (e.keyCode === 13) { // Enter
-                    trySubmit(e.ctrlKey);
-                }
-            } else if (isReject && e.keyCode === 27) { // escape
-                cancelReject();
-            } else if (isReject && e.keyCode === 13) { // 13
-                suppress = true;
-                submitReject(e);
-            } else if (e.shiftKey && e.keyCode === 8) {
-                backReject();
-            }
-        } else if (reviewType == 'EDIT') {
-            if (e.keyCode >= 97 && e.keyCode <= 105) { // 1-9 Num pad
-                suppress = setEditOption(e.keyCode - 97);
-            } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-9 normal
-                suppress = setEditOption(e.keyCode - 49);
-            } else if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
-                suppress = setLocationOption(e.keyCode - 65);
-            } else if (e.keyCode == 9) { // Tab
-                suppress = setLocationOption(-1);
-            } else if (e.keyCode === 37 || e.keyCode === 8) { //Left arrow key or backspace
-                suppress = updateRevPosition(-1, true);
-            } else if (e.keyCode === 39) { //Right arrow key
-                suppress = updateRevPosition(1, true);
-            }
-        } else if (reviewType == 'PHOTO') {
-            if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
-                if (e.shiftKey) {
-                    enlargePhoto(e.keyCode - 65);
-                } else if (e.altKey) {
-                    flagPhoto(e.keyCode - 65);
-                } else {
-                    suppress = selectPhoto(e.keyCode - 65);
-                }
-            } else if (e.keyCode == 9) { // Tab
-                suppress = selectAllPhotosOK();
-            } else if (e.keyCode === 13) { // Enter
-                trySubmit(e.ctrlKey);
-            }
-        } else if (isDuplicate) {
-            if (e.keyCode === 27) { // escape
-                cancelDuplicate();
-            } else if (e.keyCode === 13) { // 13
-                submitDuplicate(e);
-            }
-        } else if (isReject) {
-            if (e.keyCode >= 97 && e.keyCode <= 105) { // 1-5 Num pad
-                handleRejectEntry(e, e.keyCode - 97);
-            } else if (e.keyCode >= 49 && e.keyCode <= 57) { // 1-5 normal
-                handleRejectEntry(e, e.keyCode - 49);
-            } else if (e.keyCode === 27) { // escape
-                cancelReject();
-            } else if (e.keyCode === 8) { // backspace
-                backReject();
-            }
-        } else {
-            if (e.keyCode == 81) { // Q
-                fullSizePhoto('app-should-be-wayspot');
-            } else if (e.keyCode == 69) { // E
-                fullSizePhoto('app-supporting-info');
-            } else if (revPosition === 6) { // what is it? menu
-                if (e.keyCode >= 97 && e.keyCode <= 102) { // 1-6 Num pad
-                    suppress = setRating(e.keyCode - 97, true);
-                    document.activeElement.blur();
-                } else if (e.keyCode >= 49 && e.keyCode <= 54) { // 1-6 normal
-                    suppress = setRating(e.keyCode - 49, true);
-                    document.activeElement.blur();
-                } else if (e.keyCode === 9) {
-                    suppress = setRating(e.shiftKey ? -1 : -2, false);
-                } else if (e.keyCode === 13) { // Enter
-                    document.activeElement.blur();
-                    trySubmit(e.ctrlKey);
-                } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
-                    suppress = updateRevPosition(-1, true);
-                }
-            } else if (e.keyCode === 37 || e.keyCode === 8) { // Left arrow key or backspace
-                suppress = updateRevPosition(-1, true);
-            } else if (e.keyCode === 39) { //Right arrow key
-                suppress = updateRevPosition(1, true);
-            } else if (revPosition == 0 && (e.keyCode === 97 || e.keyCode === 49)) {
-                suppress = setRating(0, false);
-                isReject = true;
-                modifyRejectionPanel();
-            } else if (e.keyCode >= 97 && e.keyCode <= 101) { // 1-5 Num pad
-                suppress = setRating(e.keyCode - 97, true);
-            } else if (e.keyCode >= 49 && e.keyCode <= 53) { // 1-5 normal
-                suppress = setRating(e.keyCode - 49, true);
-            } else if (e.keyCode == 38) { // Up arrow
-                zoomInOnMaps();
-                suppress = true;
-            } else if (e.keyCode == 40) { // Down arrow
-                zoomOutOnMaps();
-                suppress = true;
-            } else if (revPosition == 2) { // Location/duplicate check
-                if (e.keyCode >= 65 && e.keyCode <= 90) { // A-Z
-                    openDuplicate(e.keyCode - 65);
-                } else if (e.keyCode == 13) {
-                    //document.activeElement.blur();
-                    console.log(document.activeElement);
-                    suppress = true;
-                    markDuplicate();
-                }
-            } else if (e.keyCode === 13) { // Enter
-                document.activeElement.blur();
-                trySubmit(false);
-            } else if (e.keyCode == 65) { // A
-                showFullSupportingInfo();
-            } else if (e.keyCode == 27) { // Escape
-                exitStreetView();
-            } else if (e.keyCode == 87) { // W
-                scrollCardBody(-50);
-            } else if (e.keyCode == 83) { // S
-                scrollCardBody(50);
-            } else if (e.keyCode == 68) { // D
-                updateRevPosition(-10, false);
-                suppress = updateRevPosition(2, false);
-                exitStreetView();
-            } else if (e.keyCode == 84) {
-                openTranslate();
-            }
-        }
-        if (suppress) {
+        if (e.code.startsWith('Key')) idx += e.code.substring(3);
+        else if (!keySequence && e.code.startsWith('Digit')) idx += e.code.substring(5);
+        else if (e.code.startsWith('Numpad')) idx += e.code.substring(6);
+        else if (keySequence) idx = keySequence;
+        else if (e.keyCode >= 16 && e.keyCode <= 18) return;
+        else idx += e.code;
+        if (map.hasOwnProperty(idx)) {
+            map[idx](e);
             e.preventDefault();
             e.stopPropagation();
-            return false;
         }
-    }
+        redrawUI();
+    };
 
-    function openTranslate() {
-        const btn = document.querySelector('.translBtnAll');
-        if (btn) btn.click();
-    }
-
-    function openDuplicate(index) {
-        const dupes = document.querySelectorAll('app-check-duplicates img.cursor-pointer');
-        if (dupes.length - 1 >= index) dupes[index].click();
-    }
-
-    function setRating(rate, advance){
-        const starButtons = ratingElements[revPosition].getElementsByClassName("wf-rate__star");
-        const whatIsButtons = ratingElements[revPosition].querySelectorAll('.review-categorization > button');
-        const whatIsYN = ratingElements[revPosition].querySelectorAll('.review-categorization > mat-button-toggle-group');
-        if (starButtons.length) {
-            // Star rating
-            starButtons[rate].click();
-            if (advance) return updateRevPosition(1, false);
-        } else if (whatIsYN) {
-            // What is it? (Required)
-            firstClick = false;
-            whatIsYN.forEach(group => {
-                if (rate < 0 || !group.querySelector('mat-button-toggle.mat-button-toggle-checked')) {
-                    group.querySelector('mat-button-toggle:nth-child(2) button').click();
-                }
-            });
-            if (rate >= 0 && rate <= 5) {
-                if (rate >= whatIsYN.length) {
-                    setTimeout(activateWhatIsOther, 50);
-                    return true;
-                }
-                const opts = whatIsYN[rate].querySelectorAll('mat-button-toggle');
-                for (let i = 0; i < opts.length; i++) {
-                    if (!opts[i].classList.contains('mat-button-toggle-checked')) {
-                        opts[i].querySelector('button').click();
-                        break;
-                    }
-                }
-            } else if (rate == -1) {
-                setTimeout(activateWhatIsOther, 50);
-                return true;
+    const isDialogOpen = diag => !!document.querySelector('mat-dialog-container' + (diag ? ' > ' + diag : ''));
+    const isDialogClosing = diag => !!document.querySelector('mat-dialog-container.ng-animating' + (diag ? ' > ' + diag : ''));
+    const closeDialog = () => {
+        const l10n = getL10N();
+        const actions = document.querySelectorAll('mat-dialog-container .mat-dialog-actions button.wf-button');
+        for (let i = 0; i < actions.length; i++) {
+            if (actions[i].textContent == l10n['modal.close']) {
+                actions[i].click();
+                return;
             }
-            return true;
-        } else if (whatIsButtons.length) {
-            setTimeout(activateWhatIsOther, 50);
-            return true;
         }
-        return false;
-    }
+    };
 
-    function activateWhatIsOther() {
-        const wfButtons = ratingElements[revPosition].getElementsByTagName("button");
-        const otherButton = wfButtons[wfButtons.length - 1];
-        if (otherButton) {
-            otherButton.click();
-            const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-            if (wfinput) focusWhatIsInput(wfinput);
-        }
-    }
-
-    function setEditOption(option) {
-        const opt = ratingElements[revPosition].querySelectorAll('mat-radio-button label')[option];
-        if (opt) opt.click();
-        document.activeElement.blur();
-        return updateRevPosition(1, false);
-    }
-
-    function setLocationOption(option) {
-        if (option >= 0) {
-            const opt = ratingElements[revPosition].querySelectorAll('agm-map div[role="button"]')[option];
-            if (opt) opt.click();
-        } else {
-            const checkbox = ratingElements[revPosition].querySelector('mat-checkbox label');
-            if (checkbox) checkbox.click();
-        }
-        document.activeElement.blur();
-        return updateRevPosition(1, false);
-    }
-
-    function selectPhoto(option) {
-        const photo = document.querySelectorAll('app-review-photo app-photo-card .photo-card')[option];
-        if (photo) photo.click();
-        return true;
-    }
-
-    function enlargePhoto(option) {
-        const photo = document.querySelectorAll('app-review-photo app-photo-card .photo-card__action')[option];
-        if (photo) photo.click();
-        return true;
-    }
-
-    function flagPhoto(option) {
-        const photo = document.querySelectorAll('app-review-photo app-photo-card .mat-menu-trigger')[option];
-        if (photo) photo.click();
-        return true;
-    }
-
-    function selectAllPhotosOK() {
-        const photo = document.querySelector('app-review-photo app-accept-all-photos-card .photo-card');
-        if (photo) photo.click();
-        return true;
-    }
-
-    "#mat-menu-panel-0 > div > button:nth-child(1)"
-    "#mat-menu-panel-0 > div > button:nth-child(2)"
-    "#mat-menu-panel-0 > div > button:nth-child(3)"
-    function resetState() {
-        ratingElements = [];
-        revPosition = 0;
-        rejectDepth = 0;
-        rejectOuterIdx = 0;
-        menuPosition = {};
-        isReject = false;
-        isDuplicate = false;
-        firstClick = true;
-    }
-
-    function fullSizePhoto(container) {
-        const closeX = document.getElementsByClassName("cdk-global-overlay-wrapper");
-        if (closeX.length === 0) {
-            const cont = document.getElementsByTagName(container)[0];
-            const img = cont.querySelector('.wf-image-modal');
-            img.click();
-        } else {
-            closeX[0].getElementsByTagName("button")[0].click()
-        }
-    }
-
-    function showFullSupportingInfo() {
-        if (document.getElementsByTagName('mat-dialog-container').length){
-            document.querySelector('div.cdk-overlay-backdrop.cdk-overlay-dark-backdrop.cdk-overlay-backdrop-showing').click();
-            return;
-        }
-        const supportingText = document.querySelector('div.cursor-pointer');
-        if (supportingText) {
-            supportingText.click();
-        }
-    }
-
-    function zoomInOnMaps() {
-        const btns = document.querySelectorAll('button[title="Zoom in"]');
-        btns.forEach(e => e.click());
-    }
-
-    function zoomOutOnMaps() {
-        const btns = document.querySelectorAll('button[title="Zoom out"]');
-        btns.forEach(e => e.click());
-    }
-
-    function exitStreetView() {
-        const button = ratingElements[revPosition].querySelector('agm-map .gm-iv-close');
-        if (button) {
-            const box = button.closest('div[class="gm-style"]');
-            if (box.style.display !== 'none') button.click();
-        }
-    }
-
-    function scrollCardBody(amount) {
-        ratingElements[revPosition].querySelector('.wf-review-card__body div').scrollTop += amount;
-    }
-
-    function markDuplicate() {
-        const btn = document.querySelector('app-check-duplicates nia-map .agm-map-container-inner button.wf-button[wftype="primary"]');
-        if (btn !== null) {
-            isDuplicate = true;
-            btn.click()
-        }
-    }
-
-    function cancelDuplicate() {
-        const btn = document.querySelector('button[class="wf-button"]');
-        if (btn !== null) {
-            isDuplicate = false;
-            btn.click()
-        }
-    }
-
-    function submitDuplicate(e) {
-        let btn = null;
-        if (e.ctrlKey) {
-            btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
-        } else {
-            btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
-        }
-        let smartButton = document.getElementById("wayfarerrtssbutton_d");
-        if (smartButton === null || smartButton === undefined) {
-            let btn = null;
-            if (e.ctrlKey) {
-                btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
+    const thumbDownOpen = card => new Promise((resolve, reject) => {
+        if (isDialogOpen()) {
+            if (!card.opens) {
+                reject();
+                return;
+            } else if (isDialogOpen(card.opens)) {
+                resolve();
+                return;
             } else {
-                btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+                closeDialog();
             }
-            if (btn !== null) {
-                isDuplicate = false;
-                btn.click();
-                setTimeout(submitToMenu, 250);
-            }
-        } else {
-            smartButton.click();
         }
-    }
-
-    function modifyRejectionPanel() {
-        awaitElement(() => document.querySelector("app-review-rejection-abuse-modal"))
-            .then((ref) => {
-                const cancelButton = document.querySelector(".mat-dialog-actions > button:nth-child(1)");
-                cancelButton.addEventListener('click', function(e) {
-                  isReject = false;
-                  rejectDepth = 0;
+        const btns = document.getElementById(card.id).querySelectorAll('button.thumbs-button');
+        for (let i = 0; i < btns.length; i++) {
+            if (btns[i].querySelector('mat-icon').textContent == 'thumb_down') {
+                btns[i].click();
+                awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => {
+                    redrawUI();
+                    resolve();
                 });
-                const els = document.getElementsByClassName("mat-expansion-panel");
-                if (els.length > 0) {
-                    const first = els[0];
-                    const categories = first.children[1].children[0].children[0].children;
-                    for (let i = 0; i < categories.length; i++) {
-                        menuPosition[i] = {"children": {}};
-                        const text = categories[i].getElementsByTagName("mat-panel-title")[0].innerText;
-                        if (isNaN(text[0])) {
-                            const newText = i + 1 + ". " + text;
-                            categories[i].getElementsByTagName("mat-panel-title")[0].innerText = newText;
-                        }
-                        menuPosition[i]["element"] = categories[i];
+                return;
+            }
+        }
+        reject();
+    });
 
-                        const childSelections = categories[i].getElementsByTagName("mat-list-option");
-                        for (let j = 0; j < childSelections.length; j++) {
-                            const text = childSelections[j].getElementsByClassName("mat-list-text")[0].innerText;
-                            if (isNaN(text[0])) {
-                                const newText = j + 1 + ". " + text;
-                                childSelections[j].getElementsByClassName("mat-list-text")[0].innerText = newText;
-                            }
-                            menuPosition[i]["children"][j] = {};
-                            menuPosition[i]["children"][j]["element"] = childSelections[j];
-                        }
-                    }
-                    const event = new Event('rejectionDialogOpened');
-                    first.dispatchEvent(event);
+    const selectDialogRadio = value => new Promise((resolve, reject) => {
+        const btns = document.querySelectorAll('mat-dialog-container mat-radio-button');
+        for (let i = 0; i < btns.length; i++) {
+            if (btns[i].querySelector('input[type=radio]').value == value) {
+                btns[i].querySelector('.mat-radio-container').click();
+                resolve();
+                return;
+            }
+        }
+        reject();
+    });
+
+    const checkDialogBox = (parent, text) => new Promise((resolve, reject) => {
+        const btns = !!parent ? parent.querySelectorAll('wf-checkbox') : document.querySelectorAll('mat-dialog-container wf-checkbox');
+        for (let i = 0; i < btns.length; i++) {
+            const label = btns[i].querySelector('.mat-checkbox-label');
+            const input = btns[i].querySelector('.mat-checkbox-label app-text-input-review-b input');
+            if (text && label.textContent.trim() == text) {
+                label.click();
+                resolve();
+                return;
+            } else if (!text && input) {
+                label.click();
+                setTimeout(() => input.focus(), 0);
+                const stopInstantBlur = e => {
+                    setTimeout(() => input.focus(), 0);
+                    input.removeEventListener('blur', stopInstantBlur);
+                };
+                input.addEventListener('blur', stopInstantBlur);
+                return;
+            }
+        }
+        reject();
+    });
+
+    const expandDialogAccordionPanel = text => new Promise((resolve, reject) => {
+        const panel = getDialogAccordionPanel(text);
+        if (panel) {
+            if (!panel.classList.contains('mat-expanded')) panel.querySelector('mat-panel-title').click();
+            resolve();
+            return;
+        }
+        reject();
+    });
+
+    const getDialogAccordionPanel = text => {
+        const panels = document.querySelectorAll('mat-dialog-container mat-accordion mat-expansion-panel');
+        for (let i = 0; i < panels.length; i++) {
+            const label = panels[i].querySelector('mat-panel-title > div > div');
+            if (label.textContent.trim() == text) {
+                return panels[i];
+            }
+        }
+        return null;
+    }
+
+    const redrawUI = () => {
+        const ephemeral = document.getElementsByClassName('wfkr2-ephemeral');
+        for (let i = ephemeral.length - 1; i >= 0; i--) {
+            ephemeral[i].parentNode.removeChild(ephemeral[i]);
+        }
+        const touched = document.getElementsByClassName('wfkr2-touched');
+        for (let i = touched.length - 1; i >= 0; i--) {
+            for (let j = touched[i].classList.length - 1; j >= 0; j--) {
+                if (touched[i].classList[j].startsWith('wfkr2-eds-')) {
+                    touched[i].classList.remove(touched[i].classList[j]);
                 }
-            });
-    }
-
-    function handleRejectEntry(e, idx) {
-        if (rejectDepth === 0) {
-            if (idx >= Object.keys(menuPosition).length) {
-                return;
             }
-            e.preventDefault();
-            menuPosition[idx]["element"].children[0].click();
-            rejectDepth = 1;
-            rejectOuterIdx = idx;
-        } else if (rejectDepth === 1) {
-            if (idx >= Object.keys(menuPosition[rejectOuterIdx]["children"]).length) {
-                return;
+            touched[i].classList.remove('wfkr2-touched');
+        }
+        if (context.draw) context.draw();
+    };
+
+    const restyle = (e, cls) => {
+        if (!e.classList.contains('wfkr2-touched')) e.classList.add('wfkr2-touched');
+        if (!e.classList.contains('wfkr2-eds-' + cls)) e.classList.add('wfkr2-eds-' + cls);
+    };
+
+    const drawNew = tag => {
+        const e = document.createElement(tag);
+        e.classList.add('wfkr2-ephemeral');
+        return e;
+    }
+
+    const ThumbCards = {
+        APPROPRIATE: { id: 'appropriate-card', opens: 'app-appropriate-rejection-flow-modal' },
+        SAFE: { id: 'safe-card', opens: 'app-safe-rejection-flow-modal' },
+        ACCURATE: { id: 'accurate-and-high-quality-card', opens: 'app-accuracy-rejection-flow-modal' },
+        PERMANENT: { id: 'permanent-location-card', opens: 'app-location-permanent-rejection-flow-modal' }
+    }
+
+    const initForNew = candidate => {
+        const drawThumbCard = card => {
+            const idkBtn = card.querySelector('.dont-know-button');
+            if (idkBtn) {
+                restyle(idkBtn, 'btn-key');
+                restyle(idkBtn, 'key-bracket-3');
             }
-            e.preventDefault();
-            rejectDepth = 2;
-            const headers = document.getElementsByClassName("mat-expansion-panel-header");
-            if (headers.length > 0) {
-                headers[0].click();
-                document.activeElement.blur();
+            const helpBtn = card.querySelector('.question-subtitle-tooltip');
+            if (helpBtn) {
+                restyle(helpBtn, 'btn-key');
+                restyle(helpBtn, 'key-bracket-H');
             }
-            menuPosition[rejectOuterIdx]["children"][idx]["element"].children[0].click();
-            const ref = document.querySelector("app-review-rejection-abuse-modal");
-            const textWrapper = ref.getElementsByClassName("mat-form-field-infix");
-            textWrapper[0].getElementsByTagName("textArea")[0].focus();
-        } else {
-            return;
-        }
-    }
-
-    function backReject() {
-        if (rejectDepth === 2) {
-            const headers = document.getElementsByClassName("mat-expansion-panel-header");
-            if (headers.length > 0) {
-                headers[0].click();
-                document.activeElement.blur();
+            const btns = card.querySelectorAll('button.thumbs-button');
+            for (let i = 0; i < btns.length; i++) {
+                restyle(btns[i], 'btn-key');
+                restyle(btns[i], 'btn-key-pad');
+                switch (btns[i].querySelector('mat-icon').textContent) {
+                    case 'thumb_up':
+                        restyle(btns[i], 'key-bracket-1');
+                        break;
+                    case 'thumb_down':
+                        restyle(btns[i], 'key-bracket-2');
+                        break;
+                }
             }
-            rejectDepth = 1;
-        } else if (rejectDepth === 1) {
-            const expandedCats = document.querySelectorAll('[aria-expanded="true"]');
-            if (expandedCats.length > 1) {
-                expandedCats[1].click();
+            const boxes = card.querySelectorAll('label > *:last-child');
+            for (let i = 0; i < boxes.length && i < 6; i++) {
+                const btnKey = '' + (i + 4);
+                const label = drawNew('span');
+                label.classList.add('wfkr2-key-label');
+                label.classList.add('wfkr2-data-key-' + btnKey);
+                label.textContent = `[${btnKey}] `;
+                if (boxes[i].classList.contains('mat-radio-label-content')) {
+                    const textNode = boxes[i].querySelector('div');
+                    textNode.insertBefore(label, textNode.firstChild);
+                } else {
+                    boxes[i].parentNode.insertBefore(label, boxes[i]);
+                }
             }
-            rejectDepth = 0;
-        } else {
-            cancelReject();
-        }
-    }
+            restyle(card.querySelector('.title-and-subtitle-row'), 'thumb-card-tassr');
+            restyle(card.querySelector('.action-buttons-row'), 'thumb-card-btnr');
+        };
 
-    function submitReject(e) {
-        if (rejectDepth <= 1) {
-            return;
-        }
-        if (e.shiftKey) {
-            return;
-        }
-        let smartButton = document.getElementById("wayfarerrtssbutton_r");
-        if (smartButton === null || smartButton === undefined) {
-            let btn = null;
-            if (e.ctrlKey) {
-                btn = document.querySelector('button[class="wf-button mat-menu-trigger wf-split-button__toggle wf-button--primary"]');
-            } else {
-                btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
-            }
-            if (btn !== null) {
-                isReject = false;
-                btn.click();
-                setTimeout(submitToMenu, 250);
-            }
-        } else {
-            smartButton.click();
-        }
-    }
+        const findKeyBtnInCard = key => document.querySelector('#' + context.cards[context.currentCard].id + ' .wfkr2-eds-key-bracket-' + key);
+        const clickThumbCardBox = key => {
+            const btn = document.querySelector('#' + context.cards[context.currentCard].id + ' .wfkr2-data-key-' + key);
+            if (btn) btn.closest('label').click();
+        };
 
-    function submitToMenu() {
-        const btn = document.querySelector('button[role="menuitem"]');
-        if (btn !== null) {
-            btn.click();
-        }
-    }
-
-    function cancelReject() {
-        const btn = document.querySelector('button[class="wf-button"]');
-        if (btn !== null) {
-            isReject = false;
-            rejectDepth = 0;
-            btn.click();
-        }
-    }
-
-    function handleCustomWhatIf(card, idx) {
-        const dropdown = card.querySelector('ng-dropdown-panel');
-        const option = dropdown.querySelector(`#${dropdown.id}-${idx}`);
-        if (option) option.click();
-        return true;
-    }
-
-    function updateRevPosition(diff, manual) {
-        ratingElements[revPosition].classList.remove('kbdActiveElement');
-        revPosition += diff;
-        if (revPosition < 0) {
-            revPosition = 0;
-        }
-        if (revPosition > maxRevPosition) {
-            revPosition = maxRevPosition;
-        }
-
-        ratingElements[revPosition].classList.add('kbdActiveElement');
-        ratingElements[revPosition].focus();
-        ratingElements[revPosition].scrollIntoView({ block: 'center' });
-
-        if (ratingElements[revPosition].id == 'categorization-card') {
-            const wfinput = ratingElements[revPosition].querySelector('wf-select input');
-            if (wfinput) focusWhatIsInput(wfinput);
-            return true;
-        }
-        return false;
-    }
-
-    function focusWhatIsInput(wfinput) {
-        wfinput.focus();
-        wfinput.addEventListener('keydown', e => {
-            if (e.keyCode == 13) {
-                e.stopPropagation();
-                keyDownEvent(e);
+        const thumbCardKeys = dialog => () => ({
+            '1': () => {
+                if (isDialogOpen()) return;
+                findKeyBtnInCard('1').click();
+                context.nextCard();
+            },
+            '2': () => {
+                if (isDialogOpen()) return;
+                findKeyBtnInCard('2').click();
+                if (!dialog) context.nextCard();
+                else waitForDialog().then(() => redrawUI());
+            },
+            '3': () => {
+                if (isDialogOpen()) return;
+                findKeyBtnInCard('3').click();
+                context.nextCard();
+            },
+            '4': () => clickThumbCardBox('4'),
+            '5': () => clickThumbCardBox('5'),
+            '6': () => clickThumbCardBox('6'),
+            '7': () => clickThumbCardBox('7'),
+            '8': () => clickThumbCardBox('8'),
+            '9': () => clickThumbCardBox('9'),
+            'H': () => {
+                if (isDialogOpen()) return;
+                const help = findKeyBtnInCard('H');
+                if (help) help.click();
+                waitForDialog().then(() => redrawUI());
             }
         });
-    }
+        const dupImgs = document.querySelectorAll('#check-duplicates-card nia-map ~ * div.overflow-x-auto img.cursor-pointer');
+        context = {
+            draw: () => {
+                if (isDialogOpen()) {
+                    if (isDialogClosing()) {
+                        awaitElement(() => !isDialogClosing()).then(() => redrawUI());
+                        return;
+                    } else if (isDialogOpen(ThumbCards.APPROPRIATE.opens)) {
+                        const btns = document.querySelectorAll('mat-dialog-container mat-radio-button');
+                        for (let i = 0; i < btns.length; i++) {
+                            let btnKey = '';
+                            switch (btns[i].querySelector('input[type=radio]').value) {
+                                case 'PRIVATE': btnKey = 'P'; break;
+                                case 'INAPPROPRIATE': btnKey = 'I'; break;
+                                case 'SCHOOL': btnKey = 'K'; break;
+                                case 'SENSITIVE': btnKey = 'S'; break;
+                                case 'EMERGENCY': btnKey = 'E'; break;
+                                case 'GENERIC': btnKey = 'G'; break;
+                                default: continue;
+                            }
+                            const label = drawNew('span');
+                            label.classList.add('wfkr2-key-label');
+                            label.textContent = `[\u{1f879}${btnKey}] `;
+                            const textNode = btns[i].querySelector('.mat-radio-label-content > div');
+                            textNode.insertBefore(label, textNode.firstChild);
+                        }
+                    } else if (isDialogOpen(ThumbCards.ACCURATE.opens)) {
+                        const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
+                        const btns = document.querySelectorAll('mat-dialog-container wf-checkbox');
+                        for (let i = 0; i < btns.length; i++) {
+                            const lbl = btns[i].querySelector('.mat-checkbox-label').textContent.trim();
+                            const panel = btns[i].closest('mat-expansion-panel');
+                            const pnl = !!panel ? panel.querySelector('mat-panel-title > div > div').textContent.trim() : null;
+                            let btnKey = '';
+                            switch (pnl) {
+                                case null:
+                                    switch (lbl) {
+                                        case aahqrl10n('inaccuratelocation'): btnKey = 'L'; break;
+                                        default: continue;
+                                    }
+                                    break;
+                                case aahqrl10n('photos'):
+                                    switch (lbl) {
+                                        case aahqrl10n('photos.blurry'): btnKey = '1,B'; break;
+                                        case aahqrl10n('photos.face'): btnKey = '1,F'; break;
+                                        case aahqrl10n('photos.license'): btnKey = '1,L'; break;
+                                        case aahqrl10n('photos.orientation'): btnKey = '1,O'; break;
+                                        case aahqrl10n('photos.identifiable'): btnKey = '1,I'; break;
+                                        case aahqrl10n('photos.thirdparty'): btnKey = '1,T'; break;
+                                        case aahqrl10n('photos.watermark'): btnKey = '1,W'; break;
+                                        case aahqrl10n('photos.lowquality'): btnKey = '1,Q'; break;
+                                        default: continue;
+                                    }
+                                    break;
+                                case aahqrl10n('title'):
+                                    switch (lbl) {
+                                        case aahqrl10n('title.emoji'): btnKey = '2,E'; break;
+                                        case aahqrl10n('title.url'): btnKey = '2,U'; break;
+                                        case aahqrl10n('title.quality'): btnKey = '2,Q'; break;
+                                        default: continue;
+                                    }
+                                    break;
+                                case aahqrl10n('description'):
+                                    switch (lbl) {
+                                        case aahqrl10n('description.emoji'): btnKey = '3,E'; break;
+                                        case aahqrl10n('description.url'): btnKey = '3,U'; break;
+                                        case aahqrl10n('description.quality'): btnKey = '3,Q'; break;
+                                        default: continue;
+                                    }
+                                    break;
+                                case aahqrl10n('abuse'):
+                                    switch (lbl) {
+                                        case aahqrl10n('abuse.fakenomination'): btnKey = '4,F'; break;
+                                        case aahqrl10n('abuse.explicit'): btnKey = '4,X'; break;
+                                        case aahqrl10n('abuse.influencing'): btnKey = '4,I'; break;
+                                        case aahqrl10n('abuse.offensive'): btnKey = '4,O'; break;
+                                        case aahqrl10n('abuse.other'): btnKey = '4,A'; break;
+                                        default: continue;
+                                    }
+                                    break;
+                            }
+                            const label = drawNew('span');
+                            label.classList.add('wfkr2-key-label');
+                            if (btnKey.includes(',')) {
+                                if (keySequence && ('+' + btnKey).startsWith(keySequence)) {
+                                    label.textContent = '\u2026' + btnKey.substring(keySequence.length).split(',').map(key => `[${key}]`).join('') + ' ';
+                                } else {
+                                    label.textContent = ('\u{1f879}' + btnKey).split(',').map(key => `[${key}]`).join('') + ' ';
+                                }
+                            } else {
+                                label.textContent = `[\u{1f879}${btnKey}] `;
+                            }
+                            const eLbl = btns[i].querySelector('.mat-checkbox-label');
+                            eLbl.parentNode.insertBefore(label, eLbl);
+                        }
+                        const panels = document.querySelectorAll('mat-dialog-container mat-accordion mat-expansion-panel');
+                        for (let i = 0; i < panels.length; i++) {
+                            const lbl = panels[i].querySelector('mat-panel-title');
+                            let btnKey = '';
+                            switch (lbl.querySelector('div > div').textContent.trim()) {
+                                case aahqrl10n('photos'): btnKey = '1'; break;
+                                case aahqrl10n('title'): btnKey = '2'; break;
+                                case aahqrl10n('description'): btnKey = '3'; break;
+                                case aahqrl10n('abuse'): btnKey = '4'; break;
+                                default: continue;
+                            }
+                            const label = drawNew('span');
+                            label.classList.add('wfkr2-key-label');
+                            label.textContent = `[\u{1f879}${btnKey}] `;
+                            lbl.parentNode.insertBefore(label, lbl);
+                        }
+                    } else if ('app-confirm-duplicate-modal') {
+                        const cancelBtn = document.querySelector('mat-dialog-container .mat-dialog-actions button.wf-button');
+                        if (cancelBtn) {
+                            restyle(cancelBtn, 'btn-key');
+                            restyle(cancelBtn, 'btn-key-pad');
+                            restyle(cancelBtn, 'key-bracket-Esc');
+                        }
+                    }
+                    const l10n = getL10N();
+                    const actions = document.querySelectorAll('mat-dialog-container .mat-dialog-actions button.wf-button');
+                    for (let i = 0; i < actions.length; i++) {
+                        if (actions[i].textContent == l10n['modal.close']) {
+                            restyle(actions[i], 'btn-key');
+                            restyle(actions[i], 'btn-key-pad');
+                            restyle(actions[i], 'key-bracket-Esc');
+                            break;
+                        }
+                    }
+                    const submitBtn = document.querySelector('mat-dialog-container .mat-dialog-actions button.wf-button--primary');
+                    if (submitBtn) {
+                        restyle(submitBtn, 'btn-key');
+                        restyle(submitBtn, 'btn-key-pad');
+                        restyle(submitBtn, 'key-bracket-Enter');
+                    }
+                } else {
+                    const cc = context.cards[context.currentCard];
+                    const card = document.getElementById(cc.id);
+                    restyle(card, 'highlighted');
+                    cc.draw(card);
+                    card.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            },
+            cards: [
+                {
+                    id: 'check-duplicates-card',
+                    draw: card => {
+                        const noDupeBtn = card.querySelector('.noDuplicatesButton');
+                        restyle(noDupeBtn, 'btn-key');
+                        restyle(noDupeBtn, 'key-bracket-1');
+                        if (dupImgs.length) {
+                            const dupImgBox = card.querySelector('#check-duplicates-card nia-map ~ * div.overflow-x-auto');
+                            const dupeHelp = drawNew('p');
+                            const dhK1 = document.createElement('span');
+                            dhK1.classList.add('wfkr2-key-span');
+                            dhK1.textContent = '[Alt]+[';
+                            const dhK2 = document.createElement('span');
+                            dhK2.classList.add('wfkr2-key-span');
+                            dhK2.classList.add('wfkr2-key-span-wildcard');
+                            dhK2.textContent = 'letter';
+                            const dhK3 = document.createElement('span');
+                            dhK3.classList.add('wfkr2-key-span');
+                            dhK3.textContent = ']';
+                            const dhK4 = document.createElement('span');
+                            dhK4.classList.add('wfkr2-key-span');
+                            dhK4.textContent = '[Alt]+[Shift]+[';
+                            const dhK5 = document.createElement('span');
+                            dhK5.classList.add('wfkr2-key-span');
+                            dhK5.classList.add('wfkr2-key-span-wildcard');
+                            dhK5.textContent = 'letter';
+                            const dhK6 = document.createElement('span');
+                            dhK6.classList.add('wfkr2-key-span');
+                            dhK6.textContent = ']';
+                            dupeHelp.appendChild(document.createTextNode('Press '));
+                            dupeHelp.appendChild(dhK1);
+                            dupeHelp.appendChild(dhK2);
+                            dupeHelp.appendChild(dhK3);
+                            dupeHelp.appendChild(document.createTextNode(' to pick a duplicate, or '));
+                            dupeHelp.appendChild(dhK4);
+                            dupeHelp.appendChild(dhK5);
+                            dupeHelp.appendChild(dhK6);
+                            dupeHelp.appendChild(document.createTextNode(' to open its photo in full screen'));
+                            dupImgBox.parentNode.insertBefore(dupeHelp, dupImgBox);
 
-    function trySubmit(finish) {
-        const dialog = document.querySelector('mat-dialog-container');
-        if (dialog) dialog.parentNode.removeChild(dialog);
-        const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
-        const buttonParts = submitWrapper[0].getElementsByTagName("button");
-        if (finish) {
-            if (finish && buttonParts.length >= 3) {
-                buttonParts[2].click();
-                document.querySelector("button.mat-focus-indicator.mat-menu-item").click();
+                            for (let i = 0; i < dupImgs.length && i < 26; i++) {
+                                const dpbox = drawNew('div');
+                                dpbox.classList.add('wfkr2-dupe-key-box');
+                                dupImgs[i].parentNode.insertBefore(dpbox, dupImgs[i]);
+                                const inner = document.createElement('div');
+                                inner.textContent = String.fromCharCode(65 + i);
+                                dpbox.appendChild(inner);
+                            }
+
+                            const dupeBtn = card.querySelectorAll('.agm-info-window-content button.wf-button--primary');
+                            for (let i = 0; i < dupeBtn.length; i++) {
+                                if (dupeBtn[i] && dupeBtn[i].closest('body')) {
+                                    restyle(dupeBtn[i], 'btn-key');
+                                    restyle(dupeBtn[i], 'key-bracket-Enter');
+                                    break;
+                                }
+                            }
+                        }
+                    },
+                    extraKeys: () => {
+                        const dupKeys = {
+                            '1': () => {
+                                document.querySelector('#check-duplicates-card .noDuplicatesButton').click();
+                                context.nextCard();
+                            },
+                            'Enter': () => {
+                                if (!isDialogOpen()) {
+                                    const dupeBtn = document.querySelectorAll('#check-duplicates-card .agm-info-window-content button.wf-button--primary');
+                                    for (let i = 0; i < dupeBtn.length; i++) {
+                                        if (dupeBtn[i] && dupeBtn[i].closest('body')) {
+                                            dupeBtn[i].click();
+                                            awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => redrawUI());
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    handleEnterNew();
+                                }
+                            },
+                            'Escape': () => {
+                                if (isDialogOpen('app-confirm-duplicate-modal')) {
+                                    const cancelBtn = document.querySelector('mat-dialog-container .mat-dialog-actions button.wf-button');
+                                    cancelBtn.click();
+                                    awaitElement(() => !isDialogOpen()).then(() => redrawUI());
+                                }
+                            }
+                        };
+                        for (let i = 0; i < dupImgs.length && i < 26; i++) {
+                            const key = String.fromCharCode(65 + i);
+                            const img = dupImgs[i];
+                            dupKeys[`[${key}`] = () => {
+                                img.click();
+                                awaitElement(() => document.activeElement.tagName == 'IMG').then(() => {
+                                    document.activeElement.blur()
+                                    redrawUI();
+                                });
+                            }
+                            dupKeys[`+[${key}`] = () => window.open(`${img.src}=s0`);
+                        }
+                        return dupKeys;
+                    }
+                }, {
+                    id: 'appropriate-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(true)
+                }, {
+                    id: 'safe-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(true)
+                }, {
+                    id: 'accurate-and-high-quality-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(true)
+                }, {
+                    id: 'permanent-location-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(true)
+                }, {
+                    id: 'socialize-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(false)
+                }, {
+                    id: 'exercise-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(false)
+                }, {
+                    id: 'explore-card',
+                    draw: drawThumbCard,
+                    extraKeys: thumbCardKeys(false)
+                }, {
+                    id: 'categorization-card',
+                    draw: card => {
+                        const labels = card.querySelectorAll('mat-button-toggle-group > div');
+                        for (let i = 0; i < labels.length; i++) {
+                            restyle(labels[i], 'btn-key');
+                            restyle(labels[i], 'key-bracket-' + (i + 1));
+                            restyle(labels[i], 'btn-key-no-highlight');
+                            restyle(labels[i], 'btn-key-pad');
+                        }
+                        const catBox = card.querySelector('mat-button-toggle-group');
+                        const catHelp = drawNew('p');
+                        const noAllKey = document.createElement('span');
+                        noAllKey.classList.add('wfkr2-key-span');
+                        noAllKey.textContent = '[Tab]';
+                        catHelp.appendChild(document.createTextNode('Press '));
+                        catHelp.appendChild(noAllKey);
+                        catHelp.appendChild(document.createTextNode(' set all options to "No"'));
+                        catBox.parentNode.insertBefore(catHelp, catBox);
+                    },
+                    extraKeys: () => {
+                        const setAllNo = evenIfYes => {
+                            const rows = document.querySelectorAll('#categorization-card mat-button-toggle-group');
+                            for (let i = 0; i < rows.length; i++) {
+                                if (evenIfYes || !rows[i].querySelector('mat-button-toggle.mat-button-toggle-checked')) {
+                                    rows[i].querySelector('mat-button-toggle:last-of-type button').click();
+                                }
+                            }
+                        };
+                        const toggleYN = key => {
+                            setAllNo(false);
+                            const label = document.querySelector('#categorization-card .wfkr2-eds-key-bracket-' + key);
+                            const opts = label.closest('mat-button-toggle-group').querySelectorAll('mat-button-toggle');
+                            for (let i = 0; i < opts.length; i++) {
+                                if (!opts[i].classList.contains('mat-button-toggle-checked')) {
+                                    opts[i].querySelector('button').click(); break;
+                                }
+                            }
+                        };
+                        const keys = {
+                            'Tab': () => setAllNo(true)
+                        };
+                        let i = 1;
+                        while (candidate.hasOwnProperty('categoryIds') && i <= candidate.categoryIds.length) {
+                            const key = '' + (i++);
+                            keys[key] = () => toggleYN(key);
+                        }
+                        return keys
+                    }
+                }
+            ],
+            currentCard: 0,
+            nextCard: () => {
+                if (context.currentCard < context.cards.length - 1) {
+                    context.currentCard++;
+                    context.extraKeys = context.cards[context.currentCard].extraKeys
+                    updateKeybindsNew(candidate);
+                }
+            },
+            prevCard: () => {
+                if (context.currentCard > 0) {
+                    context.currentCard--;
+                    context.extraKeys = context.cards[context.currentCard].extraKeys
+                    updateKeybindsNew(candidate);
+                }
             }
-            return;
-        }
-        let smartButton = document.getElementById("wayfarerrtssbutton_0");
-        if (smartButton === null || smartButton === undefined) {
-            const submitWrapper = document.getElementsByTagName("app-submit-review-split-button");
-            buttonParts[0].click();
-        } else {
-            smartButton.click();
-        }
-    }
+        };
+        context.extraKeys = context.cards[context.currentCard].extraKeys
+        updateKeybindsNew(candidate);
+    };
 
-    function addCss() {
-        const whatIsSelector = 'div.review-categorization__option > div > div:nth-child(1)::before'
-        const whatIsOptions = [...Array(10).keys()].map(e => (`div:nth-child(${e}) > ${whatIsSelector} { content: '[${e}] '; }`)).join('\n');
-        const whatIsButtons = [...Array(5).keys()].map(e => (`div.review-categorization > button:nth-child(${e})::before { content: '${e}. '; }`)).join('\n');
-        const whatIsYNLabels = [...Array(7).keys()].map(e => (`div.review-categorization > mat-button-toggle-group:nth-child(${e}) > div::before { content: '[${e}]\u00a0'; }`)).join('\n');
-        const editOptions = [...Array(10).keys()].map(e => (`app-review-edit mat-radio-button:nth-child(${e}) .mat-radio-label-content::before { content: '[${e}]'; }`)).join('\n');
-        const photoOptions = [...Array(27).keys()].map(e => {
-            const letter = String.fromCharCode(64 + e);
-            return `app-photo-card:nth-child(${e}) .photo-card__actions::before { content: '${letter}'; }`;
-        }).join('\n');
-        const locationOptions = [...Array(26).keys()].map(e => {
-            const letter = String.fromCharCode(65 + e);
-            return `app-select-location-edit agm-map div[option-idx="${e}"]:before { content: '${letter}'; }`;
-        }).join('\n');
+    const handleEnterNew = () => {
+        let btn = null;
+        if (isDialogOpen() && !isDialogClosing()) {
+            btn = document.querySelector('mat-dialog-container .mat-dialog-actions button.wf-button--primary');
+        } else {
+            btn = document.querySelector('app-submit-review-split-button button.wf-button--primary');
+        }
+        if (btn) {
+            btn.click();
+        }
+    };
+
+    const updateKeybindsNew = candidate => {
+        const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
+        setHandler(makeKeyMap({
+            '+P': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('PRIVATE')),
+            '+I': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('INAPPROPRIATE')),
+            '+K': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('SCHOOL')),
+            '+S': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('SENSITIVE')),
+            '+E': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('EMERGENCY')),
+            '+G': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('GENERIC')),
+            '+U': () => thumbDownOpen(ThumbCards.SAFE),
+            '+1': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => expandDialogAccordionPanel(aahqrl10n('photos'))),
+            '+1,B': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.blurry')),
+            '+1,F': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.face')),
+            '+1,L': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.license')),
+            '+1,O': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.orientation')),
+            '+1,I': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.identifiable')),
+            '+1,T': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.thirdparty')),
+            '+1,W': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.watermark')),
+            '+1,Q': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('photos')), aahqrl10n('photos.lowquality')),
+            '+2': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => expandDialogAccordionPanel(aahqrl10n('title'))),
+            '+2,E': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('title')), aahqrl10n('title.emoji')),
+            '+2,U': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('title')), aahqrl10n('title.url')),
+            '+2,Q': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('title')), aahqrl10n('title.quality')),
+            '+3': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => expandDialogAccordionPanel(aahqrl10n('description'))),
+            '+3,E': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('description')), aahqrl10n('description.emoji')),
+            '+3,U': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('description')), aahqrl10n('description.url')),
+            '+3,Q': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('description')), aahqrl10n('description.quality')),
+            '+4': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => expandDialogAccordionPanel(aahqrl10n('abuse'))),
+            '+4,F': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.fakenomination')),
+            '+4,X': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.explicit')),
+            '+4,I': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.influencing')),
+            '+4,O': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.offensive')),
+            '+4,A': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.other')),
+            '+L': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => checkDialogBox(null, aahqrl10n('inaccuratelocation'))),
+            '+O': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => checkDialogBox(null, null)),
+            '+T': () => thumbDownOpen(ThumbCards.PERMANENT),
+            'Q': () => window.open(candidate.imageUrl + '=s0'),
+            'E': () => window.open(candidate.supportingImageUrl + '=s0'),
+            'Tab': () => !isDialogOpen() && context.nextCard(),
+            '+Tab': () => !isDialogOpen() && context.prevCard(),
+            'ArrowDown': () => !isDialogOpen() && context.nextCard(),
+            'ArrowUp': () => !isDialogOpen() && context.prevCard(),
+            'ArrowRight': () => !isDialogOpen() && context.nextCard(),
+            'ArrowLeft': () => !isDialogOpen() && context.prevCard(),
+            'Enter': () => handleEnterNew(),
+            ...context.extraKeys()
+        }));
+    };
+
+    (() => {
+        const keyList = [
+            ...[...Array(27).keys()].map(e => String.fromCharCode(64 + e)),
+            ...[...Array(10).keys()].map(e => '' + e),
+            'Esc', 'Tab', 'Enter'
+        ];
+        const edsKeys = keyList.map(key => `.wfkr2-eds-key-bracket-${key}::before { content: '[${key}]'; }`).join('\n');
 
         const css = `
-            ${whatIsSelector} { font-family: monospace; color: white; }
-            ${whatIsOptions}
-            ${whatIsYNLabels}
-
-            div.review-categorization > button::before { margin-right: 5px; }
-            .dark div.review-categorization > button::before { color: white; }
-            div.review-categorization > mat-button-toggle-group > div::before { font-family: monospace; color: #FF6D38; }
-            div.review-categorization > mat-button-toggle-group > div { color: black !important; }
-            .dark div.review-categorization > mat-button-toggle-group > div { color: white !important; }
-            ${whatIsButtons}
-            div.review-categorization > button:last-child::before { margin-left: -14px; }
-
-            app-review-new #categorization-card.wbkb-yesno > div:first-child > div:first-child::after {
-                content: '[Shift+Tab] = Other\\a[Tab] = Nothing';
-                margin-top: 10px;
-                display: block;
-                white-space: pre;
-                font-family: monospace;
-                color: #FF6D38;
-            }
-
-            app-review-edit mat-radio-button .mat-radio-label-content::before { color: #FF6D38; font-family: monospace; }
-            ${editOptions}
-
-            app-supporting-info .wf-review-card__body .bg-gray-200 .cursor-pointer::before {
-                content: '[Click here or press A for full supporting info] ';
-                color: #FF6D38;
-                display: block;
-            }
-
-            app-select-location-edit agm-map div[role="button"]::before { margin-left: 8px; color: black; auto; font-size: 25px; }
-            app-select-location-edit mat-checkbox .mat-checkbox-label::before { content: '[Tab]'; color: #FF6D38; font-family: monospace; }
-            ${locationOptions}
-
-            app-photo-card .photo-card__actions::before { font-size: 24px; margin-right: 20px; }
-            app-accept-all-photos-card .photo-card__overlay span::after {
-                content: '[Press Tab to accept all photos] ';
-                color: #FF6D38;
-                display: block;
-            }
-            ${photoOptions}
-
-        .card.kbdActiveElement {
+	    .wfkr2-eds-highlighted {
             border-width: 1px;
+		    border-color: #df471c;
+	    }
+	    .dark .wfkr2-eds-highlighted {
+		    border-color: #20B8E3;
+	    }
+        .wfkr2-eds-btn-key::before, .wfkr2-key-label, .wfkr2-key-span {
+            color: #FF6D38;
+            font-family: monospace;
+            text-transform: none;
+            display: inline-block;
         }
-        .kbdActiveElement {
-            border-color: #df471c;
+        .wfkr2-key-span-wildcard {
+            color: #20B8E3;
         }
-        .dark .kbdActiveElement {
-            border-color: #20B8E3;
+        .wfkr2-eds-btn-key-no-highlight::before {
+            color: black;
         }
-        .kbdDupeImageBox {
+        .dark .wfkr2-eds-btn-key-no-highlight::before {
+            color: white;
+        }
+        .wfkr2-eds-btn-key-pad::before, .wfkr2-key-label {
+            margin-right: 5px;
+        }
+        .wfkr2-eds-btn-key.is-selected::before, .wfkr2-eds-btn-key.wf-button--primary::before {
+            color: black;
+        }
+        .wfkr2-eds-thumb-card-btnr {
+            width: 43% !important;
+        }
+        .wfkr2-eds-thumb-card-tassr {
+            width: 57% !important;
+        }
+
+        ${edsKeys}
+
+        .wfkr2-dupe-key-box {
             width: 0;
             z-index: 10;
         }
-        .kbdDupeImageBox > div {
+        .wfkr2-dupe-key-box > div {
             width: 1.7em;
             margin: 5px;
             text-align: center;
@@ -842,26 +854,20 @@
             background: rgba(0,0,0,0.5);
             color: #FF6D38;
         }
-        .kbdDupeHelp {
-            color: #FF6D38;
-            font-family: monospace;
-        }
-
-        app-check-duplicates nia-map .agm-map-container-inner button.wf-button[wftype="primary"]::before {
-            content: '[Enter]';
-            font-family: monospace;
-        }
-        /* Translation button integration */
-        .translBtnAll::after {
-            content: '[T]';
-            font-family: monospace;
-            color: #FF6D38;
-        }
             `;
         const style = document.createElement('style');
         style.type = 'text/css';
         style.innerHTML = css;
-        document.querySelector('head').appendChild(style);
-    }
+        // We're loading this script on document-start, which means <head> does not exist yet.
+        // Wait for it to start existing before we try to add the CSS to it.
+        const tryAdd = setInterval(() => {
+            const head = document.querySelector('head');
+            if (head) {
+                clearInterval(tryAdd);
+                console.log('Injecting styles...');
+                head.appendChild(style);
+            }
+        }, 100);
+    })();
 
 })();
