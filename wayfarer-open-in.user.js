@@ -372,6 +372,12 @@
         },
         {
             // Norway
+            label: 'Finn.no kart',
+            url: 'https://kart.finn.no/?lng=%lng%&lat=%lat%&zoom=18&mapType=norortho&showPin=1',
+            regions: ['NO']
+        },
+        {
+            // Norway
             label: '1881.no',
             url: 'https://kart.1881.no/?lat=%lat%&lon=%lng%&z=18&v=1&r=&o=&layer=',
             regions: ['NO']
