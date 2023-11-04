@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.0.0
+// @version      2.0.1
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -157,6 +157,7 @@
         if (inputActive && (e.code.startsWith('Numpad') || e.code.startsWith('Key') || e.code.startsWith('Digit'))) return;
 
         if (e.shiftKey && e.code.startsWith('Digit')) keySequence = '+' + e.code.substring(5);
+        else if (e.shiftKey && e.code.startsWith('Numpad')) keySequence = '+' + e.code.substring(6);
         let idx = keySequence ? keySequence + ',' : '';
         if (!keySequence && e.shiftKey) idx += '+';
         if (e.ctrlKey) idx += '^';
@@ -164,7 +165,7 @@
 
         if (e.code.startsWith('Key')) idx += e.code.substring(3);
         else if (!keySequence && e.code.startsWith('Digit')) idx += e.code.substring(5);
-        else if (e.code.startsWith('Numpad')) idx += e.code.substring(6);
+        else if (!keySequence && e.code.startsWith('Numpad')) idx += e.code.substring(6);
         else if (keySequence) idx = keySequence;
         else if (e.keyCode >= 16 && e.keyCode <= 18) return;
         else idx += e.code;
