@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.0.0
+// @version      2.0.1
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -525,12 +525,6 @@
                     const card = document.getElementById(cc.id);
                     restyle(card, 'highlighted');
                     cc.draw(card);
-                    /*
-                    card.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                    */
                 }
             },
             cards: [
