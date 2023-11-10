@@ -525,10 +525,12 @@
                     const card = document.getElementById(cc.id);
                     restyle(card, 'highlighted');
                     cc.draw(card);
+                    /*
                     card.scrollIntoView({
                         behavior: 'smooth',
                         block: 'center'
                     });
+                    */
                 }
             },
             cards: [
