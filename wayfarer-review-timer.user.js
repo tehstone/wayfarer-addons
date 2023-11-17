@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.5.0
+// @version      0.6.0
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -81,7 +81,7 @@
                     console.log(e);
                 }
                 addSettings();
-                //addSmartSubmitButton();
+                addSmartSubmitButton();
             });
     }
 
@@ -260,16 +260,6 @@
             smartSubmitEnabled = smartSubmitEnabled === "true";
         }        
 
-        const new_review_ref = document.querySelector('#safety-and-accessability-card');
-        if (new_review_ref) {
-            smartSubmitEnabled = false;
-        }
-        
-
-        if (smartSubmitEnabled !== true) {
-            return;
-        }
-
         for(let i=0; i < buttons.length; i++) {
             let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_${i}`);
 
@@ -282,25 +272,19 @@
 
             if (smartSubmitButton === null) {
                 smartSubmitButton = document.createElement("button");
-                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary wfrt-smart-button';
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled wfrt-smart-button';
                 smartSubmitButton.disabled = true;
                 smartSubmitButton.id = `wayfarerrtssbutton_${i}`;
                 smartSubmitButton.innerHTML = "Smart Submit";
-                smartSubmitButton.onclick = checkSubmitReview;
+                smartSubmitButton.onclick = function() {
+                    checkSubmitReview();
+                }
             }
 			const submitButton = buttons[i].firstElementChild;
 			insertAfter(smartSubmitButton, submitButton);
 			submitButton.style.display = 'none';
         }
 
-        document.body.addEventListener('rejectionDialogOpened', addButtonToRejectDialog, true);
-
-        const rejectStar = document.querySelector('.wf-review-card .wf-rate__star');
-        if (rejectStar) {
-            rejectStar.onclick = function() {
-                setTimeout(addButtonToRejectDialog, 500);
-            };
-        }
 
         addSubmitButtonObserver();
 
@@ -314,7 +298,7 @@
             if (smartSubmitButton === null) {
                 const buttons = parent[0].getElementsByTagName('button');
                 smartSubmitButton = document.createElement("button");
-                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary wfrt-smart-button';
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled wfrt-smart-button';
                 smartSubmitButton.style.marginLeft = "1.5rem";
                 smartSubmitButton.id = `wayfarerrtssbutton_d`;
                 smartSubmitButton.innerHTML = "Smart Submit";
@@ -328,6 +312,20 @@
 
             clearInterval(this);
         }, 500);
+
+        let thumbElements = document.querySelectorAll('*[class^="mat-icon"]');
+        let found = 0;
+        for (var i = 0; i < thumbElements.length; i++) { 
+            if (thumbElements[i].innerHTML.startsWith('thumb_down')) {
+                found++;
+                thumbElements[i].onclick = function() {
+                    setTimeout(addButtonToRejectDialog, 500);
+                };
+            }
+            if (found == 4) {
+                break;
+            }
+        }
     }
 
     function addSubmitButtonObserver() {
@@ -358,28 +356,42 @@
     }
 
     function addButtonToRejectDialog() {
-        const parent = document.getElementsByClassName("mat-dialog-actions");
+        const parent = document.getElementsByClassName("mat-dialog-container");
         if (parent.length < 1) {
             return;
+        }
+        let selectionRequired = false;
+        if (parent[0].childNodes[0].localName !== "app-safe-rejection-flow-modal"
+            && parent[0].childNodes[0].localName !== "app-location-permanent-rejection-flow-modal") {
+            selectionRequired = true;
         }
         const buttons = parent[0].getElementsByTagName('button');
         let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_r`);
         if (smartSubmitButton === null) {
             smartSubmitButton = document.createElement("button");
-            smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled';
-            smartSubmitButton.disabled = true;
+            if (selectionRequired) {
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled';
+                smartSubmitButton.disabled = true;
+            } else {
+                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary';
+                smartSubmitButton.disabled = false;
+            }
+            
+            
             smartSubmitButton.style.marginLeft = "1.5rem";
             smartSubmitButton.id = `wayfarerrtssbutton_r`;
             smartSubmitButton.innerHTML = "Smart Submit";
             smartSubmitButton.onclick = function() {
-                checkSubmitReview();
+                checkSubmitReview(true);
             }
             insertAfter(smartSubmitButton, buttons[1]);
 
             buttons[1].style.display = "none";
         }
 
-        addRejectButtonObserver(buttons[1]);
+        if (selectionRequired) {
+            addRejectButtonObserver(buttons[1]);
+        }
     }
 
     function addRejectButtonObserver(button) {
@@ -400,7 +412,7 @@
         });
     }
 
-    function checkSubmitReview() {
+    function checkSubmitReview(rejection=false) {
         if (submitButtonClicked) { return; }
         submitButtonClicked = true;
         let diff = Math.ceil((expireTime - new Date().getTime()) / 1000);
@@ -419,18 +431,23 @@
         if (diff + delay > 1200) {
             updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)}`, `${Math.abs(1200 - delay - diff)}`);
         }
-        waitToSubmit(delay);
+        waitToSubmit(delay, rejection);
     }
 
-    function waitToSubmit(delay) {
+    function waitToSubmit(delay, rejection) {
         let diff = Math.ceil((expireTime - new Date().getTime()) / 1000);
         if (diff + delay < 1200) {
+            if (rejection) {
+            const parent = document.getElementsByClassName("mat-dialog-container")[0];
+            btn = parent.querySelectorAll('button[class="wf-button wf-button--primary"]')[0];
+        } else {
             btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
+        }
             btn.click();
         } else {
             updateButtonText(`Submitting in ${Math.abs(1200 - delay - diff)}`, `${Math.abs(1200 - delay - diff)}`);
             setTimeout(function() {
-                waitToSubmit(delay);
+                waitToSubmit(delay, rejection);
             }, 1000);
         }
     }
