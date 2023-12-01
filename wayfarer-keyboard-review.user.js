@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.0.1
+// @version      2.0.2
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -9,7 +9,7 @@
 // @run-at       document-start
 // ==/UserScript==
 
-// Copyright 2022 tehstone
+// Copyright 2023 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -151,6 +151,7 @@
     };
 
     const makeKeyMap = map => e => {
+        console.log("makeKeyMap")
         let inputActive = false;
         if (document.activeElement.tagName == 'TEXTAREA') inputActive = true;
         if (document.activeElement.tagName == 'INPUT' && !['radio', 'checkbox'].includes(document.activeElement.type.toLowerCase())) inputActive = true;
@@ -190,6 +191,7 @@
     };
 
     const thumbDownOpen = card => new Promise((resolve, reject) => {
+        console.log("thumbDownOpen")
         if (isDialogOpen()) {
             if (!card.opens) {
                 reject();
@@ -708,7 +710,7 @@
                     }
                 }
             ],
-            currentCard: 0,
+            currentCard: 1,
             nextCard: () => {
                 if (context.currentCard < context.cards.length - 1) {
                     context.currentCard++;
