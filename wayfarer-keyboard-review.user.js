@@ -144,7 +144,7 @@
                     //initForEdit(candidate);
                     break;
                 case 'APP-REVIEW-PHOTO':
-                    //initForPhoto(candidate);
+                    initForPhoto(candidate);
                     break;
             }
         });
@@ -785,6 +785,75 @@
         }));
     };
 
+    const initForPhoto = candidate => {
+        const acceptAll = document.querySelector('app-review-photo app-accept-all-photos-card .photo-card');
+
+        context = {
+            draw: () => {
+                const infoCard = document.querySelector('app-review-photo .review-photo__info div');
+                console.log(infoCard);
+                const photoHelp = drawNew('p');
+                photoHelp.style.marginTop = '10px';
+                const phK1 = document.createElement('span');
+                phK1.classList.add('wfkr2-key-span');
+                phK1.textContent = '[';
+                const phK2 = document.createElement('span');
+                phK2.classList.add('wfkr2-key-span');
+                phK2.classList.add('wfkr2-key-span-wildcard');
+                phK2.textContent = 'letter';
+                const phK3 = document.createElement('span');
+                phK3.classList.add('wfkr2-key-span');
+                phK3.textContent = ']';
+                const phK4 = document.createElement('span');
+                phK4.classList.add('wfkr2-key-span');
+                phK4.textContent = '[Shift]+[';
+                const phK5 = document.createElement('span');
+                phK5.classList.add('wfkr2-key-span');
+                phK5.classList.add('wfkr2-key-span-wildcard');
+                phK5.textContent = 'letter';
+                const phK6 = document.createElement('span');
+                phK6.classList.add('wfkr2-key-span');
+                phK6.textContent = ']';
+                photoHelp.appendChild(document.createTextNode('Press '));
+                photoHelp.appendChild(phK1);
+                photoHelp.appendChild(phK2);
+                photoHelp.appendChild(phK3);
+                photoHelp.appendChild(document.createTextNode(' reject a photo, or '));
+                photoHelp.appendChild(phK4);
+                photoHelp.appendChild(phK5);
+                photoHelp.appendChild(phK6);
+                photoHelp.appendChild(document.createTextNode(' to open it in full screen'));
+                infoCard.appendChild(photoHelp);
+
+                for (let i = 0; i < context.cards.length; i++) {
+                    const actions = context.cards[i].querySelector('.photo-card__actions');
+                    const label = drawNew('span');
+                    label.classList.add('wfkr2-key-label');
+                    label.classList.add('wfkr2-photo-card-label');
+                    label.textContent = String.fromCharCode(65 + i);
+                    actions.insertBefore(label, actions.firstChild);
+                }
+
+                const label = drawNew('span');
+                label.classList.add('wfkr2-key-label');
+                label.textContent = '[Tab]';
+                const acceptAllText = acceptAll.querySelector('span');
+                acceptAllText.insertBefore(label, acceptAllText.firstChild);
+            },
+            cards: document.querySelectorAll('app-review-photo app-photo-card .photo-card')
+        };
+        const keys = {
+            'Tab': () => acceptAll.click(),
+            'Enter': () => handleEnterNew()
+        };
+        for (let i = 0; i < context.cards.length; i++) {
+            const card = context.cards[i];
+            keys[String.fromCharCode(65 + i)] = () => card.click();
+            keys['+' + String.fromCharCode(65 + i)] = () => window.open(card.querySelector('.photo-card__photo img').src + '=s0');
+        }
+        setHandler(makeKeyMap(keys));
+    };
+
     (() => {
         const keyList = [
             ...[...Array(27).keys()].map(e => String.fromCharCode(64 + e)),
@@ -827,6 +896,11 @@
         }
         .wfkr2-eds-thumb-card-tassr {
             width: 57% !important;
+        }
+        .wfkr2-photo-card-label {
+            font-size: 1.9em;
+            display: inline-block;
+            padding: 0 0.5em;
         }
 
         ${edsKeys}
