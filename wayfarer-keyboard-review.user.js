@@ -533,9 +533,6 @@
                 {
                     id: 'check-duplicates-card',
                     draw: card => {
-                        const noDupeBtn = card.querySelector('.noDuplicatesButton');
-                        restyle(noDupeBtn, 'btn-key');
-                        restyle(noDupeBtn, 'key-bracket-1');
                         if (dupImgs.length) {
                             const dupImgBox = card.querySelector('#check-duplicates-card nia-map ~ * div.overflow-x-auto');
                             const dupeHelp = drawNew('p');
@@ -591,10 +588,6 @@
                     },
                     extraKeys: () => {
                         const dupKeys = {
-                            '1': () => {
-                                document.querySelector('#check-duplicates-card .noDuplicatesButton').click();
-                                context.nextCard();
-                            },
                             'Enter': () => {
                                 if (!isDialogOpen()) {
                                     const dupeBtn = document.querySelectorAll('#check-duplicates-card .agm-info-window-content button.wf-button--primary');
