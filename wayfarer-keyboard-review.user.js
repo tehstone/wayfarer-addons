@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.0.2
+// @version      2.0.3
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -144,7 +144,7 @@
                     //initForEdit(candidate);
                     break;
                 case 'APP-REVIEW-PHOTO':
-                    //initForPhoto(candidate);
+                    initForPhoto(candidate);
                     break;
             }
         });
@@ -158,6 +158,7 @@
         if (inputActive && (e.code.startsWith('Numpad') || e.code.startsWith('Key') || e.code.startsWith('Digit'))) return;
 
         if (e.shiftKey && e.code.startsWith('Digit')) keySequence = '+' + e.code.substring(5);
+        else if (e.shiftKey && e.code.startsWith('Numpad')) keySequence = '+' + e.code.substring(6);
         let idx = keySequence ? keySequence + ',' : '';
         if (!keySequence && e.shiftKey) idx += '+';
         if (e.ctrlKey) idx += '^';
@@ -165,7 +166,7 @@
 
         if (e.code.startsWith('Key')) idx += e.code.substring(3);
         else if (!keySequence && e.code.startsWith('Digit')) idx += e.code.substring(5);
-        else if (e.code.startsWith('Numpad')) idx += e.code.substring(6);
+        else if (!keySequence && e.code.startsWith('Numpad')) idx += e.code.substring(6);
         else if (keySequence) idx = keySequence;
         else if (e.keyCode >= 16 && e.keyCode <= 18) return;
         else idx += e.code;
@@ -533,9 +534,6 @@
                 {
                     id: 'check-duplicates-card',
                     draw: card => {
-                        const noDupeBtn = card.querySelector('.noDuplicatesButton');
-                        restyle(noDupeBtn, 'btn-key');
-                        restyle(noDupeBtn, 'key-bracket-1');
                         if (dupImgs.length) {
                             const dupImgBox = card.querySelector('#check-duplicates-card nia-map ~ * div.overflow-x-auto');
                             const dupeHelp = drawNew('p');
@@ -591,10 +589,6 @@
                     },
                     extraKeys: () => {
                         const dupKeys = {
-                            '1': () => {
-                                document.querySelector('#check-duplicates-card .noDuplicatesButton').click();
-                                context.nextCard();
-                            },
                             'Enter': () => {
                                 if (!isDialogOpen()) {
                                     const dupeBtn = document.querySelectorAll('#check-duplicates-card .agm-info-window-content button.wf-button--primary');
@@ -791,6 +785,75 @@
         }));
     };
 
+    const initForPhoto = candidate => {
+        const acceptAll = document.querySelector('app-review-photo app-accept-all-photos-card .photo-card');
+
+        context = {
+            draw: () => {
+                const infoCard = document.querySelector('app-review-photo .review-photo__info div');
+                console.log(infoCard);
+                const photoHelp = drawNew('p');
+                photoHelp.style.marginTop = '10px';
+                const phK1 = document.createElement('span');
+                phK1.classList.add('wfkr2-key-span');
+                phK1.textContent = '[';
+                const phK2 = document.createElement('span');
+                phK2.classList.add('wfkr2-key-span');
+                phK2.classList.add('wfkr2-key-span-wildcard');
+                phK2.textContent = 'letter';
+                const phK3 = document.createElement('span');
+                phK3.classList.add('wfkr2-key-span');
+                phK3.textContent = ']';
+                const phK4 = document.createElement('span');
+                phK4.classList.add('wfkr2-key-span');
+                phK4.textContent = '[Shift]+[';
+                const phK5 = document.createElement('span');
+                phK5.classList.add('wfkr2-key-span');
+                phK5.classList.add('wfkr2-key-span-wildcard');
+                phK5.textContent = 'letter';
+                const phK6 = document.createElement('span');
+                phK6.classList.add('wfkr2-key-span');
+                phK6.textContent = ']';
+                photoHelp.appendChild(document.createTextNode('Press '));
+                photoHelp.appendChild(phK1);
+                photoHelp.appendChild(phK2);
+                photoHelp.appendChild(phK3);
+                photoHelp.appendChild(document.createTextNode(' reject a photo, or '));
+                photoHelp.appendChild(phK4);
+                photoHelp.appendChild(phK5);
+                photoHelp.appendChild(phK6);
+                photoHelp.appendChild(document.createTextNode(' to open it in full screen'));
+                infoCard.appendChild(photoHelp);
+
+                for (let i = 0; i < context.cards.length; i++) {
+                    const actions = context.cards[i].querySelector('.photo-card__actions');
+                    const label = drawNew('span');
+                    label.classList.add('wfkr2-key-label');
+                    label.classList.add('wfkr2-photo-card-label');
+                    label.textContent = String.fromCharCode(65 + i);
+                    actions.insertBefore(label, actions.firstChild);
+                }
+
+                const label = drawNew('span');
+                label.classList.add('wfkr2-key-label');
+                label.textContent = '[Tab]';
+                const acceptAllText = acceptAll.querySelector('span');
+                acceptAllText.insertBefore(label, acceptAllText.firstChild);
+            },
+            cards: document.querySelectorAll('app-review-photo app-photo-card .photo-card')
+        };
+        const keys = {
+            'Tab': () => acceptAll.click(),
+            'Enter': () => handleEnterNew()
+        };
+        for (let i = 0; i < context.cards.length; i++) {
+            const card = context.cards[i];
+            keys[String.fromCharCode(65 + i)] = () => card.click();
+            keys['+' + String.fromCharCode(65 + i)] = () => window.open(card.querySelector('.photo-card__photo img').src + '=s0');
+        }
+        setHandler(makeKeyMap(keys));
+    };
+
     (() => {
         const keyList = [
             ...[...Array(27).keys()].map(e => String.fromCharCode(64 + e)),
@@ -833,6 +896,11 @@
         }
         .wfkr2-eds-thumb-card-tassr {
             width: 57% !important;
+        }
+        .wfkr2-photo-card-label {
+            font-size: 1.9em;
+            display: inline-block;
+            padding: 0 0.5em;
         }
 
         ${edsKeys}

@@ -128,14 +128,37 @@
         XMLHttpRequest.prototype.open = function (method, url) {
             if (url == '/api/v1/vault/review') {
                 if (method == 'GET') {
-                    this.addEventListener('load', checkResponse, false);
+                    const start = new Date();
+                    const intv = setInterval(() => {
+                        const secs = ((new Date() - start) / 1000).toFixed(1);
+                        let loader = document.querySelector('.wfrping_load_indicator');
+                        if (!loader) {
+                            const parent = document.querySelector('.wf-loader .wf-loader__animation');
+                            if (parent) {
+                                loader = document.createElement('div');
+                                loader.classList.add('wfrping_load_indicator');
+                                parent.appendChild(loader);
+                                const infoLine = document.createElement('p');
+                                infoLine.textContent = 'Loading next review...';
+                                loader.appendChild(infoLine);
+                                const counterLine = document.createElement('p');
+                                loader.appendChild(counterLine);
+                                const counter = document.createElement('span');
+                                counter.classList.add('wfrping_load_counter');
+                                counterLine.appendChild(counter);
+                            }
+                        }
+                        if (loader) loader.querySelector('.wfrping_load_counter').textContent = ` ${secs}s`;
+                    }, 100);
+                    this.addEventListener('load', checkResponse(intv), false);
                 }
             }
             open.apply(this, arguments);
         };
     })(XMLHttpRequest.prototype.open);
 
-    function checkResponse(e) {
+    const checkResponse = intv => function (e) {
+        clearInterval(intv);
         try {
             const response = this.response;
             const json = JSON.parse(response);
@@ -145,6 +168,7 @@
             playDing();
             addSettings();
         } catch (e) {
+            doReload();
             console.log(e); // eslint-disable-line no-console
         }
     }
@@ -154,6 +178,13 @@
         if (sound && sounds.some(s => s.name === sound)) {
             const ding = new Audio(sounds.filter(s => s.name === sound)[0].sound);
             ding.play();
+        }
+    };
+
+    const doReload = () => {
+        const reload = localStorage.hasOwnProperty("wfrping_auto_reload") ? localStorage.wfrping_auto_reload : '0';
+        if (reload == '1') {
+            location.reload();
         }
     };
 
@@ -228,9 +259,31 @@
             selectLabel.setAttribute('for', 'wfrping_sound');
             selectLabel.classList.add('wfrping_settings_label');
 
+            let autoReloadInput = document.createElement('input');
+            autoReloadInput.setAttribute("type", "checkbox");
+            let autoReload = localStorage.wfrping_auto_reload;
+            if (autoReload === undefined || autoReload === null || autoReload === "" || autoReload === "0") {
+                autoReload = false;
+            }
+            autoReloadInput.checked = autoReload === "1";
+            autoReloadInput.addEventListener('change', function() {
+                autoReload = this.checked ? "1" : "0";
+                localStorage['wfrping_auto_reload'] = autoReload;
+            });
+            autoReloadInput.id = "wfrping_auto_reload_input";
+            autoReloadInput.classList.add('wfrping_input');
+
+            const autoReloadLabel = document.createElement("label");
+            autoReloadLabel.innerText = "Auto retry/reload on error:";
+            autoReloadLabel.setAttribute("for", "wfrping_auto_reload_input");
+            autoReloadLabel.classList.add('wfrping_settings_label');
+
             settingsDiv.appendChild(document.createElement('br'));
             settingsDiv.appendChild(selectLabel);
             settingsDiv.appendChild(select);
+            settingsDiv.appendChild(document.createElement('br'));
+            settingsDiv.appendChild(autoReloadLabel);
+            settingsDiv.appendChild(autoReloadInput);
             settingsDiv.appendChild(document.createElement('br'));
         })
     };
@@ -244,11 +297,34 @@
                 color: black;
             }
 
+            .wfrping_input {
+                margin:  2px 12px;
+                padding: 2px 12px;
+                width: 90px;
+                background-color: #FFFFFF;
+                color: black;
+            }
+
             .wfrping_settings_label {
                 margin:  2px 12px;
                 padding: 2px 12px;
                 color: black;
                 font-size: 16px;
+            }
+
+            .wfrping_load_indicator {
+                margin-top: 2em;
+                text-align: center;
+            }
+
+            .wfrping_load_indicator p:first-child {
+                margin-bottom: 1em;
+            }
+
+            .wfrping_load_indicator .wfrping_load_counter {
+                display: inline-block;
+                font-size: 1.5em;
+                font-family: monospace;
             }
 
             .wrap-collabsible {
