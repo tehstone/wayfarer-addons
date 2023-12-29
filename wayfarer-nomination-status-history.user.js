@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      0.8.8
+// @version      0.8.9
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1248,7 +1248,7 @@
             },
             {
                 // Nomination decided (Wayfarer, NIA)
-                subject: /^Decision on you Wayfarer Nomination,/,
+                subject: /^Decision on your? Wayfarer Nomination,/,
                 status: eStatusHelpers.WF_DECIDED_NIA(
                     undefined, // Accepted - this email template has not been used for acceptances yet
                     'did not meet the criteria required to be accepted and has been rejected'
@@ -1766,9 +1766,6 @@
 
             //  ---------------------------------------- NORWEGIAN [no] ----------------------------------------
             // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
             // Nomination received (Ingress)
             // Nomination decided (Ingress)
             // Nomination received (PoGo)
@@ -1776,8 +1773,8 @@
             // Nomination rejected (PoGo)
             // Nomination duplicated (PoGo)
             // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo, edit, or report received (Wayfarer)
+            // Photo decided (Wayfarer)
+            // Photo received (Wayfarer)
             // Photo or edit decided (Ingress)
             // Edit received (Ingress)
             // Photo received (Ingress)
@@ -1785,15 +1782,48 @@
             // Ingress Mission related
             // Ingress damage report
             {
+                // Nomination received (Wayfarer)
+                subject: /^Takk! Vi har mottatt Niantic Wayspot-nominasjonen for/,
+                status: () => eType.NOMINATED,
+                image: [ eQuery.IMAGE_ALT('Submission Photo') ]
+            },
+            {
+                // Nomination decided (Wayfarer)
+                subject: /^En avgjørelse er tatt for Niantic Wayspot-nominasjonen for/,
+                status: eStatusHelpers.WF_DECIDED(
+                    'har valgt å godta Wayspot-nominasjonen din.',
+                    'har valgt å avvise Wayspot-nominasjonen din.'
+                ), image: [ eQuery.WF_DECIDED(
+                    /^Takk for Wayspot-nominasjonen (?<title>.*), som du sendte inn (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
+                    ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
+                ) ]
+            },
+            {
+                // Appeal received
+                subject: /^Takk! Vi har mottatt Niantic Wayspot-klagen for/,
+                status: () => eType.APPEALED,
+                image: [ eQuery.IMAGE_ALT('Submission Photo') ]
+            },
+            {
                 // Appeal decided
                 subject: /^En avgjørelse er tatt for Niantic Wayspot-klagen for/,
                 status: eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic har valgt å legge til nominasjonen som en Wayspot',
-                    undefined //'Niantic has decided that your nomination should not be added as a Wayspot'
+                    'Niantic har valgt ikke legge til nominasjonen som en Wayspot'
                 ), image: [ eQuery.WF_DECIDED(
                     /^Takk for klagen i forbindelse med Wayspot-nominasjonen (?<title>.*), som du sendte inn (?<day>\d+)\.(?<month>)\.(?<year>\d+).$/,
                     ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
                 ) ]
+            },
+            {
+                // Edit, or report decided (Wayfarer)
+                subject: /^En avgjørelse er tatt for (endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
+                ignore: true
+            },
+            {
+                // Edit, or report received (Wayfarer)
+                subject: /^Takk! Vi har mottatt (endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
+                ignore: true
             },
 
             //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
@@ -2064,15 +2094,24 @@
                     }
                     if (fh['content-type'] === null) return;
                     const partCT = parseContentType(fh['content-type']);
-                    if (fh['content-transfer-encoding'] && fh['content-transfer-encoding'].toLowerCase() == 'quoted-printable' && partCT.type == 'text/html') {
-                        htmlBody = partBody;
-                        charset = (partCT.params.charset || 'utf-8').toLowerCase();
+                    if (fh['content-transfer-encoding']) {
+                        if (fh['content-transfer-encoding'].toLowerCase() == 'quoted-printable' && partCT.type == 'text/html') {
+                            charset = (partCT.params.charset || 'utf-8').toLowerCase();
+                            htmlBody = unfoldQuotedPrintable(partBody, charset);
+                        } else if (fh['content-transfer-encoding'].toLowerCase() == 'base64' && partCT.type == 'text/html') {
+                            charset = (partCT.params.charset || 'utf-8').toLowerCase();
+                            htmlBody = charset.toLowerCase() == 'utf-8' ? atobUTF8(partBody) : atob(partBody);
+                        }
                     }
                 });
             } else if (fh['content-transfer-encoding'].toLowerCase() == 'quoted-printable' && ct.type == 'text/html') {
                 // HTML message
-                htmlBody = mimeBody;
                 charset = (ct.params.charset || 'utf-8').toLowerCase();
+                htmlBody = unfoldQuotedPrintable(mimeBody, charset);
+            } else if (fh['content-transfer-encoding'].toLowerCase() == 'base64' && ct.type == 'text/html') {
+                // HTML message
+                charset = (ct.params.charset || 'utf-8').toLowerCase();
+                htmlBody = charset.toLowerCase() == 'utf-8' ? atobUTF8(mimeBody) : atob(mimeBody);
             } else {
                 parseFailures.push({
                     id: file.id,
@@ -2085,24 +2124,7 @@
             }
 
             try {
-                // Unfold QP CTE
-                const body = htmlBody
-                .split(/=\r?\n/).join('')
-                .split(/\r?\n/).map(e => {
-                    const uriStr = e.split('%').join('=25').split('=').join('%');
-                    switch (charset) {
-                        case 'utf-8':
-                            return decodeURIComponent(uriStr);
-                        case 'iso-8859-1':
-                        case 'us-ascii':
-                        case 'windows-1252':
-                            return decodeURIComponent(asciiToUTF8(uriStr));
-                        default:
-                            throw new Error(`Unknown charset ${charset}.`);
-                    }
-                }).join('\n');
-
-                const doc = dp.parseFromString(body, 'text/html');
+                const doc = dp.parseFromString(htmlBody, 'text/html');
                 /* DEBUG */
                 //console.log(doc);
                 /* DEBUG */
@@ -2202,6 +2224,25 @@
             paramMap[attr.toLowerCase()] = value.startsWith('"') && value.endsWith('"') ? value.substring(1, value.length - 1) : value;
         });
         return { type: type.toLowerCase(), params: paramMap };
+    };
+
+    const unfoldQuotedPrintable = (body, charset) => {
+        // Unfold QP CTE
+        return body
+        .split(/=\r?\n/).join('')
+        .split(/\r?\n/).map(e => {
+            const uriStr = e.split('%').join('=25').split('=').join('%');
+            switch (charset) {
+                case 'utf-8':
+                    return decodeURIComponent(uriStr);
+                case 'iso-8859-1':
+                case 'us-ascii':
+                case 'windows-1252':
+                    return decodeURIComponent(asciiToUTF8(uriStr));
+                default:
+                    throw new Error(`Unknown charset ${charset}.`);
+            }
+        }).join('\n');
     };
 
     const extractEmail = fromHeader => {
