@@ -1343,8 +1343,8 @@ function init() {
 
         // hilbert space-filling curve
         // based on http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
-        // note: rather then calculating the final integer hilbert position, we just return the list of quads
-        // this ensures no precision issues whth large orders (S3 cell IDs use up to 30), and is more
+        // note: rather than calculating the final integer hilbert position, we just return the list of quads
+        // this ensures no precision issues with large orders (S3 cell IDs use up to 30), and is more
         // convenient for pulling out the individual bits as needed later
         var pointToHilbertQuadList = function(x, y, order, face) {
             var hilbertMap = {
