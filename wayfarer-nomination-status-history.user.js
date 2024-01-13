@@ -266,8 +266,8 @@
                                 }
                                 // Then, add options for each entry in the history.
                                 let previous = null;
-                                result.statusHistory.forEach(({ timestamp, status, verified }) => {
-                                    addEventToHistoryDisplay(box, timestamp, status, verified, previous);
+                                result.statusHistory.forEach(({ timestamp, status, verified, email }) => {
+                                    addEventToHistoryDisplay(box, timestamp, status, verified, email, previous);
                                     previous = status;
                                 });
                                 // Clean up when we're done.
@@ -281,7 +281,7 @@
     };
 
     // Adds a nomination history entry to the given history display <select>.
-    const addEventToHistoryDisplay = (box, timestamp, status, verified, previous) => {
+    const addEventToHistoryDisplay = (box, timestamp, status, verified, email, previous) => {
         if (status === 'NOMINATED' && !!previous) {
             if (previous === 'HELD') {
                 status = 'Hold released';
@@ -294,14 +294,28 @@
         // Maybe make this configurable to user's local time later?
         const date = new Date(timestamp);
         const dateString = `${date.getUTCFullYear()}-${('0'+(date.getUTCMonth()+1)).slice(-2)}-${('0'+date.getUTCDate()).slice(-2)}`;
-        const text = `${dateString} - ${stateMap.hasOwnProperty(status) ? stateMap[status] : status}`;
+        const text = `${dateString} - `;
+        const stateText = stateMap.hasOwnProperty(status) ? stateMap[status] : status;
 
         const lastLine = box.querySelector('.wfnshOneLine');
-        lastLine.textContent = text;
+        lastLine.textContent = text + stateText;
         const line = document.createElement('p');
+        line.appendChild(document.createTextNode(text));
         if (verified) lastLine.classList.add('wfnshVerified');
         else if (lastLine.classList.contains('wfnshVerified')) lastLine.classList.remove('wfnshVerified');
-        line.textContent = text;
+
+        const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        if (email && windowRef.wft_plugins_api && windowRef.wft_plugins_api.emailImport) {
+            const aDisplay = document.createElement('a');
+            aDisplay.textContent = stateText;
+            aDisplay.addEventListener('click', e => {
+                e.stopPropagation();
+                windowRef.wft_plugins_api.emailImport.get(email).then(eml => eml.display());
+            });
+            line.appendChild(aDisplay);
+        } else {
+            line.appendChild(document.createTextNode(stateText));
+        }
         if (verified) line.classList.add('wfnshVerified');
         const textbox = box.querySelector('.wfnshInner');
         textbox.appendChild(line);
