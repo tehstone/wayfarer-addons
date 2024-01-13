@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.0
+// @version      1.0.1
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -710,12 +710,22 @@
         #emailParsers = [
 
             //  ---------------------------------------- MISCELLANEOUS ----------------------------------------
-            /*{
+            {
                 subject: /^Help us improve Wayfarer$/,
                 ignore: true
-            },*/
+            },
             {
                 subject: /^Help us tackle Wayfarer Abuse$/,
+                ignore: true
+            },
+            {
+                // Lightship submission decision. Not trackable in Wayfarer
+                subject: /^Your Wayspot submission for/,
+                ignore: true
+            },
+            {
+                // Lightship VPS activation
+                subject: /Activated on VPS$/,
                 ignore: true
             },
 
