@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.1
+// @version      1.0.2
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -708,7 +708,7 @@ WayfarerEmail.display ()
         await dispatchEmailEvent('ImportStarted');
         for await (const file of files()) {
             i++;
-            progress(i + 1, fileCount);
+            progress(i, fileCount);
             const content = file.contents;
             const mime = parseMIME(content);
             if (!mime) {
@@ -767,6 +767,8 @@ WayfarerEmail.display ()
                     tx.commit();
                     if (wfEmail && evtType) {
                         dispatchEmailEvent(evtType, wfEmail).then(() => cont());
+                    } else {
+                        cont();
                     }
                 }
             });
