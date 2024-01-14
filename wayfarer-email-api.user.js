@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.7
+// @version      1.0.8
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -302,7 +302,8 @@ WayfarerEmail.display ()
                 Ʒ: 'Ǯ',
                 ʒ: 'ǯ',
                 "'": '"',
-                が: 'が'
+                が: 'が',
+                で: 'で'
             };
             for (const k in map) {
                 if (map.hasOwnProperty(k)) {
