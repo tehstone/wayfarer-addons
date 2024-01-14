@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.2
+// @version      1.0.3
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -974,7 +974,7 @@ td:first-child {
         }
 
         #parseContentType(ctHeader) {
-            const m = ctHeader.toLowerCase().match(/^(?<type>[^\/]+\/[^\/;\s]+)(?=($|(?<params>(;[^;]*)*)))/);
+            const m = ctHeader.match(/^(?<type>[^\/]+\/[^\/;\s]+)(?=($|(?<params>(;[^;]*)*)))/);
             const { type, params } = m.groups;
             const paramMap = {};
             if (params) params.substr(1).split(';').forEach(param => {
