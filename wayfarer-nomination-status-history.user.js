@@ -1694,7 +1694,6 @@
             // It should not be possible for the stored history to have duplicates, but this line of code exists because it did somehow happen to someone
             this.#deduplicateHistoryArray(this.#statusHistory[id]);
             const diffs = [];
-            console.log(this.#statusHistory[id], joined);
             if (this.#statusHistory[id].length) {
                 for (let i = 0, j = 0; i < this.#statusHistory[id].length && j < joined.length; i++, j++) {
                     while (this.#statusHistory[id][i].status !== joined[j].status) diffs.push({ ...joined[j++], previously: null });
