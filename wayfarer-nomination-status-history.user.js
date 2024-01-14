@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.2
+// @version      1.0.3
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1274,7 +1274,6 @@
             // Nomination rejected (PoGo)
             // Nomination duplicated (PoGo)
             // Photo, edit, or report; received or decided (PoGo)
-            // Photo received (Wayfarer)
             // Photo or edit decided (Ingress)
             // Edit received (Ingress)
             // Photo received (Ingress)
@@ -1321,8 +1320,8 @@
                 ignore: true
             },
             {
-                // Edit, or report received (Wayfarer)
-                subject: /^Takk! Vi har mottatt (endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
+                // Photo, edit, or report received (Wayfarer)
+                subject: /^Takk! Vi har mottatt (Photo for Niantic-Wayspot-en|endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
                 ignore: true
             },
 
