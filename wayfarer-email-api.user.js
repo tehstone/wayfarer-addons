@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.3
+// @version      1.0.4
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -37,15 +37,19 @@ The API is available under: window.wft_plugins_api.emailImport
 API.get (id: str)
     returns: Promise
     |- resolves: WayfarerEmail
-    \- rejects: if email with given ID is not found
+    \- rejects: Error?
 
-    Retrieves the email represented by the given Message-ID.
+    Retrieves the email represented by the given Message-ID. Rejects if email with given ID is not found, or
+    if the email database could not be opened. In the former case nothing is returned, in the latter case,
+    an Error is returned by the promise.
 
 API.getAll ()
     returns: Promise
-    \- resolves: WayfarerEmail[]
+    |- resolves: WayfarerEmail[]
+    \- rejects: Error
 
-    Retrieves a list of all emails that have been imported to the local database.
+    Retrieves a list of all emails that have been imported to the local database. Rejects if the email
+    database could not be opened.
 
 API.iterate async* ()
     yields: WayfarerEmail
@@ -245,6 +249,7 @@ WayfarerEmail.display ()
                 if (result) resolve(new WayfarerEmail(result));
                 else reject();
             };
+            getEmail.onerror = () => reject(getEmail.error);
         })),
 
         getAll: id => new Promise((resolve, reject) => getIDBInstance().then(db => {
@@ -256,6 +261,7 @@ WayfarerEmail.display ()
                 const { result } = getEmail;
                 resolve(result.map(e => new WayfarerEmail(e)));
             };
+            getEmail.onerror = () => reject(getEmail.error);
         })),
 
         iterate: async function*() {
