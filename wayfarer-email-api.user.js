@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.4
+// @version      1.0.5
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -42,14 +42,6 @@ API.get (id: str)
     Retrieves the email represented by the given Message-ID. Rejects if email with given ID is not found, or
     if the email database could not be opened. In the former case nothing is returned, in the latter case,
     an Error is returned by the promise.
-
-API.getAll ()
-    returns: Promise
-    |- resolves: WayfarerEmail[]
-    \- rejects: Error
-
-    Retrieves a list of all emails that have been imported to the local database. Rejects if the email
-    database could not be opened.
 
 API.iterate async* ()
     yields: WayfarerEmail
@@ -248,18 +240,6 @@ WayfarerEmail.display ()
                 const { result } = getEmail;
                 if (result) resolve(new WayfarerEmail(result));
                 else reject();
-            };
-            getEmail.onerror = () => reject(getEmail.error);
-        })),
-
-        getAll: id => new Promise((resolve, reject) => getIDBInstance().then(db => {
-            const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
-            tx.oncomplete = event => db.close();
-            const objectStore = tx.objectStore(OBJECT_STORE_NAME);
-            const getEmail = objectStore.getAll();
-            getEmail.onsuccess = () => {
-                const { result } = getEmail;
-                resolve(result.map(e => new WayfarerEmail(e)));
             };
             getEmail.onerror = () => reject(getEmail.error);
         })),
