@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.5
+// @version      1.0.6
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1012,6 +1012,7 @@ td:first-child {
                     }
                 case 'iso-8859-1':
                 case 'us-ascii':
+                case 'ascii':
                 case 'windows-1252':
                     return decodeURIComponent(asciiToUTF8(uriStr));
                 default:
