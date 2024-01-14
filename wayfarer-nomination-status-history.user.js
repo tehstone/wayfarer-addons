@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.1
+// @version      1.0.2
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 1;
+    const eV1ProcessingStateVersion = 2;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -1274,7 +1274,6 @@
             // Nomination rejected (PoGo)
             // Nomination duplicated (PoGo)
             // Photo, edit, or report; received or decided (PoGo)
-            // Photo decided (Wayfarer)
             // Photo received (Wayfarer)
             // Photo or edit decided (Ingress)
             // Edit received (Ingress)
@@ -1317,8 +1316,8 @@
                 ) ]
             },
             {
-                // Edit, or report decided (Wayfarer)
-                subject: /^En avgjørelse er tatt for (endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
+                // Photo, edit, or report decided (Wayfarer)
+                subject: /^En avgjørelse er tatt for (Niantic Wayspot-medieinnholdet som er sendt inn for|endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
                 ignore: true
             },
             {
@@ -1557,6 +1556,14 @@
                         ? JSON.parse(localStorage.wfnshV1ProcessedEmailStates)
                         : { version: eV1ProcessingStateVersion, states: {} };
                     this.#messageStatus = eV1State.states;
+                    const stateKeys = Object.keys(this.#messageStatus);
+                    if (eV1State.version < 2) {
+                        for (let i = 0; i < stateKeys.length; i++) {
+                            // Reprocess old failures due to bugfixes and template additions
+                            if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
+                            if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.FAILURE) delete this.#messageStatus[stateKeys[i]];
+                        }
+                    }
                     const counters = Object.keys(this.#eProcessingStatus).length;
                     for (let i = 0; i < counters; i++) this.#stats.push(0);
                     getList.result.forEach(e => { this.#statusHistory[e.id] = e.statusHistory });
