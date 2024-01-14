@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.5
+// @version      1.0.6
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -47,6 +47,7 @@
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
     const eV1ProcessingStateVersion = 2;
+    const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -656,7 +657,11 @@
                         case 'DUPLICATE':
                             return this.#eType.DUPLICATE;
                         case 'APPEALED':
-                            throw new AmbiguousRejectionError('This email was rejected because determining the former status of this nomination after appealing it is impossible if it was appealed prior to the installation of this script.');
+                            if (strictClassificationMode) {
+                                throw new AmbiguousRejectionError('This email was rejected because determining the former status of this nomination after appealing it is impossible if it was appealed prior to the installation of this script.');
+                            } else {
+                                return 'REJECTED';
+                            }
                     }
                 }
                 throw new AmbiguousRejectionError(`This email was rejected because it was not possible to determine how this nomination was rejected (expected status REJECTED or DUPLICATE, but observed ${this.#statusHistory[nom.id][this.#statusHistory[nom.id].length - 1].status}).`);
@@ -671,7 +676,11 @@
                             return this.#eType.DUPLICATE;
                     }
                 }
-                throw new AmbiguousRejectionError(`This email was not processed because it was not possible to determine how Niantic rejected the appeal (expected status REJECTED or DUPLICATE, but observed ${this.#statusHistory[nom.id][this.#statusHistory[nom.id].length - 1].status}).`);
+                if (strictClassificationMode) {
+                    throw new AmbiguousRejectionError(`This email was not processed because it was not possible to determine how Niantic rejected the appeal (expected status REJECTED or DUPLICATE, but observed ${this.#statusHistory[nom.id][this.#statusHistory[nom.id].length - 1].status}).`);
+                } else {
+                    return 'REJECTED';
+                }
             }
         };
 
@@ -1747,7 +1756,7 @@
                     }
                     if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
                     const [ nom ] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
-                    if (!nom) throw new NominationMatchingError('The nomination that this email refers to cannot be found on this Wayfarer account.');
+                    if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
                     const status = this.#emailParsers[j].status(doc, nom, email);
                     if (!status) throw new MissingDataError('Unable to determine the status change that this email represents.');
                     change = {
