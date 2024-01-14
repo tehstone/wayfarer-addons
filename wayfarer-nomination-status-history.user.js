@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.3
+// @version      1.0.4
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1671,23 +1671,30 @@
             });
         }
 
-        #mergeEmailChange(id, change) {
-            const joined = [...change.updates, ...this.#statusHistory[id]];
-            joined.sort((a, b) => a.timestamp - b.timestamp);
-            for (let i = joined.length - 2; i >= 0; i--) {
-                if (joined[i].status == joined[i + 1].status) {
+        #deduplicateHistoryArray(arr) {
+            for (let i = arr.length - 2; i >= 0; i--) {
+                if (arr[i].status == arr[i + 1].status) {
                     // Duplicate status
-                    const curDate = new Date(joined[i].timestamp);
+                    const curDate = new Date(arr[i].timestamp);
                     if (!(curDate.getUTCMilliseconds() || curDate.getUTCSeconds() || curDate.getUTCMinutes() || curDate.getUTCHours())) {
                         // All of the above are 0 means this was with extreme likelihood a WFES import that is less accurate.
                         // Thus we keep the email date instead for this one even though it happened "in the future".
-                        joined.splice(i, 1);
+                        arr.splice(i, 1);
                     } else {
-                        joined.splice(i + 1, 1);
+                        arr.splice(i + 1, 1);
                     }
                 }
             }
+        }
+
+        #mergeEmailChange(id, change) {
+            const joined = [...change.updates, ...this.#statusHistory[id]];
+            joined.sort((a, b) => a.timestamp - b.timestamp);
+            this.#deduplicateHistoryArray(joined);
+            // It should not be possible for the stored history to have duplicates, but this line of code exists because it did somehow happen to someone
+            this.#deduplicateHistoryArray(this.#statusHistory[id]);
             const diffs = [];
+            console.log(this.#statusHistory[id], joined);
             if (this.#statusHistory[id].length) {
                 for (let i = 0, j = 0; i < this.#statusHistory[id].length && j < joined.length; i++, j++) {
                     while (this.#statusHistory[id][i].status !== joined[j].status) diffs.push({ ...joined[j++], previously: null });
