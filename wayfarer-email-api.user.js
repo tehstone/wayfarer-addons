@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.8
+// @version      1.0.9
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -301,16 +301,14 @@ WayfarerEmail.display ()
                 ø: 'ǿ',
                 Ʒ: 'Ǯ',
                 ʒ: 'ǯ',
-                "'": '"',
-                が: 'が',
-                で: 'で'
+                "'": '"'
             };
             for (const k in map) {
                 if (map.hasOwnProperty(k)) {
                     text = text.replaceAll(new RegExp(`[${map[k]}]`, 'g'), k);
                 }
             }
-            return text;
+            return text.normalize('NFD');
         }
     };
 
@@ -983,11 +981,8 @@ td:first-child {
                 const token = e.substr(0, b);
                 // Decode RFC 2047 atoms
                 const field = e.substr(b + 1).trim().replaceAll(/=\?([A-Za-z0-9-]+)\?([QqBb])\?([^\?]+)\?=(?:\s+(?==\?[A-Za-z0-9-]+\?[QqBb]\?[^\?]+\?=))?/g, (_, charset, encoding, text) => {
-                    if (!['utf-8', 'us-ascii', 'iso-8859-1', 'windows-1252'].includes(charset.toLowerCase())) throw new Error(`Unknown charset: ${charset}`);
                     switch (encoding) {
-                        case 'Q': case 'q':
-                            text = text.split('_').join(' ').split('%').join('=25').split('=').join('%');
-                            return decodeURIComponent(charset.toLowerCase() == 'utf-8' ? text : asciiToUTF8(text))
+                        case 'Q': case 'q': return new TextDecoder(charset).decode(qpStringToU8A(text.split('_').join(' ')))
                         case 'B': case 'b': return charset.toLowerCase() == 'utf-8' ? atobUTF8(text) : atob(text);
                         default: throw new Error(`Invalid RFC 2047 encoding format: ${encoding}`);
                     }
@@ -998,28 +993,26 @@ td:first-child {
         return [ headers, body ];
     };
 
+    const qpStringToU8A = str => {
+        const u8a = new Uint8Array(str.length - (2 * (str.split('=').length - 1)));
+        for (let i = 0, j = 0; i < str.length; i++, j++) {
+            if (str[i] !== '=') {
+                u8a[j] = str.codePointAt(i);
+            } else {
+                u8a[j] = parseInt(str.substring(i+1, i+3), 16);
+                i += 2;
+            }
+        }
+        return u8a;
+    }
+
     const unfoldQuotedPrintable = (body, charset) => {
         // Unfold QP CTE
+        const textDecoder = new TextDecoder(charset);
         return body
         .split(/=\r?\n/).join('')
         .split(/\r?\n/).map(e => {
-            const uriStr = e.split('%').join('=25').split('=').join('%');
-            switch (charset) {
-                case 'utf-8':
-                    try {
-                        return decodeURIComponent(uriStr);
-                    } catch (e) {
-                        // Fix broken UTF-8
-                        return decodeURIComponent(uriStr.replace(/(?<!%C[23])%A0/gi, '%C2%A0'));
-                    }
-                case 'iso-8859-1':
-                case 'us-ascii':
-                case 'ascii':
-                case 'windows-1252':
-                    return decodeURIComponent(asciiToUTF8(uriStr));
-                default:
-                    throw new Error(`Unknown charset ${charset}.`);
-            }
+            return textDecoder.decode(qpStringToU8A(e));
         }).join('\n');
     };
 
@@ -1032,12 +1025,6 @@ td:first-child {
 
     // https://stackoverflow.com/a/30106551/1955334
     const atobUTF8 = text => decodeURIComponent(atob(text).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-
-    const asciiToUTF8 = text => text.replaceAll(/%([A-Fa-f][0-9A-Fa-f])/g, (match, p1) => {
-        const ci = parseInt(p1, 16);
-        if (ci <= 0xBF) return '%c2%' + ci.toString(16);
-        if (ci >= 0xC0) return '%c3%' + (ci - 0x40).toString(16);
-    });
 
     const utcDateToISO8601 = date => `${date.getUTCFullYear()}-${('0' + (date.getUTCMonth() + 1)).slice(-2)}-${('0' + date.getUTCDate()).slice(-2)}`;
     const shiftDays = (date, offset) => {
