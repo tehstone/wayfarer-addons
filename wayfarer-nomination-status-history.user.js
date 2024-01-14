@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.4
+// @version      1.0.5
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -726,6 +726,11 @@
             {
                 // Lightship VPS activation
                 subject: /Activated on VPS$/,
+                ignore: true
+            },
+            {
+                // Support tickets
+                subject: /^Re: \[\d+\] /,
                 ignore: true
             },
 
