@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Rejections Plus
-// @version      0.2.3
+// @version      0.2.4
 // @description  Improves the display of criteria on rejected nominations, allows displaying more than two rejection reasons, and more.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-rejections-plus.user.js
@@ -202,7 +202,7 @@
         const l10n = getL10N();
         reasons.forEach(reason => {
             const header = document.createElement('p');
-            header.textContent = l10n[`reject.reason.${reason.toLowerCase()}.short`];
+            header.textContent = l10n[`reject.reason.${reason.toLowerCase()}.short`] || reason.toLowerCase();
             header.style.fontWeight = 'bold';
             const body = document.createElement('p');
             body.textContent = l10n[`reject.reason.${reason.toLowerCase()}`];
