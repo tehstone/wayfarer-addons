@@ -722,7 +722,7 @@ function init() {
         }
 
         /**
-         * Extends a objects prototype by anothers.
+         * Extends an object's prototype by another's.
          *
          * @param {Object} obj1 The object to be extended.
          * @param {Object} obj2 The object to extend with.
@@ -1545,7 +1545,7 @@ function init() {
      *     'anchor': (Array) The anchor position of the label text.
      *     'textColor': (string) The text color.
      *     'textSize': (number) The text size.
-     *     'backgroundPosition: (string) The background postition x, y.
+     *     'backgroundPosition: (string) The background position x, y.
      * @param {number=} opt_padding Optional padding to apply to the cluster icon.
      * @constructor
      * @extends google.maps.OverlayView
@@ -1695,7 +1695,7 @@ function init() {
         }
 
         /**
-         * Sets the icon to the the styles.
+         * Sets the icon to the styles.
          */
         useStyle() {
             var index = Math.max(0, this.sums_.index - 1);
@@ -2008,8 +2008,8 @@ function init() {
 
         // hilbert space-filling curve
         // based on http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
-        // note: rather then calculating the final integer hilbert position, we just return the list of quads
-        // this ensures no precision issues whth large orders (S3 cell IDs use up to 30), and is more
+        // note: rather than calculating the final integer hilbert position, we just return the list of quads
+        // this ensures no precision issues with large orders (S3 cell IDs use up to 30), and is more
         // convenient for pulling out the individual bits as needed later
         var pointToHilbertQuadList = function(x, y, order, face) {
             var hilbertMap = {
