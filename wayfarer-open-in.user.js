@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.7.1
+// @version      0.7.2
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -378,7 +378,7 @@
         },
         {
             // Norway
-            label: '1881.no kart',
+            label: '1881.no',
             url: 'https://kart.1881.no/?lat=%lat%&lon=%lng%&z=18&v=1&r=&o=&layer=',
             regions: ['NO']
         },
@@ -392,6 +392,13 @@
             // Norway
             label: 'Norgeskart',
             url: 'https://www.norgeskart.no/#!?project=norgeskart&layers=1003&zoom=17&lat=%lat%&lon=%lng%&markerLat=%lat%&markerLon=%lng%',
+            projection: 'EPSG:5973',
+            regions: ['NO']
+        },
+        {
+            // Norway
+            label: 'Se eiendom',
+            url: 'https://www.norgeskart.no/#!?project=seeiendom&layers=1003,1013,1014,1015&zoom=17&lat=%lat%&lon=%lng%&markerLat=%lat%&markerLon=%lng%&panel=Seeiendom&showSelection=true&p=Seeiendom',
             projection: 'EPSG:5973',
             regions: ['NO']
         },
