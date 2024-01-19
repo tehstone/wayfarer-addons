@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.0.7
+// @version      1.1.0
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 3;
+    const eV1ProcessingStateVersion = 4
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -718,31 +718,6 @@
 
         #emailParsers = [
 
-            //  ---------------------------------------- MISCELLANEOUS ----------------------------------------
-            {
-                subject: /^Help us improve Wayfarer$/,
-                ignore: true
-            },
-            {
-                subject: /^Help us tackle Wayfarer Abuse$/,
-                ignore: true
-            },
-            {
-                // Lightship submission decision. Not trackable in Wayfarer
-                subject: /^Your Wayspot submission for/,
-                ignore: true
-            },
-            {
-                // Lightship VPS activation
-                subject: /Activated on VPS$/,
-                ignore: true
-            },
-            {
-                // Support tickets
-                subject: /^Re: \[\d+\] /,
-                ignore: true
-            },
-
             //  ---------------------------------------- ENGLISH [en] ----------------------------------------
             {
                 // Nomination received (Wayfarer)
@@ -866,108 +841,6 @@
                 status: () => this.#eType.DUPLICATE,
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
-            {
-                // Photo, edit, or report; received or decided (PoGo)
-                subject: /^(Photo Submission|Edit Suggestion|Invalid Pokéstop\/Gym Report) (Accepted|Received|Rejected)$/,
-                ignore: true
-            },
-            {
-                // Photo, edit, or report decided (Wayfarer)
-                subject: /^Niantic Wayspot (edit suggestion|media submission|report) decided for/,
-                ignore: true
-            },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Thanks! Niantic Wayspot (edit suggestion|Photo|report) received for/,
-                ignore: true
-            },
-            {
-                // Photo or edit decided (Ingress)
-                subject: /^Portal (edit|photo) review complete/,
-                ignore: true
-            },
-            {
-                // Edit received (Ingress)
-                subject: /^Portal Edit Suggestion Received$/,
-                ignore: true
-            },
-            {
-                // Photo received (Ingress) or edit received (Ingress OPR)
-                subject: /^Portal (edit|photo) submission confirmation/,
-                ignore: true
-            },
-            {
-                // Report received or decided (Ingress)
-                subject: /^Invalid Ingress Portal report (received|reviewed)$/,
-                ignore: true
-            },
-            {
-                // Ingress Mission related
-                subject: /^Ingress Mission/,
-                ignore: true
-            },
-            {
-                // Ingress damage report
-                subject: /^Ingress Damage Report:/,
-                ignore: true
-            },
-
-            //  ---------------------------------------- BENGALI [be] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot (Photo পাওয়া গিয়েছে|সম্পাদনা করার পরামর্শ পাওয়া গেছে|রিপোর্ট পাওয়া গেছে)!$/,
-                ignore: true
-            },
-
-            //  ---------------------------------------- CZECH [cs] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
-            {
-                // Photo, or edit received (Wayfarer)
-                subject: /^Děkujeme! Přijali jsme (Photo pro Niantic Wayspot|návrh na úpravu Niantic Wayspotu pro)/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^Děkujeme! Přijali jsme hlášení ohledně Niantic Wayspotu/,
-                ignore: true
-            },
 
             //  ---------------------------------------- GERMAN [de] ----------------------------------------
             {
@@ -1045,55 +918,8 @@
                 status: () => this.#eType.DUPLICATE,
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
-            {
-                // Photo, edit, or report; received or decided (PoGo)
-                subject: /^(Fotovorschlag|Vorschlag für Bearbeitung|Meldung zu unzulässigen PokéStop\/Arena) (akzeptiert|abgelehnt|erhalten)$/,
-                ignore: true
-            },
-            {
-                // Photo, edit, or report decided (Wayfarer)
-                subject: /^Danke! Wir haben (den Upload Photo|deine Meldung|deinen Änderungsvorschlag) für den Wayspot/,
-                ignore: true
-            },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Entscheidung zu (deinem Upload|deiner Meldung|deinem Änderungsvorschlag) für den Wayspot/,
-                ignore: true
-            },
-            {
-                // Photo or edit decided (Ingress)
-                subject: /^Überprüfung des (Vorschlags zur Änderung eines Portals|Portalfotos) abgeschlossen/,
-                ignore: true
-            },
-            {
-                // Photo or edit received (Ingress)
-                subject: /^(Vorschlag für die Änderung eines Portals|Portalfotovorschlag) erhalten/,
-                ignore: true
-            },
-            {
-                // Report received or decided (Ingress)
-                subject: /^Meldung zu ungültigem Ingress-Portal (erhalten|geprüft)$/,
-                ignore: true
-            },
 
             //  ---------------------------------------- SPANISH [es] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^¡Gracias! ¡Hemos recibido la propuesta de Wayspot de Niantic/,
@@ -1117,40 +943,8 @@
                 status: () => this.#eType.APPEALED,
                 image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
             },
-            {
-                // Photo received (Wayfarer)
-                subject: /^¡Gracias! ¡Hemos recibido el Photo del Wayspot de Niantic para/,
-                ignore: true
-            },
-            {
-                // Edit received (Wayfarer)
-                subject: /^¡Gracias! ¡Propuesta de modificación de Wayspot de Niantic recibida para/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^¡Gracias! ¡Hemos recibido el informe sobre el Wayspot de Niantic/,
-                ignore: true
-            },
 
             //  ---------------------------------------- FRENCH [fr] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Remerciements ! Proposition d’un Wayspot Niantic reçue pour/,
@@ -1168,42 +962,8 @@
                     ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc']
                 )]
             },
-            {
-                // Photo received (Wayfarer)
-                subject: /^Remerciements ! Contribution de Wayspot Niantic Photo reçue pour/,
-                ignore: true
-            },
-            {
-                // Edit received (Wayfarer)
-                subject: /^Remerciements ! Proposition de modification de Wayspot Niantic reçue pour/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^Remerciements ! Signalement reçu pour le Wayspot/,
-                ignore: true
-            },
 
             //  ---------------------------------------- HINDI [hi] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Report received (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
@@ -1215,40 +975,8 @@
                     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 )]
             },
-            {
-                // Photo received (Wayfarer)
-                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
-                ignore: true
-            },
-            {
-                // Edit received (Wayfarer)
-                subject: /^धन्यवाद! .* के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ!$/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^धन्यवाद! .* के लिए प्राप्त Niantic Wayspot रिपोर्ट!$/,
-                ignore: true
-            },
 
             //  ---------------------------------------- ITALIAN [it] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Grazie! Abbiamo ricevuto una candidatura di Niantic Wayspot per/,
@@ -1266,30 +994,8 @@
                     ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
                 )]
             },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Grazie! Abbiamo ricevuto (Photo|il suggerimento di modifica|la segnalazione) di Niantic Wayspot per/,
-                ignore: true
-            },
 
             //  ---------------------------------------- JAPANESE [jp] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^ありがとうございます。 Niantic Wayspotの申請「.*」が受領されました。$/,
@@ -1307,40 +1013,8 @@
                     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
                 )]
             },
-            {
-                // Photo received (Wayfarer)
-                subject: /^ありがとうございます。 Niantic Wayspot Photo「.*」が受領されました。$/,
-                ignore: true
-            },
-            {
-                // Edit received (Wayfarer)
-                subject: /^ありがとうございます。 Niantic Wayspot「.*」の編集提案が受領されました。$/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^ありがとうございます。 Niantic Wayspotに関する報告「.*」が受領されました。$/,
-                ignore: true
-            },
 
             //  ---------------------------------------- KOREAN [kr] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 후보 신청이 완료되었습니다!$/,
@@ -1358,62 +1032,8 @@
                     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
                 )]
             },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^감사합니다! .*에 대한 Niantic Wayspot (Photo 제출 완료|수정이 제안되었습니다!|보고 접수)$/,
-                ignore: true
-            },
-
-            //  ---------------------------------------- MARATHI [mr] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo received (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
-            {
-                // Edit received (Wayfarer)
-                subject: /^धन्यवाद! Niantic वेस्पॉट संपादन सूचना .* साठी प्राप्त झाली!$/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट अहवाल प्राप्त झाला!$/,
-                ignore: true
-            },
 
             //  ---------------------------------------- DUTCH [nl] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Bedankt! Niantic Wayspot-nominatie ontvangen voor/,
@@ -1431,37 +1051,8 @@
                     ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
                 )]
             },
-            {
-                // Photo, or edit received (Wayfarer)
-                subject: /^Bedankt! Niantic Wayspot-(Photo|bewerksuggestie) ontvangen voor/,
-                ignore: true
-            },
-            {
-                // Report received (Wayfarer)
-                subject: /^Bedankt! Melding van Niantic Wayspot .* ontvangen!$/,
-                ignore: true
-            },
-            {
-                // Edit decided (Wayfarer)
-                subject: /^Besluit over Niantic Wayspot-bewerksuggestie voor/,
-                ignore: true
-            },
 
             //  ---------------------------------------- NORWEGIAN [no] ----------------------------------------
-            // MISSING:
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Takk! Vi har mottatt Niantic Wayspot-nominasjonen for/,
@@ -1496,61 +1087,8 @@
                     ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
                 )]
             },
-            {
-                // Photo, edit, or report decided (Wayfarer)
-                subject: /^En avgjørelse er tatt for (Niantic Wayspot-medieinnholdet som er sendt inn for|endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
-                ignore: true
-            },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Takk! Vi har mottatt (Photo for Niantic-Wayspot-en|endringsforslaget for Niantic Wayspot-en|Niantic Wayspot-rapporten for)/,
-                ignore: true
-            },
 
-            //  ---------------------------------------- POLISH [pl] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Dziękujemy! Odebrano (materiały Photo|sugestię zmiany|raport dotyczący) Wayspotu Niantic/,
-                ignore: true
-            },
-
-            //  ---------------------------------------- PORTUGUESE [pt] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
+            //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
             {
                 // Nomination received (Wayfarer)
                 subject: /^Agradecemos a sua indicação para o Niantic Wayspot/,
@@ -1568,30 +1106,8 @@
                     ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
                 )]
             },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Agradecemos (o envio de Photo para o|a sua sugestão de edição para o|o envio da denúncia referente ao) Niantic Wayspot/,
-                ignore: true
-            },
 
             //  ---------------------------------------- RUSSIAN [ru] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Спасибо! Номинация Niantic Wayspot для .* получена!$/,
@@ -1609,29 +1125,8 @@
                     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
                 )]
             },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Спасибо! (Получено: Photo|Предложение по изменению|Жалоба на) Niantic Wayspot для/,
-                ignore: true
-            },
 
             //  ---------------------------------------- SWEDISH [sv] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^Tack! Niantic Wayspot-nominering har tagits emot för/,
@@ -1660,88 +1155,8 @@
                     ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
                 )]
             },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^Tack! Niantic Wayspot( Photo togs|-redigeringsförslag har tagits|-rapport har tagits) emot för /,
-                ignore: true
-            },
-
-            //  ---------------------------------------- TAMIL [ta] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo received (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
-            {
-                // Edit or report received (Wayfarer)
-                subject: /^நன்றி! .* -க்கான Niantic Wayspot (திருத்த பரிந்துரை பெறப்பட்டது|புகார் பெறப்பட்டது)!$/,
-                ignore: true
-            },
-
-            //  ---------------------------------------- TELUGU [te] ----------------------------------------
-            // MISSING:
-            // Nomination received (Wayfarer)
-            // Nomination decided (Wayfarer)
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
-            {
-                // Photo or report received (Wayfarer)
-                subject: /^ధన్యవాదాలు! .* కొరకు Niantic (Wayspot Photo అందుకున్నాము|వేస్పాట్ నామినేషన్ అందుకున్నాము)!$/,
-                ignore: true
-            },
-            {
-                // Edit received (Wayfarer)
-                subject: /^ధన్యవాదాలు! మీ వేస్పాట్ .* ఎడిట్ సూచనకై ధన్యవాదాలు!$/,
-                ignore: true
-            },
 
             //  ---------------------------------------- THAI [th] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^ขอบคุณ! เราได้รับการเสนอสถานที่ Niantic Wayspot สำหรับ/,
@@ -1759,30 +1174,8 @@
                     ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
                 )]
             },
-            {
-                // Photo, edit, or report received (Wayfarer)
-                subject: /^ขอบคุณ! (ได้รับ Niantic Wayspot Photo|เราได้รับคำแนะนำการแก้ไข Niantic Wayspot|เราได้รับการรายงาน Niantic Wayspot) สำหรับ/,
-                ignore: true
-            },
 
             //  ---------------------------------------- CHINESE [zh] ----------------------------------------
-            // MISSING:
-            // Appeal received
-            // Appeal decided
-            // Nomination received (Ingress)
-            // Nomination decided (Ingress)
-            // Nomination received (PoGo)
-            // Nomination accepted (PoGo)
-            // Nomination rejected (PoGo)
-            // Nomination duplicated (PoGo)
-            // Photo, edit, or report; received or decided (PoGo)
-            // Photo, edit, or report decided (Wayfarer)
-            // Photo or edit decided (Ingress)
-            // Edit received (Ingress)
-            // Photo received (Ingress)
-            // Report received or decided (Ingress)
-            // Ingress Mission related
-            // Ingress damage report
             {
                 // Nomination received (Wayfarer)
                 subject: /^感謝你！ 我們已收到 Niantic Wayspot 候選/,
@@ -1797,13 +1190,8 @@
                     undefined //'has decided not to accept your Wayspot nomination.'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^感謝你在 (?<year>\d+)-(?<month>)-(?<day>\d+) 提交 Wayspot 候選 (?<title>.*)！$/,
-                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
                 )]
-            },
-            {
-                // Photo, edit or report received (Wayfarer)
-                subject: /^感謝你！ 我們已收到 .* 的 Niantic Wayspot (Photo|編輯建議|報告)！$/,
-                ignore: true
             },
         ];
 
@@ -1841,6 +1229,9 @@
                         ? JSON.parse(localStorage.wfnshV1ProcessedEmailStates)
                         : { version: eV1ProcessingStateVersion, states: {} };
                     this.#messageStatus = eV1State.states;
+                    if (eV1State.version < 4) {
+                        this.#messageStatus = {};
+                    }
                     const stateKeys = Object.keys(this.#messageStatus);
                     if (eV1State.version < 3) {
                         for (let i = 0; i < stateKeys.length; i++) {
@@ -2005,45 +1396,50 @@
             let reason = null;
             let except = null
             try {
-                const doc = email.getDocument();
-                const subject = email.getHeader('Subject');
-                let success = false;
-                for (let j = 0; j < this.#emailParsers.length; j++) {
-                    if (!subject.match(this.#emailParsers[j].subject)) continue;
-                    if (this.#emailParsers[j].ignore) {
-                        returnStatus = this.#eProcessingStatus.SKIPPED;
-                        reason = 'This email is either for a type of contribution that is not trackable in Niantic Wayfarer, or for content that is unrelated to Wayfarer.';
-                        break;
-                    }
-                    let url = null;
-                    if (this.#emailParsers[j].image) {
-                        for (let k = 0; k < this.#emailParsers[j].image.length && url === null; k++) {
-                            url = this.#emailParsers[j].image[k](doc, email);
-                            if (url) {
-                                const match = url.match(/^https?:\/\/lh3.googleusercontent.com\/(.*)$/);
-                                if (!match) url = null;
-                                else url = match[1];
-                            };
+                const type = email.classify();
+                if (!(type in ['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'])) {
+                    returnStatus = this.#eProcessingStatus.SKIPPED;
+                    reason = 'This email is either for a type of contribution that is not trackable in Niantic Wayfarer, or for content that is unrelated to Wayfarer.';
+                } else {
+                    const doc = email.getDocument();
+                    const subject = email.getHeader('Subject');
+                    let success = false;
+                    for (let j = 0; j < this.#emailParsers.length; j++) {
+                        if (!subject.match(this.#emailParsers[j].subject)) continue;
+                        if (this.#emailParsers[j].ignore) {
+
+                            break;
                         }
+                        let url = null;
+                        if (this.#emailParsers[j].image) {
+                            for (let k = 0; k < this.#emailParsers[j].image.length && url === null; k++) {
+                                url = this.#emailParsers[j].image[k](doc, email);
+                                if (url) {
+                                    const match = url.match(/^https?:\/\/lh3.googleusercontent.com\/(.*)$/);
+                                    if (!match) url = null;
+                                    else url = match[1];
+                                };
+                            }
+                        }
+                        if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
+                        const [nom] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
+                        if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
+                        const status = this.#emailParsers[j].status(doc, nom, email);
+                        if (!status) throw new MissingDataError('Unable to determine the status change that this email represents.');
+                        change = {
+                            title: nom.title,
+                            updates: [{
+                                timestamp: new Date(email.getHeader('Date')).getTime(),
+                                verified: true,
+                                email: email.messageID,
+                                status
+                            }]
+                        };
+                        id = nom.id;
+                        success = true;
                     }
-                    if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
-                    const [nom] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
-                    if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
-                    const status = this.#emailParsers[j].status(doc, nom, email);
-                    if (!status) throw new MissingDataError('Unable to determine the status change that this email represents.');
-                    change = {
-                        title: nom.title,
-                        updates: [{
-                            timestamp: new Date(email.getHeader('Date')).getTime(),
-                            verified: true,
-                            email: email.messageID,
-                            status
-                        }]
-                    };
-                    id = nom.id;
-                    success = true;
+                    if (!success && returnStatus !== this.#eProcessingStatus.SKIPPED) throw new UnknownTemplateError('This email does not appear to match any styles of Niantic emails currently known to Nomination Status History.');
                 }
-                if (!success && returnStatus !== this.#eProcessingStatus.SKIPPED) throw new UnknownTemplateError('This email does not appear to match any styles of Niantic emails currently known to Nomination Status History.');
             } catch (e) {
                 except = e;
                 if (e instanceof UnresolvableProcessingError) {
