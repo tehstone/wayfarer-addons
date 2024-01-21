@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.0
+// @version      1.1.1
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 4
+    const eV1ProcessingStateVersion = 5;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -720,12 +720,6 @@
 
             //  ---------------------------------------- ENGLISH [en] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^Thanks! Niantic Wayspot nomination received for/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot nomination decided for/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -746,12 +740,6 @@
                     /^Thank you for taking the time to nominate (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)\./,
                     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 )]
-            },
-            {
-                // Appeal received
-                subject: /^Thanks! Niantic Wayspot appeal received for/,
-                status: () => this.#eType.APPEALED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
             },
             {
                 // Appeal decided
@@ -844,12 +832,6 @@
 
             //  ---------------------------------------- GERMAN [de] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^Danke! Wir haben deinen Vorschlag für den Wayspot/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^Entscheidung zum Wayspot-Vorschlag/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -859,12 +841,6 @@
                     /^danke, dass du den Wayspot-Vorschlag (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) eingereicht hast.$/,
                     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
                 )]
-            },
-            {
-                // Appeal received
-                subject: /^Danke! Wir haben deinen Einspruch für den Wayspot/,
-                status: () => this.#eType.APPEALED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
             },
             {
                 // Appeal decided
@@ -921,12 +897,6 @@
 
             //  ---------------------------------------- SPANISH [es] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^¡Gracias! ¡Hemos recibido la propuesta de Wayspot de Niantic/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^Decisión tomada sobre la propuesta de Wayspot de Niantic/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -937,20 +907,8 @@
                     ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']
                 )]
             },
-            {
-                // Appeal received
-                subject: /^¡Gracias! ¡Recurso de Wayspot de Niantic recibido para/,
-                status: () => this.#eType.APPEALED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
 
             //  ---------------------------------------- FRENCH [fr] ----------------------------------------
-            {
-                // Nomination received (Wayfarer)
-                subject: /^Remerciements ! Proposition d’un Wayspot Niantic reçue pour/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Résultat concernant la proposition du Wayspot Niantic/,
@@ -978,12 +936,6 @@
 
             //  ---------------------------------------- ITALIAN [it] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^Grazie! Abbiamo ricevuto una candidatura di Niantic Wayspot per/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^Proposta di Niantic Wayspot decisa per/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -996,12 +948,6 @@
             },
 
             //  ---------------------------------------- JAPANESE [jp] ----------------------------------------
-            {
-                // Nomination received (Wayfarer)
-                subject: /^ありがとうございます。 Niantic Wayspotの申請「.*」が受領されました。$/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
@@ -1016,12 +962,6 @@
 
             //  ---------------------------------------- KOREAN [kr] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^감사합니다! .*에 대한 Niantic Wayspot 후보 신청이 완료되었습니다!$/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /에 대한 Niantic Wayspot 후보 결정이 완료됨$/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -1034,12 +974,6 @@
             },
 
             //  ---------------------------------------- DUTCH [nl] ----------------------------------------
-            {
-                // Nomination received (Wayfarer)
-                subject: /^Bedankt! Niantic Wayspot-nominatie ontvangen voor/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Besluit over Niantic Wayspot-nominatie voor/,
@@ -1054,12 +988,6 @@
 
             //  ---------------------------------------- NORWEGIAN [no] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^Takk! Vi har mottatt Niantic Wayspot-nominasjonen for/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^En avgjørelse er tatt for Niantic Wayspot-nominasjonen for/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -1069,12 +997,6 @@
                     /^Takk for Wayspot-nominasjonen (?<title>.*), som du sendte inn (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
                     ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
                 )]
-            },
-            {
-                // Appeal received
-                subject: /^Takk! Vi har mottatt Niantic Wayspot-klagen for/,
-                status: () => this.#eType.APPEALED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
             },
             {
                 // Appeal decided
@@ -1090,12 +1012,6 @@
 
             //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^Agradecemos a sua indicação para o Niantic Wayspot/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^Decisão sobre a indicação do Niantic Wayspot/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -1109,12 +1025,6 @@
 
             //  ---------------------------------------- RUSSIAN [ru] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^Спасибо! Номинация Niantic Wayspot для .* получена!$/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^Вынесено решение по номинации Niantic Wayspot для/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -1127,12 +1037,6 @@
             },
 
             //  ---------------------------------------- SWEDISH [sv] ----------------------------------------
-            {
-                // Nomination received (Wayfarer)
-                subject: /^Tack! Niantic Wayspot-nominering har tagits emot för/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot-nominering har beslutats om för/,
@@ -1158,12 +1062,6 @@
 
             //  ---------------------------------------- THAI [th] ----------------------------------------
             {
-                // Nomination received (Wayfarer)
-                subject: /^ขอบคุณ! เราได้รับการเสนอสถานที่ Niantic Wayspot สำหรับ/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
-            {
                 // Nomination decided (Wayfarer)
                 subject: /^ผลการตัดสินการเสนอสถานที่ Niantic Wayspot สำหรับ/,
                 status: this.#eStatusHelpers.WF_DECIDED(
@@ -1176,12 +1074,6 @@
             },
 
             //  ---------------------------------------- CHINESE [zh] ----------------------------------------
-            {
-                // Nomination received (Wayfarer)
-                subject: /^感謝你！ 我們已收到 Niantic Wayspot 候選/,
-                status: () => this.#eType.NOMINATED,
-                image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
-            },
             {
                 // Nomination decided (Wayfarer)
                 subject: /^社群已對 Niantic Wayspot 候選 .* 做出決定$/,
@@ -1229,7 +1121,7 @@
                         ? JSON.parse(localStorage.wfnshV1ProcessedEmailStates)
                         : { version: eV1ProcessingStateVersion, states: {} };
                     this.#messageStatus = eV1State.states;
-                    if (eV1State.version < 4) {
+                    if (eV1State.version < 5) {
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
@@ -1396,48 +1288,64 @@
             let reason = null;
             let except = null
             try {
-                const type = email.classify();
-                if (!(type in ['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'])) {
+                const emlClass = email.classify();
+                if (!['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'].includes(emlClass.type)) {
                     returnStatus = this.#eProcessingStatus.SKIPPED;
                     reason = 'This email is either for a type of contribution that is not trackable in Niantic Wayfarer, or for content that is unrelated to Wayfarer.';
                 } else {
                     const doc = email.getDocument();
-                    const subject = email.getHeader('Subject');
                     let success = false;
-                    for (let j = 0; j < this.#emailParsers.length; j++) {
-                        if (!subject.match(this.#emailParsers[j].subject)) continue;
-                        if (this.#emailParsers[j].ignore) {
-
-                            break;
-                        }
-                        let url = null;
-                        if (this.#emailParsers[j].image) {
-                            for (let k = 0; k < this.#emailParsers[j].image.length && url === null; k++) {
-                                url = this.#emailParsers[j].image[k](doc, email);
-                                if (url) {
-                                    const match = url.match(/^https?:\/\/lh3.googleusercontent.com\/(.*)$/);
-                                    if (!match) url = null;
-                                    else url = match[1];
-                                };
+                    let template = null;
+                    if (emlClass.style == 'WAYFARER' && emlClass.type == 'NOMINATION_RECEIVED') {
+                        template = {
+                            status: () => this.#eType.NOMINATED,
+                            image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
+                        };
+                    } else if (emlClass.style == 'WAYFARER' && emlClass.type == 'APPEAL_RECEIVED') {
+                        template = {
+                            status: () => this.#eType.APPEALED,
+                            image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
+                        };
+                    } else {
+                        const subject = email.getHeader('Subject');
+                        for (let j = 0; j < this.#emailParsers.length; j++) {
+                            if (subject.match(this.#emailParsers[j].subject)) {
+                                template = this.#emailParsers[j];
+                                break;
                             }
                         }
-                        if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
-                        const [nom] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
-                        if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
-                        const status = this.#emailParsers[j].status(doc, nom, email);
-                        if (!status) throw new MissingDataError('Unable to determine the status change that this email represents.');
-                        change = {
-                            title: nom.title,
-                            updates: [{
-                                timestamp: new Date(email.getHeader('Date')).getTime(),
-                                verified: true,
-                                email: email.messageID,
-                                status
-                            }]
-                        };
-                        id = nom.id;
-                        success = true;
                     }
+                    if (!template) {
+                        throw new UnknownTemplateError('This email does not appear to match any styles of Niantic emails currently known to Nomination Status History.');
+                    }
+                    let url = null;
+                    if (template.image) {
+                        for (let k = 0; k < template.image.length && url === null; k++) {
+                            url = template.image[k](doc, email);
+                            if (url) {
+                                const match = url.match(/^https?:\/\/lh3.googleusercontent.com\/(.*)$/);
+                                if (!match) url = null;
+                                else url = match[1];
+                            };
+                        }
+                    }
+
+                    if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
+                    const [nom] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
+                    if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
+                    const status = template.status(doc, nom, email);
+                    if (!status) throw new MissingDataError('Unable to determine the status change that this email represents.');
+                    change = {
+                        title: nom.title,
+                        updates: [{
+                            timestamp: new Date(email.getHeader('Date')).getTime(),
+                            verified: true,
+                            email: email.messageID,
+                            status
+                        }]
+                    };
+                    id = nom.id;
+                    success = true;
                     if (!success && returnStatus !== this.#eProcessingStatus.SKIPPED) throw new UnknownTemplateError('This email does not appear to match any styles of Niantic emails currently known to Nomination Status History.');
                 }
             } catch (e) {
