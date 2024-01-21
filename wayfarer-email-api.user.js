@@ -1780,12 +1780,6 @@ td:first-child {
                 language: 'no'
             },
             {
-                subject: /^Takk! Vi har mottatt Niantic Wayspot-klagen for/,
-                type: 'APPEAL_RECEIVED',
-                style: 'WAYFARER',
-                language: 'no'
-            },
-            {
                 subject: /^En avgjørelse er tatt for Niantic Wayspot-klagen for/,
                 type: 'APPEAL_DECIDED',
                 style: 'WAYFARER',
