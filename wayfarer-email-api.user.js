@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.0
+// @version      1.1.1
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1278,8 +1278,20 @@ td:first-child {
                 language: 'cs'
             },
             {
+                subject: /^Rozhodnutí o odeslání obrázku Niantic Wayspotu/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
                 subject: /^Děkujeme! Přijali jsme návrh na úpravu Niantic Wayspotu pro/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o návrhu úpravy Niantic Wayspotu pro/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'cs'
             },
@@ -1515,6 +1527,12 @@ td:first-child {
                 language: 'fr'
             },
             {
+                subject: /^Résultat concernant la modification du Wayspot Niantic/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
                 subject: /^Remerciements ! Signalement reçu pour le Wayspot/,
                 type: 'REPORT_RECEIVED',
                 style: 'WAYFARER',
@@ -1536,6 +1554,12 @@ td:first-child {
             {
                 subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
                 type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /के लिए तह Niantic Wayspot मीडिया सबमिशन$/,
+                type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
                 language: 'hi'
             },
