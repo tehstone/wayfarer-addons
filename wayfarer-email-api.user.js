@@ -178,6 +178,7 @@ WayfarerEmail.display ()
 (() => {
     const OBJECT_STORE_NAME = 'importedEmails';
     const apiEventListeners = {};
+    const DEBUGGING_MODE = false;
 
     // Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
     (function (open) {
@@ -322,6 +323,12 @@ WayfarerEmail.display ()
             return text.normalize('NFD');
         }
     };
+
+    if (DEBUGGING_MODE) {
+        console.log('Email API debugger API:', {
+            makeDebugEmail: obj => new WayfarerEmail(obj)
+        });
+    }
 
     const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     if (!windowRef.wft_plugins_api) windowRef.wft_plugins_api = {};
