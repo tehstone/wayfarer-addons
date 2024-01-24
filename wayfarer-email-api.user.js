@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.1
+// @version      1.1.2
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -776,6 +776,7 @@ WayfarerEmail.display ()
 
     class WayfarerEmail {
         #dbObject;
+        #cache = {};
 
         constructor(dbObject) {
             this.#dbObject = dbObject;
@@ -835,10 +836,12 @@ WayfarerEmail.display ()
         }
 
         getDocument() {
+            if (this.#cache.document) return this.#cache.document;
             const html = this.getBody('text/html');
             if (!html) return null;
             const dp = new DOMParser();
-            return dp.parseFromString(html, 'text/html');
+            this.#cache.document = dp.parseFromString(html, 'text/html');
+            return this.#cache.document;
         }
 
         // Don't use this
@@ -982,15 +985,17 @@ td:first-child {
         }
 
         classify() {
+            if (this.#cache.classification) return this.#cache.classification;
             const subject = this.getHeader('Subject');
             for (let i = 0; i < WayfarerEmail.#templates.length; i++) {
                 const template = WayfarerEmail.#templates[i];
                 if (subject.match(template.subject)) {
-                    return {
+                    this.#cache.classification = {
                         type: template.type,
                         style: template.style,
                         language: template.language
                     };
+                    return this.#cache.classification;
                 }
             }
             throw new Error('This email does not appear to match any styles of Niantic emails currently known to Email API.');
