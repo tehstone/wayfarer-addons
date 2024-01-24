@@ -326,7 +326,30 @@ WayfarerEmail.display ()
 
     if (DEBUGGING_MODE) {
         console.log('Email API debugger API:', {
-            makeDebugEmail: obj => new WayfarerEmail(obj)
+            makeDebugEmail: obj => new WayfarerEmail(obj),
+            readDebugEmail: () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'message/rfc822,*.eml';
+                input.style.display = 'none';
+                input.addEventListener('change', async e => {
+                    console.log(e.target);
+                    const content = await e.target.files[0].text();
+                    const mime = parseMIME(content);
+                    if (!mime) throw new Error('This file does not appear to be an email in MIME format (invalid RFC 822 data).');
+                    const [ headers, body ] = mime;
+                    const obj = {
+                        id: headers.find(e => e[0].toLowerCase() == 'message-id'),
+                        pids: [],
+                        filename: 'debug-email.eml',
+                        ts: Date.now(),
+                        headers, body
+                    };
+                    console.log(new WayfarerEmail(obj));
+                });
+                document.querySelector('body').appendChild(input);
+                input.click();
+            }
         });
     }
 
