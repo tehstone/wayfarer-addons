@@ -1252,6 +1252,12 @@ td:first-child {
             },
             //  ---------------------------------------- BENGALI [bn] ----------------------------------------
             {
+                subject: /^ধন্যবাদ! .*-এর জন্য Niantic Wayspot মনোনয়ন পাওয়া গেছে!/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
                 subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot Photo পাওয়া গিয়েছে!$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -1260,6 +1266,12 @@ td:first-child {
             {
                 subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot সম্পাদনা করার পরামর্শ পাওয়া গেছে!$/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /-এর জন্য Niantic Wayspot সম্পাদনায় পরামর্শের সিদ্ধান্ত নেওয়া হয়েছে$/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'bn'
             },
@@ -1276,6 +1288,12 @@ td:first-child {
                 language: 'bn'
             },
             //  ---------------------------------------- CZECH [cs] ----------------------------------------
+            {
+                subject: /^Děkujeme! Přijali jsme nominaci na Niantic Wayspot pro/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
             {
                 subject: /^Děkujeme! Přijali jsme Photo pro Niantic Wayspot/,
                 type: 'PHOTO_RECEIVED',
@@ -1303,6 +1321,12 @@ td:first-child {
             {
                 subject: /^Děkujeme! Přijali jsme hlášení ohledně Niantic Wayspotu/,
                 type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o hlášení v souvislosti s Niantic Wayspotem/,
+                type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
                 language: 'cs'
             },
@@ -1501,8 +1525,20 @@ td:first-child {
                 language: 'es'
             },
             {
+                subject: /^Decisión tomada sobre la propuesta de modificación del Wayspot de Niantic/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
                 subject: /^¡Gracias! ¡Hemos recibido el informe sobre el Wayspot de Niantic/,
                 type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^Decisión tomada sobre el Wayspot de Niantic/,
+                type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
                 language: 'es'
             },
@@ -1551,14 +1587,14 @@ td:first-child {
             },
             //  ---------------------------------------- HINDI [hi] ----------------------------------------
             {
-                subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
-                type: 'NOMINATION_DECIDED',
+                subject: /^धन्यवाद! .* के लिए Niantic Wayspot नामांकन प्राप्त हुआ!$/,
+                type: 'NOMINATION_RECEIVED',
                 style: 'WAYFARER',
                 language: 'hi'
             },
             {
-                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
-                type: 'PHOTO_RECEIVED',
+                subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
+                type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
                 language: 'hi'
             },
@@ -1575,8 +1611,20 @@ td:first-child {
                 language: 'hi'
             },
             {
+                subject: /के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
                 subject: /^धन्यवाद! .* के लिए प्राप्त Niantic Wayspot रिपोर्ट!$/,
                 type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /के लिए तय Niantic Wayspot रिपोर्$/,
+                type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
                 language: 'hi'
             },
@@ -1649,8 +1697,20 @@ td:first-child {
                 language: 'jp'
             },
             {
+                subject: /^Niantic Wayspotのメディア申請「.*」が決定しました。$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
                 subject: /^ありがとうございます。 Niantic Wayspot「.*」の編集提案が受領されました。$/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^Niantic Wayspotの編集提案「.*」が決定しました。$/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'jp'
             },
@@ -1686,8 +1746,20 @@ td:first-child {
                 language: 'kr'
             },
             {
+                subject: /에 대한 Niantic Wayspot 미디어 제안 결정 완료$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 수정이 제안되었습니다!$/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /에 대한 Niantic Wayspot 수정 제안 결정 완료$/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'kr'
             },
@@ -1705,8 +1777,26 @@ td:first-child {
             },
             //  ---------------------------------------- MARATHI [mr] ----------------------------------------
             {
+                subject: /^धन्यवाद! Niantic वेस्पॉट नामांकन .* साठी प्राप्त झाले!/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
                 subject: /^धन्यवाद! Niantic वेस्पॉट संपादन सूचना .* साठी प्राप्त झाली!$/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^Niantic वेस्पॉट संपादन सूचना .* साठी निश्चित केली$/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'mr'
             },
@@ -1828,6 +1918,12 @@ td:first-child {
             },
             //  ---------------------------------------- POLISH [pl] ----------------------------------------
             {
+                subject: /^Dziękujemy! Odebrano nominację Wayspotu/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
                 subject: /^Dziękujemy! Odebrano materiały Photo Wayspotu Niantic/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -1836,6 +1932,12 @@ td:first-child {
             {
                 subject: /^Dziękujemy! Odebrano sugestię zmiany Wayspotu Niantic/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Podjęto decyzję na temat sugestii edycji Wayspotu Niantic/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'pl'
             },
@@ -1877,6 +1979,12 @@ td:first-child {
                 language: 'pt'
             },
             {
+                subject: /^Decisão sobre a sugestão de edição do Niantic Wayspot/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
                 subject: /^Agradecemos o envio da denúncia referente ao Niantic Wayspot/,
                 type: 'REPORT_RECEIVED',
                 style: 'WAYFARER',
@@ -1910,6 +2018,12 @@ td:first-child {
             {
                 subject: /^Спасибо! Предложение по изменению Niantic Wayspot для/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Вынесено решение по предложению по изменению Niantic Wayspot для/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'ru'
             },
@@ -1970,6 +2084,12 @@ td:first-child {
             },
             //  ---------------------------------------- TAMIL [ta] ----------------------------------------
             {
+                subject: /^நன்றி! .* -க்கான Niantic Wayspot பரிந்துரை பெறப்பட்டது!!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
                 subject: /^நன்றி! .* -க்கான Niantic Wayspot Photo பெறப்பட்டது!$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -2001,6 +2121,12 @@ td:first-child {
             },
             //  ---------------------------------------- TELUGU [te] ----------------------------------------
             {
+                subject: /^ధన్యవాదాలు! .* కు Niantic Wayspot నామినేషన్ అందుకున్నాము!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
                 subject: /^ధన్యవాదాలు! .* కొరకు Niantic Wayspot Photo అందుకున్నాము!$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -2009,6 +2135,12 @@ td:first-child {
             {
                 subject: /^ధన్యవాదాలు! మీ వేస్పాట్ .* ఎడిట్ సూచనకై ధన్యవాదాలు!$/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /కొరకు నిర్ణయించబడిన Niantic వేస్పాట్ సూచన$/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'te'
             },
@@ -2046,6 +2178,12 @@ td:first-child {
             {
                 subject: /^ขอบคุณ! เราได้รับคำแนะนำการแก้ไข Niantic Wayspot สำหรับ/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ผลการตัดสินคำแนะนำการแก้ไข Niantic Wayspot สำหรับ/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'th'
             },
@@ -2089,6 +2227,12 @@ td:first-child {
             {
                 subject: /^感謝你！ 我們已收到 .* 的 Niantic Wayspot 編輯建議！$/,
                 type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^社群已對 .* 的 Niantic Wayspot 編輯建議做出決定$/,
+                type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
                 language: 'zh'
             },
