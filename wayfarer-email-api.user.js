@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.2
+// @version      1.1.3
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1020,11 +1020,16 @@ td:first-child {
             for (let i = 0; i < WayfarerEmail.#templates.length; i++) {
                 const template = WayfarerEmail.#templates[i];
                 if (subject.match(template.subject)) {
-                    this.#cache.classification = {
-                        type: template.type,
-                        style: template.style,
-                        language: template.language
-                    };
+                    if (template.disambiguate) {
+                        this.#cache.classification = template.disambiguate(this);
+                        if (!this.#cache.classification) throw new Error('Disambiguation of ambiguous email template failed.');
+                    } else {
+                        this.#cache.classification = {
+                            type: template.type,
+                            style: template.style,
+                            language: template.language
+                        };
+                    }
                     return this.#cache.classification;
                 }
             }
@@ -1636,9 +1641,25 @@ td:first-child {
             },
             {
                 subject: /^धन्यवाद! .* के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ!$/,
-                type: 'EDIT_RECEIVED',
-                style: 'WAYFARER',
-                language: 'hi'
+                disambiguate: email => {
+                    const doc = email.getDocument();
+                    const title = doc.querySelector('td.em_pbottom.em_blue.em_font_20').textContent.trim();
+                    if (title == 'बढ़िया खोज की! आपके वेस्पॉट Photo सबमिशन के लिए धन्यवाद!') {
+                        return {
+                            type: 'PHOTO_RECEIVED',
+                            style: 'WAYFARER',
+                            language: 'hi',
+                        }
+                    } else if (title.includes('आपके संपादन हमारे खोजकर्ताओं के समुदाय के लिए सर्वोत्तम संभव अनुभव बनाए रखने में मदद करते हैं।')) {
+                        return {
+                            type: 'EDIT_RECEIVED',
+                            style: 'WAYFARER',
+                            language: 'hi',
+                        }
+                    } else {
+                        return null;
+                    }
+                }
             },
             {
                 subject: /के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ$/,
