@@ -1599,12 +1599,6 @@ td:first-child {
                 language: 'hi'
             },
             {
-                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
-                type: 'PHOTO_RECEIVED',
-                style: 'WAYFARER',
-                language: 'hi'
-            },
-            {
                 subject: /के लिए तह Niantic Wayspot मीडिया सबमिशन$/,
                 type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
@@ -1785,6 +1779,12 @@ td:first-child {
             {
                 subject: /^धन्यवाद! Niantic वेस्पॉट नामांकन .* साठी प्राप्त झाले!/,
                 type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
+                type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
                 language: 'mr'
             },
