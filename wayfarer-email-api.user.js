@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.5
+// @version      1.1.6
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1560,6 +1560,12 @@ td:first-child {
                 language: 'es'
             },
             {
+                subject: /^Decisión tomada sobre el envío de archivo de Wayspot de Niantic para/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
                 subject: /^¡Gracias! ¡Propuesta de modificación de Wayspot de Niantic recibida para/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
@@ -1599,6 +1605,12 @@ td:first-child {
             {
                 subject: /^Remerciements ! Contribution de Wayspot Niantic Photo reçue pour/,
                 type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Résultat concernant le Wayspot Niantic/,
+                type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
                 language: 'fr'
             },
@@ -1858,6 +1870,12 @@ td:first-child {
                 language: 'mr'
             },
             {
+                subject: /साठी Niantic वेस्पॉट मीडिया सबमिशनचा निर्णय घेतला$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
                 subject: /^धन्यवाद! Niantic वेस्पॉट संपादन सूचना .* साठी प्राप्त झाली!$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
@@ -2087,6 +2105,12 @@ td:first-child {
             {
                 subject: /^Спасибо! Получено: Photo Niantic Wayspot для/,
                 type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Вынесено решение по предложению по файлу для/,
+                type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
                 language: 'ru'
             },
