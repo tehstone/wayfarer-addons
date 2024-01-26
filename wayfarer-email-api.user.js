@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.6
+// @version      1.1.7
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1692,7 +1692,7 @@ td:first-child {
                 language: 'hi'
             },
             {
-                subject: /के लिए तय Niantic Wayspot रिपोर्$/,
+                subject: /के लिए तय Niantic Wayspot रिपोर्ट$/,
                 type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
                 language: 'hi'
@@ -2040,7 +2040,7 @@ td:first-child {
                 style: 'WAYFARER',
                 language: 'pl'
             },
-            //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
+            //  ---------------------------------------- PORTUGUESE [pt] ----------------------------------------
             {
                 subject: /^Agradecemos a sua indicação para o Niantic Wayspot/,
                 type: 'NOMINATION_RECEIVED',
@@ -2178,6 +2178,12 @@ td:first-child {
             {
                 subject: /^Tack! Niantic Wayspot-rapport har tagits emot för/,
                 type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Niantic Wayspot-rapport har beslutats om för/,
+                type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
                 language: 'sv'
             },
