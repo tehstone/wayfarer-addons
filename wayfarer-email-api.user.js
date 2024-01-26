@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.3
+// @version      1.1.4
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1330,6 +1330,12 @@ td:first-child {
                 language: 'cs'
             },
             {
+                subject: /^Rozhodnutí o nominaci na Niantic Wayspot pro/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
                 subject: /^Děkujeme! Přijali jsme Photo pro Niantic Wayspot/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -1828,8 +1834,20 @@ td:first-child {
             },
             //  ---------------------------------------- MARATHI [mr] ----------------------------------------
             {
-                subject: /^धन्यवाद! Niantic वेस्पॉट नामांकन .* साठी प्राप्त झाले!/,
+                subject: /^धन्यवाद! Niantic वेस्पॉट नामांकन .* साठी प्राप्त झाले!$/,
                 type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^Niantic वेस्पॉट नामांकन .* साठी निश्चित केले$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! Niantic वेस्पॉट आवाहन .* साठी प्राप्त झाले!$/,
+                type: 'APPEAL_RECEIVED',
                 style: 'WAYFARER',
                 language: 'mr'
             },
@@ -2024,6 +2042,12 @@ td:first-child {
                 language: 'pt'
             },
             {
+                subject: /^Decisão sobre o envio de mídia para o Niantic Wayspot/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
                 subject: /^Agradecemos a sua sugestão de edição para o Niantic Wayspot/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
@@ -2141,6 +2165,12 @@ td:first-child {
                 language: 'ta'
             },
             {
+                subject: /-க்கான Niantic Wayspot பணிந்துரை பரிசீலிக்கப்பட்டது.$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
                 subject: /^நன்றி! .* -க்கான Niantic Wayspot Photo பெறப்பட்டது!$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -2174,6 +2204,12 @@ td:first-child {
             {
                 subject: /^ధన్యవాదాలు! .* కు Niantic Wayspot నామినేషన్ అందుకున్నాము!$/,
                 type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /కొరకు Niantic వేస్పాట్ నామినేషన్‌‌పై నిర్ణయం$/,
+                type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
                 language: 'te'
             },

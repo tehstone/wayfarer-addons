@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.1
+// @version      1.1.2
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 5;
+    const eV1ProcessingStateVersion = 6;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -830,6 +830,19 @@
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
 
+            //  ---------------------------------------- CZECH [cs] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /^Rozhodnutí o nominaci na Niantic Wayspot pro/,
+                status: this.#eStatusHelpers.WF_DECIDED(
+                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'se rozhodla nepřijmout vaši nominaci na Wayspot'
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\.(?<month>)\.(?<year>\d+)$/,
+                    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                )]
+            },
+
             //  ---------------------------------------- GERMAN [de] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
@@ -926,7 +939,7 @@
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
                 status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'ने को आपके Wayspot नामांकन को स्वीकार करने का निर्णय लिया है',
                     'ने को आपके Wayspot नामांकन को अस्वीकार करने का निर्णय लिया है'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
@@ -970,6 +983,19 @@
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^(?<year>\d+). (?<month>). (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
                     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                )]
+            },
+
+            //  ---------------------------------------- MARATHI [mr] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /^Niantic वेस्पॉट नामांकन .* साठी निश्चित केले$/,
+                status: this.#eStatusHelpers.WF_DECIDED(
+                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'तुमचे Wayspot नामांकन न स्वीकारण्याचा निर्णय घेतला आहे'
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^तुमच्या (?<month>) (?<day>\d+), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 )]
             },
 
@@ -1060,6 +1086,32 @@
                 )]
             },
 
+            //  ---------------------------------------- TAMIL [ta] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /-க்கான Niantic Wayspot பணிந்துரை பரிசீலிக்கப்பட்டது.$/,
+                status: this.#eStatusHelpers.WF_DECIDED(
+                    'உங்கள் Wayspot பரிந்துரையை ஏற்றுக்கொள்வதாக முடிவு செய்திருக்கிறது',
+                    undefined //'has decided not to accept your Wayspot nomination.',
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^நாளது தேதியில் (?<month>) (?<day>\d+), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                )]
+            },
+
+            //  ---------------------------------------- TELUGU [te] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /కొరకు Niantic వేస్పాట్ నామినేషన్‌‌పై నిర్ణయం$/,
+                status: this.#eStatusHelpers.WF_DECIDED(
+                    'మీ వేస్పాట్ నామినేషన్‌ను అంగీకరించడానికి ఉండటానికి',
+                    undefined //'has decided not to accept your Wayspot nomination.',
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^(?<month>) (?<day>\d+), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                )]
+            },
+
             //  ---------------------------------------- THAI [th] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
@@ -1125,7 +1177,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 3) {
+                    if (eV1State.version < 6) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
