@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.8
+// @version      1.1.9
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1299,6 +1299,12 @@ td:first-child {
                 language: 'bn'
             },
             {
+                subject: /-এর জন্য Niantic Wayspot মিডিয়া জমা দেওয়ার সিদ্ধান্ত নেওয়া হয়েছে$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
                 subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot সম্পাদনা করার পরামর্শ পাওয়া গেছে!$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
@@ -1919,6 +1925,12 @@ td:first-child {
                 language: 'nl'
             },
             {
+                subject: /^Besluit over Niantic Wayspot-media-inzending voor/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
                 subject: /^Bedankt! Niantic Wayspot-bewerksuggestie ontvangen voor/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
@@ -2013,6 +2025,12 @@ td:first-child {
             {
                 subject: /^Dziękujemy! Odebrano materiały Photo Wayspotu Niantic/,
                 type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Decyzja na temat zgłoszenia materiałów do Wayspotu Niantic/,
+                type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
                 language: 'pl'
             },
