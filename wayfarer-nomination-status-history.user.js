@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.2
+// @version      1.1.3
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 6;
+    const eV1ProcessingStateVersion = 7;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -838,7 +838,7 @@
                     undefined, //'has decided to accept your Wayspot nomination.',
                     'se rozhodla nepřijmout vaši nominaci na Wayspot'
                 ), image: [this.#eQuery.WF_DECIDED(
-                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\.(?<month>)\.(?<year>\d+)$/,
+                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
                     ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
                 )]
             },
@@ -1177,7 +1177,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 6) {
+                    if (eV1State.version < 7) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
