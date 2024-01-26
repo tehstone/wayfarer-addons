@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.4
+// @version      1.1.5
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -2220,6 +2220,12 @@ td:first-child {
                 language: 'te'
             },
             {
+                subject: /కొరకు Niantic వేస్పాట్ మీడియా సమర్పణపై నిర్ణయం$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
                 subject: /^ధన్యవాదాలు! మీ వేస్పాట్ .* ఎడిట్ సూచనకై ధన్యవాదాలు!$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
@@ -2259,6 +2265,12 @@ td:first-child {
             {
                 subject: /^ขอบคุณ! ได้รับ Niantic Wayspot Photo สำหรับ/,
                 type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ผลการตัดสินการส่งมีเดีย Niantic Wayspot สำหรับ/,
+                type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
                 language: 'th'
             },
