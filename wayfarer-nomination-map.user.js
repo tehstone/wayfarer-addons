@@ -571,7 +571,7 @@ function init() {
      *       'anchor': (Array) The anchor position of the label text.
      *       'textColor': (string) The text color.
      *       'textSize': (number) The text size.
-     *       'backgroundPosition': (string) The position of the backgound x, y.
+     *       'backgroundPosition': (string) The position of the background x, y.
      * @constructor
      * @extends google.maps.OverlayView
      */
@@ -739,7 +739,7 @@ function init() {
         }
 
         /**
-         * Implementaion of the interface method.
+         * Implementation of the interface method.
          * @ignore
          */
         onAdd() {
@@ -747,7 +747,7 @@ function init() {
         }
 
         /**
-         * Implementaion of the interface method.
+         * Implementation of the interface method.
          * @ignore
          */
         draw() {}
@@ -877,7 +877,7 @@ function init() {
          *
          *  @param {Array.<google.maps.Marker>} markers The markers in the clusterer.
          *  @param {number} numStyles The number of styles available.
-         *  @return {Object} A object properties: 'text' (string) and 'index' (number).
+         *  @return {Object} An object properties: 'text' (string) and 'index' (number).
          *  @private
          */
         calculator_(markers, numStyles) {
@@ -900,7 +900,7 @@ function init() {
          * Set the calculator function.
          *
          * @param {function(Array, number)} calculator The function to set as the
-         *     calculator. The function should return a object properties:
+         *     calculator. The function should return an object properties:
          *     'text' (string) and 'index' (number).
          *
          */
@@ -1165,7 +1165,7 @@ function init() {
         }
 
         /**
-         * Determins if a marker is contained in a bounds.
+         * Determines if a marker is contained in a bounds.
          *
          * @param {google.maps.Marker} marker The marker to check.
          * @param {google.maps.LatLngBounds} bounds The bounds to check against.
@@ -1346,7 +1346,7 @@ function init() {
         }
 
         /**
-         * Determins if a marker is already added to the cluster.
+         * Determines if a marker is already added to the cluster.
          *
          * @param {google.maps.Marker} marker The marker to check.
          * @return {boolean} True if the marker is already added.

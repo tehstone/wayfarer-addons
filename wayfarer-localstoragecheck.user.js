@@ -310,7 +310,7 @@
 
     // Recalculate storage every 10 seconds
     const calcLoop = setInterval(calculateStorage, 10000);
-    // Check that the localStorage box in the header is actually there every half seconf
+    // Check that the localStorage box in the header is actually there every half second
     const setupLoop = setInterval(() => {
         const boxes = document.getElementsByClassName('wfLSM-box');
         if (!boxes.length) {
