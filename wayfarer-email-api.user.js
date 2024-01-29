@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.0.9
+// @version      1.1.9
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -157,6 +157,17 @@ WayfarerEmail.getDocument ()
     Returns the body of the email as a DOM if the email is text/html or has a valid text/html multipart
     alternative. If the email does not have a text/html body, this function returns null.
 
+WayfarerEmail.classify ()
+    returns: object
+
+    Attempts to classify the email into a type. The result is an object with the following properties:
+
+    - type (str): The type of contribution, e.g. NOMINATION_RECEIVED, EDIT_DECIDED, etc.
+    - style (str): The visual style of the email, e.g. POKEMON_GO, WAYFARER, etc.
+    - language (str): ISO-639-1 language code representing this email's language
+
+    If classification fails, an error is thrown.
+
 WayfarerEmail.display ()
     returns: undefined
 
@@ -167,6 +178,7 @@ WayfarerEmail.display ()
 (() => {
     const OBJECT_STORE_NAME = 'importedEmails';
     const apiEventListeners = {};
+    const DEBUGGING_MODE = false;
 
     // Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
     (function (open) {
@@ -311,6 +323,35 @@ WayfarerEmail.display ()
             return text.normalize('NFD');
         }
     };
+
+    if (DEBUGGING_MODE) {
+        console.log('Email API debugger API:', {
+            makeDebugEmail: obj => new WayfarerEmail(obj),
+            readDebugEmail: () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'message/rfc822,*.eml';
+                input.style.display = 'none';
+                input.addEventListener('change', async e => {
+                    console.log(e.target);
+                    const content = await e.target.files[0].text();
+                    const mime = parseMIME(content);
+                    if (!mime) throw new Error('This file does not appear to be an email in MIME format (invalid RFC 822 data).');
+                    const [ headers, body ] = mime;
+                    const obj = {
+                        id: headers.find(e => e[0].toLowerCase() == 'message-id'),
+                        pids: [],
+                        filename: 'debug-email.eml',
+                        ts: Date.now(),
+                        headers, body
+                    };
+                    console.log(new WayfarerEmail(obj));
+                });
+                document.querySelector('body').appendChild(input);
+                input.click();
+            }
+        });
+    }
 
     const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     if (!windowRef.wft_plugins_api) windowRef.wft_plugins_api = {};
@@ -765,6 +806,7 @@ WayfarerEmail.display ()
 
     class WayfarerEmail {
         #dbObject;
+        #cache = {};
 
         constructor(dbObject) {
             this.#dbObject = dbObject;
@@ -824,10 +866,12 @@ WayfarerEmail.display ()
         }
 
         getDocument() {
+            if (this.#cache.document) return this.#cache.document;
             const html = this.getBody('text/html');
             if (!html) return null;
             const dp = new DOMParser();
-            return dp.parseFromString(html, 'text/html');
+            this.#cache.document = dp.parseFromString(html, 'text/html');
+            return this.#cache.document;
         }
 
         // Don't use this
@@ -968,7 +1012,1402 @@ td:first-child {
                 paramMap[attr.toLowerCase()] = value.startsWith('"') && value.endsWith('"') ? value.substring(1, value.length - 1) : value;
             });
             return { type: type.toLowerCase(), params: paramMap };
-        };
+        }
+
+        classify() {
+            if (this.#cache.classification) return this.#cache.classification;
+            const subject = this.getHeader('Subject');
+            for (let i = 0; i < WayfarerEmail.#templates.length; i++) {
+                const template = WayfarerEmail.#templates[i];
+                if (subject.match(template.subject)) {
+                    if (template.disambiguate) {
+                        this.#cache.classification = template.disambiguate(this);
+                        if (!this.#cache.classification) throw new Error('Disambiguation of ambiguous email template failed.');
+                    } else {
+                        this.#cache.classification = {
+                            type: template.type,
+                            style: template.style,
+                            language: template.language
+                        };
+                    }
+                    return this.#cache.classification;
+                }
+            }
+            throw new Error('This email does not appear to match any styles of Niantic emails currently known to Email API.');
+        }
+
+        static #templates = [
+            //  ---------------------------------------- MISCELLANEOUS ----------------------------------------
+            {
+                subject: /^Ingress Mission/,
+                type: 'MISCELLANEOUS',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Ingress Damage Report:/,
+                type: 'MISCELLANEOUS',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Help us improve Wayfarer$/,
+                type: 'SURVEY',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Help us tackle Wayfarer Abuse$/,
+                type: 'SURVEY',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Your Wayspot submission for/,
+                type: 'NOMINATION_DECIDED',
+                style: 'LIGHTSHIP',
+                language: 'en'
+            },
+            {
+                subject: /Activated on VPS$/,
+                type: 'MISCELLANEOUS',
+                style: 'LIGHTSHIP',
+                language: 'en'
+            },
+            {
+                subject: /^Re: \[\d+\] /,
+                type: 'MISCELLANEOUS',
+                style: null,
+                language: 'en'
+            },
+            //  ---------------------------------------- ENGLISH [en] ----------------------------------------
+            {
+                subject: /^Thanks! Niantic Wayspot nomination received for/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Niantic Wayspot nomination decided for/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Decision on your? Wayfarer Nomination,/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Thanks! Niantic Wayspot appeal received for/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Your Niantic Wayspot appeal has been decided for/,
+                type: 'APPEAL_DECIDED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Portal submission confirmation:/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Portal review complete:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Ingress Portal Submitted:/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'REDACTED',
+                language: 'en'
+            },
+            {
+                subject: /^Ingress Portal Duplicate:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'REDACTED',
+                language: 'en'
+            },
+            {
+                subject: /^Ingress Portal Live:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'REDACTED',
+                language: 'en'
+            },
+            {
+                subject: /^Ingress Portal Rejected:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'REDACTED',
+                language: 'en'
+            },
+            {
+                subject: /^Trainer [^:]+: Thank You for Nominating a PokéStop for Review.$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Trainer [^:]+: Your PokéStop Nomination Is Eligible!$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Trainer [^:]+: Your PokéStop Nomination Is Ineligible$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Trainer [^:]+: Your PokéStop Nomination Review Is Complete:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Photo Submission Received$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Photo Submission (Accepted|Rejected)$/,
+                type: 'PHOTO_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Edit Suggestion Received$/,
+                type: 'EDIT_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Edit Suggestion (Accepted|Rejected)$/,
+                type: 'EDIT_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Invalid Pokéstop\/Gym Report Received$/,
+                type: 'REPORT_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Invalid Pokéstop\/Gym Report (Accepted|Rejected)$/,
+                type: 'REPORT_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'en'
+            },
+            {
+                subject: /^Thanks! Niantic Wayspot Photo received for/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Niantic Wayspot media submission decided for/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Thanks! Niantic Wayspot edit suggestion received for/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Niantic Wayspot edit suggestion decided for/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Thanks! Niantic Wayspot report received for/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Niantic Wayspot report decided for/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'en'
+            },
+            {
+                subject: /^Portal photo submission confirmation/,
+                type: 'PHOTO_RECEIVED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Portal photo review complete/,
+                type: 'PHOTO_DECIDED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Portal Edit Suggestion Received$/,
+                type: 'EDIT_RECEIVED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Portal edit submission confirmation/,
+                type: 'EDIT_RECEIVED',
+                style: 'REDACTED',
+                language: 'en'
+            },
+            {
+                subject: /^Portal edit review complete/,
+                type: 'EDIT_DECIDED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Invalid Ingress Portal report received$/,
+                type: 'REPORT_RECEIVED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            {
+                subject: /^Invalid Ingress Portal report reviewed$/,
+                type: 'REPORT_DECIDED',
+                style: 'INGRESS',
+                language: 'en'
+            },
+            //  ---------------------------------------- BENGALI [bn] ----------------------------------------
+            {
+                subject: /^ধন্যবাদ! .*-এর জন্য Niantic Wayspot মনোনয়ন পাওয়া গেছে!/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot Photo পাওয়া গিয়েছে!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /-এর জন্য Niantic Wayspot মিডিয়া জমা দেওয়ার সিদ্ধান্ত নেওয়া হয়েছে$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot সম্পাদনা করার পরামর্শ পাওয়া গেছে!$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /-এর জন্য Niantic Wayspot সম্পাদনায় পরামর্শের সিদ্ধান্ত নেওয়া হয়েছে$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot রিপোর্ট পাওয়া গেছে!$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
+                subject: /^Niantic Wayspot রিপোর্ট .*-এর জন্য সিদ্ধান্ত নেওয়া হয়েছে$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            //  ---------------------------------------- CZECH [cs] ----------------------------------------
+            {
+                subject: /^Děkujeme! Přijali jsme nominaci na Niantic Wayspot pro/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o nominaci na Niantic Wayspot pro/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Děkujeme! Přijali jsme Photo pro Niantic Wayspot/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o odeslání obrázku Niantic Wayspotu/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Děkujeme! Přijali jsme návrh na úpravu Niantic Wayspotu pro/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o návrhu úpravy Niantic Wayspotu pro/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Děkujeme! Přijali jsme hlášení ohledně Niantic Wayspotu/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o hlášení v souvislosti s Niantic Wayspotem/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            //  ---------------------------------------- GERMAN [de] ----------------------------------------
+            {
+                subject: /^Danke! Wir haben deinen Vorschlag für den Wayspot/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Entscheidung zum Wayspot-Vorschlag/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Danke! Wir haben deinen Einspruch für den Wayspot/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Entscheidung zum Einspruch für den Wayspot/,
+                type: 'APPEAL_DECIDED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Empfangsbestätigung deines eingereichten Portalvorschlags:/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Überprüfung des Portals abgeschlossen:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Trainer [^:]+: Danke, dass du einen PokéStop zur Überprüfung vorgeschlagen hast$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Trainer [^:]+: Dein vorgeschlagener PokéStop ist (zulässig!|nicht zulässig)$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Trainer [^:]+: Die Prüfung deines PokéStop-Vorschlags wurde abgeschlossen:/,
+                type: 'NOMINATION_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Fotovorschlag erhalten$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Fotovorschlag (akzeptiert|abgelehnt)$/,
+                type: 'PHOTO_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Vorschlag für Bearbeitung erhalten$/,
+                type: 'EDIT_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Vorschlag für Bearbeitung (akzeptiert|abgelehnt)$/,
+                type: 'EDIT_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Meldung zu unzulässigen PokéStop\/Arena erhalten$/,
+                type: 'REPORT_RECEIVED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Meldung zu unzulässigen PokéStop\/Arena (akzeptiert|abgelehnt)$/,
+                type: 'REPORT_DECIDED',
+                style: 'POKEMON_GO',
+                language: 'de'
+            },
+            {
+                subject: /^Danke! Wir haben den Upload Photo für den Wayspot/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Entscheidung zu deinem Upload für den Wayspot/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Danke! Wir haben deinen Änderungsvorschlag für den Wayspot/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Entscheidung zu deinem Änderungsvorschlag für den Wayspot/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Danke! Wir haben deine Meldung für den Wayspot/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Entscheidung zu deiner Meldung für den Wayspot/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'de'
+            },
+            {
+                subject: /^Portalfotovorschlag erhalten/,
+                type: 'PHOTO_RECEIVED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Überprüfung des Portalfotos abgeschlossen/,
+                type: 'PHOTO_DECIDED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Vorschlag für die Änderung eines Portals erhalten/,
+                type: 'EDIT_RECEIVED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Überprüfung des Vorschlags zur Änderung eines Portals abgeschlossen/,
+                type: 'EDIT_DECIDED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Meldung zu ungültigem Ingress-Portal erhalten$/,
+                type: 'REPORT_RECEIVED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            {
+                subject: /^Meldung zu ungültigem Ingress-Portal geprüft$/,
+                type: 'REPORT_DECIDED',
+                style: 'INGRESS',
+                language: 'de'
+            },
+            //  ---------------------------------------- SPANISH [es] ----------------------------------------
+            {
+                subject: /^¡Gracias! ¡Hemos recibido la propuesta de Wayspot de Niantic/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^Decisión tomada sobre la propuesta de Wayspot de Niantic/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^¡Gracias! ¡Recurso de Wayspot de Niantic recibido para/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^¡Gracias! ¡Hemos recibido el Photo del Wayspot de Niantic para/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^Decisión tomada sobre el envío de archivo de Wayspot de Niantic para/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^¡Gracias! ¡Propuesta de modificación de Wayspot de Niantic recibida para/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^Decisión tomada sobre la propuesta de modificación del Wayspot de Niantic/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^¡Gracias! ¡Hemos recibido el informe sobre el Wayspot de Niantic/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            {
+                subject: /^Decisión tomada sobre el Wayspot de Niantic/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'es'
+            },
+            //  ---------------------------------------- FRENCH [fr] ----------------------------------------
+            {
+                subject: /^Remerciements ! Proposition d’un Wayspot Niantic reçue pour/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Résultat concernant la proposition du Wayspot Niantic/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Remerciements ! Contribution de Wayspot Niantic Photo reçue pour/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Résultat concernant le Wayspot Niantic/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Remerciements ! Proposition de modification de Wayspot Niantic reçue pour/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Résultat concernant la modification du Wayspot Niantic/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Remerciements ! Signalement reçu pour le Wayspot/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            {
+                subject: /^Résultat concernant le signalement du Wayspot Niantic/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'fr'
+            },
+            //  ---------------------------------------- HINDI [hi] ----------------------------------------
+            {
+                subject: /^धन्यवाद! .* के लिए Niantic Wayspot नामांकन प्राप्त हुआ!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /के लिए तह Niantic Wayspot मीडिया सबमिशन$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /^धन्यवाद! .* के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ!$/,
+                disambiguate: email => {
+                    const doc = email.getDocument();
+                    const title = doc.querySelector('td.em_pbottom.em_blue.em_font_20').textContent.trim();
+                    if (title == 'बढ़िया खोज की! आपके वेस्पॉट Photo सबमिशन के लिए धन्यवाद!') {
+                        return {
+                            type: 'PHOTO_RECEIVED',
+                            style: 'WAYFARER',
+                            language: 'hi',
+                        }
+                    } else if (title.includes('आपके संपादन हमारे खोजकर्ताओं के समुदाय के लिए सर्वोत्तम संभव अनुभव बनाए रखने में मदद करते हैं।')) {
+                        return {
+                            type: 'EDIT_RECEIVED',
+                            style: 'WAYFARER',
+                            language: 'hi',
+                        }
+                    } else {
+                        return null;
+                    }
+                }
+            },
+            {
+                subject: /के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /^धन्यवाद! .* के लिए प्राप्त Niantic Wayspot रिपोर्ट!$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            {
+                subject: /के लिए तय Niantic Wayspot रिपोर्ट$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'hi'
+            },
+            //  ---------------------------------------- ITALIAN [it] ----------------------------------------
+            {
+                subject: /^Grazie! Abbiamo ricevuto una candidatura di Niantic Wayspot per/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Proposta di Niantic Wayspot decisa per/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Grazie! Abbiamo ricevuto Photo di Niantic Wayspot per/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Proposta di contenuti multimediali di Niantic Wayspot decisa per/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Grazie! Abbiamo ricevuto il suggerimento di modifica di Niantic Wayspot per/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Suggerimento di modifica di Niantic Wayspot deciso per/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Grazie! Abbiamo ricevuto la segnalazione di Niantic Wayspot per/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            {
+                subject: /^Segnalazione di Niantic Wayspot decisa per/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'it'
+            },
+            //  ---------------------------------------- JAPANESE [jp] ----------------------------------------
+            {
+                subject: /^ありがとうございます。 Niantic Wayspotの申請「.*」が受領されました。$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^ありがとうございます。 Niantic Wayspot Photo「.*」が受領されました。$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^Niantic Wayspotのメディア申請「.*」が決定しました。$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^ありがとうございます。 Niantic Wayspot「.*」の編集提案が受領されました。$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^Niantic Wayspotの編集提案「.*」が決定しました。$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^ありがとうございます。 Niantic Wayspotに関する報告「.*」が受領されました。$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^Niantic Wayspotの報告「.*」が決定しました$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            //  ---------------------------------------- KOREAN [kr] ----------------------------------------
+            {
+                subject: /^감사합니다! .*에 대한 Niantic Wayspot 후보 신청이 완료되었습니다!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /에 대한 Niantic Wayspot 후보 결정이 완료됨$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /^감사합니다! .*에 대한 Niantic Wayspot Photo 제출 완료$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /에 대한 Niantic Wayspot 미디어 제안 결정 완료$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /^감사합니다! .*에 대한 Niantic Wayspot 수정이 제안되었습니다!$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /에 대한 Niantic Wayspot 수정 제안 결정 완료$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /^감사합니다! .*에 대한 Niantic Wayspot 보고 접수$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            {
+                subject: /에 대한 Niantic Wayspot 보고 결정 완료$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'kr'
+            },
+            //  ---------------------------------------- MARATHI [mr] ----------------------------------------
+            {
+                subject: /^धन्यवाद! Niantic वेस्पॉट नामांकन .* साठी प्राप्त झाले!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^Niantic वेस्पॉट नामांकन .* साठी निश्चित केले$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! Niantic वेस्पॉट आवाहन .* साठी प्राप्त झाले!$/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट Photo प्राप्त झाले!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /साठी Niantic वेस्पॉट मीडिया सबमिशनचा निर्णय घेतला$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! Niantic वेस्पॉट संपादन सूचना .* साठी प्राप्त झाली!$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^Niantic वेस्पॉट संपादन सूचना .* साठी निश्चित केली$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^धन्यवाद! .* साठी Niantic वेस्पॉट अहवाल प्राप्त झाला!$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /साठी Niantic वेस्पॉट अहवाल निश्चित केला$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            //  ---------------------------------------- DUTCH [nl] ----------------------------------------
+            {
+                subject: /^Bedankt! Niantic Wayspot-nominatie ontvangen voor/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Besluit over Niantic Wayspot-nominatie voor/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Bedankt! Niantic Wayspot-Photo ontvangen voor/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Besluit over Niantic Wayspot-media-inzending voor/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Bedankt! Niantic Wayspot-bewerksuggestie ontvangen voor/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Besluit over Niantic Wayspot-bewerksuggestie voor/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Bedankt! Melding van Niantic Wayspot .* ontvangen!$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            {
+                subject: /^Besluit over Niantic Wayspot-melding voor/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'nl'
+            },
+            //  ---------------------------------------- NORWEGIAN [no] ----------------------------------------
+            {
+                subject: /^Takk! Vi har mottatt Niantic Wayspot-nominasjonen for/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^En avgjørelse er tatt for Niantic Wayspot-nominasjonen for/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^Takk! Vi har mottatt Niantic Wayspot-klagen for/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^En avgjørelse er tatt for Niantic Wayspot-klagen for/,
+                type: 'APPEAL_DECIDED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^Takk! Vi har mottatt Photo for Niantic-Wayspot-en/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^Takk! Vi har mottatt endringsforslaget for Niantic Wayspot-en/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^Takk! Vi har mottatt Niantic Wayspot-rapporten for/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^En avgjørelse er tatt for Niantic Wayspot-medieinnholdet som er sendt inn for/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^En avgjørelse er tatt for endringsforslaget for Niantic Wayspot-en/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            {
+                subject: /^En avgjørelse er tatt for Niantic Wayspot-rapporten for/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'no'
+            },
+            //  ---------------------------------------- POLISH [pl] ----------------------------------------
+            {
+                subject: /^Dziękujemy! Odebrano nominację Wayspotu/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Dziękujemy! Odebrano materiały Photo Wayspotu Niantic/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Decyzja na temat zgłoszenia materiałów do Wayspotu Niantic/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Dziękujemy! Odebrano sugestię zmiany Wayspotu Niantic/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Podjęto decyzję na temat sugestii edycji Wayspotu Niantic/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Dziękujemy! Odebrano raport dotyczący Wayspotu Niantic/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Podjęto decyzję odnośnie raportu dotyczącego Wayspotu Niantic/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            //  ---------------------------------------- PORTUGUESE [pt] ----------------------------------------
+            {
+                subject: /^Agradecemos a sua indicação para o Niantic Wayspot/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Decisão sobre a indicação do Niantic Wayspot/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Agradecemos o envio de Photo para o Niantic Wayspot/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Decisão sobre o envio de mídia para o Niantic Wayspot/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Agradecemos a sua sugestão de edição para o Niantic Wayspot/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Decisão sobre a sugestão de edição do Niantic Wayspot/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Agradecemos o envio da denúncia referente ao Niantic Wayspot/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            {
+                subject: /^Decisão sobre a denúncia referente ao Niantic Wayspot/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'pt'
+            },
+            //  ---------------------------------------- RUSSIAN [ru] ----------------------------------------
+            {
+                subject: /^Спасибо! Номинация Niantic Wayspot для .* получена!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Вынесено решение по номинации Niantic Wayspot для/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Спасибо! Получено: Photo Niantic Wayspot для/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Вынесено решение по предложению по файлу для/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Спасибо! Предложение по изменению Niantic Wayspot для/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Вынесено решение по предложению по изменению Niantic Wayspot для/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Спасибо! Жалоба на Niantic Wayspot для/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            {
+                subject: /^Вынесено решение по жалобе на Niantic Wayspot для/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'ru'
+            },
+            //  ---------------------------------------- SWEDISH [sv] ----------------------------------------
+            {
+                subject: /^Tack! Niantic Wayspot-nominering har tagits emot för/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Niantic Wayspot-nominering har beslutats om för/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Din Niantic Wayspot-överklagan har beslutats om för/,
+                type: 'APPEAL_DECIDED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Tack! Niantic Wayspot Photo togs emot för/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Niantic Wayspot-medieinlämning har beslutats om för/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Tack! Niantic Wayspot-redigeringsförslag har tagits emot för/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Niantic Wayspot-redigeringsförslag har beslutats om för/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Tack! Niantic Wayspot-rapport har tagits emot för/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            {
+                subject: /^Niantic Wayspot-rapport har beslutats om för/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'sv'
+            },
+            //  ---------------------------------------- TAMIL [ta] ----------------------------------------
+            {
+                subject: /^நன்றி! .* -க்கான Niantic Wayspot பரிந்துரை பெறப்பட்டது!!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /-க்கான Niantic Wayspot பணிந்துரை பரிசீலிக்கப்பட்டது.$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /^நன்றி! .* -க்கான Niantic Wayspot Photo பெறப்பட்டது!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /-க்கான Niantic Wayspot மீடியா சமர்ப்பிப்பு பரிசீலிக்கப்பட்டது.$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /^நன்றி! .* -க்கான Niantic Wayspot திருத்த பரிந்துரை பெறப்பட்டது!$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /-க்கான Niantic Wayspot திருத்த பரிந்துரை பரிசீலிக்கப்பட்டது$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /^நன்றி! .* -க்கான Niantic Wayspot புகார் பெறப்பட்டது!$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            {
+                subject: /-க்கான Niantic Wayspot புகார் பரிசீலிக்கப்பட்டது!$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'ta'
+            },
+            //  ---------------------------------------- TELUGU [te] ----------------------------------------
+            {
+                subject: /^ధన్యవాదాలు! .* కు Niantic Wayspot నామినేషన్ అందుకున్నాము!$/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /కొరకు Niantic వేస్పాట్ నామినేషన్‌‌పై నిర్ణయం$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /^ధన్యవాదాలు! .* కొరకు Niantic Wayspot Photo అందుకున్నాము!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /కొరకు Niantic వేస్పాట్ మీడియా సమర్పణపై నిర్ణయం$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /^ధన్యవాదాలు! మీ వేస్పాట్ .* ఎడిట్ సూచనకై ధన్యవాదాలు!$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /కొరకు నిర్ణయించబడిన Niantic వేస్పాట్ సూచన$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /^ధన్యవాదాలు! .* కొరకు Niantic వేస్పాట్ నామినేషన్ అందుకున్నాము!$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            {
+                subject: /కొరకు నిర్ణయించబడిన Niantic వేస్పాట్ రిపోర్ట్$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'te'
+            },
+            //  ---------------------------------------- THAI [th] ----------------------------------------
+            {
+                subject: /^ขอบคุณ! เราได้รับการเสนอสถานที่ Niantic Wayspot สำหรับ/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ผลการตัดสินการเสนอสถานที่ Niantic Wayspot สำหรับ/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ขอบคุณ! ได้รับ Niantic Wayspot Photo สำหรับ/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ผลการตัดสินการส่งมีเดีย Niantic Wayspot สำหรับ/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ขอบคุณ! เราได้รับคำแนะนำการแก้ไข Niantic Wayspot สำหรับ/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ผลการตัดสินคำแนะนำการแก้ไข Niantic Wayspot สำหรับ/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ขอบคุณ! เราได้รับการรายงาน Niantic Wayspot สำหรับ/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            {
+                subject: /^ผลตัดสินการรายงาน Niantic Wayspot สำหรับ/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'th'
+            },
+            //  ---------------------------------------- CHINESE [zh] ----------------------------------------
+            {
+                subject: /^感謝你！ 我們已收到 Niantic Wayspot 候選/,
+                type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^社群已對 Niantic Wayspot 候選 .* 做出決定$/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^感謝你！ 我們已收到 .* 的 Niantic Wayspot Photo！$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^社群已對你為 .* 提交的 Niantic Wayspot 媒體做出決定$/,
+                type: 'PHOTO_DECIDED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^感謝你！ 我們已收到 .* 的 Niantic Wayspot 編輯建議！$/,
+                type: 'EDIT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^社群已對 .* 的 Niantic Wayspot 編輯建議做出決定$/,
+                type: 'EDIT_DECIDED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^感謝你！ 我們已收到 .* 的 Niantic Wayspot 報告！$/,
+                type: 'REPORT_RECEIVED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+            {
+                subject: /^Niantic 已對 .* 的 Wayspot 報告做出決定$/,
+                type: 'REPORT_DECIDED',
+                style: 'WAYFARER',
+                language: 'zh'
+            },
+        ];
     }
 
     const parseMIME = data => {
