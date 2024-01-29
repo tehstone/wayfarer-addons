@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.3
+// @version      1.1.4
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 7;
+    const eV1ProcessingStateVersion = 8;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -830,12 +830,25 @@
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
 
+            //  ---------------------------------------- BENGALI [bn] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /-এর জন্য Niantic Wayspot মনোনয়নের সিদ্ধান্ত নেওয়া হয়েছে/,
+                status: this.#eStatusHelpers.WF_DECIDED(
+                    'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে চানদ',
+                    undefined //'has decided not to accept your Wayspot nomination.'
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^(?<month>) (?<day>\d+), (?<year>\d+)-এ আপনার Wayspot মনোনয়ন (?<title>.*) করার জন্য আপনাকে ধন্যবাদ জানাই!$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                )]
+            },
+
             //  ---------------------------------------- CZECH [cs] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Rozhodnutí o nominaci na Niantic Wayspot pro/,
                 status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'se rozhodla přijmout vaši nominaci na Wayspot',
                     'se rozhodla nepřijmout vaši nominaci na Wayspot'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
@@ -927,7 +940,7 @@
                 subject: /^Résultat concernant la proposition du Wayspot Niantic/,
                 status: this.#eStatusHelpers.WF_DECIDED(
                     'a décidé d’accepter votre proposition de Wayspot.',
-                    undefined //'has decided not to accept your Wayspot nomination.'
+                    'a décidé de ne pas accepter votre proposition de Wayspot.'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^Merci pour votre proposition de Wayspot (?<title>.*) le (?<day>\d+) (?<month>)\.? (?<year>\d+)\u2009!$/,
                     ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc']
@@ -998,6 +1011,17 @@
                     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 )]
             },
+            {
+                // Appeal decided
+                subject: /^तुमचे Niantic वेस्पॉट आवाहन .* साठी निश्चित करण्यात आले आहे$/,
+                status: this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                    undefined, //'Niantic has decided that your nomination should be added as a Wayspot',
+                    'Niantic ने ठरवले आहे की तुमचे नामांकन REJECT वेस्पॉट म्हणून जोडले जाऊ नये/नसावे'
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^(?<month>) (?<day>\d+), (?<year>\d+) रोजी (?<title>.*) साठी तुमच्या वेस्पॉट नामांकन आवाहनाबद्दल धन्यवाद.$/,
+                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                )]
+            },
 
             //  ---------------------------------------- DUTCH [nl] ----------------------------------------
             {
@@ -1036,13 +1060,26 @@
                 )]
             },
 
-            //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
+            //  ---------------------------------------- POLISH [pl] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /^Podjęto decyzję na temat nominacji Wayspotu/,
+                status: this.#eStatusHelpers.WF_DECIDED(
+                    'zdecydowała zaakceptować nominacji Wayspotu.',
+                    undefined //'has decided not to accept your Wayspot nomination.'
+                ), image: [this.#eQuery.WF_DECIDED(
+                    /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
+                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                )]
+            },
+
+            //  ---------------------------------------- PORTUGUESE [pt] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Decisão sobre a indicação do Niantic Wayspot/,
                 status: this.#eStatusHelpers.WF_DECIDED(
                     'a comunidade decidiu aceitar a sua indicação de Wayspot.',
-                    undefined //'has decided not to accept your Wayspot nomination.'
+                    'a comunidade decidiu recusar a sua indicação de Wayspot.'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^Agradecemos a sua indicação do Wayspot (?<title>.*) em (?<day>\d+)\/(?<month>)\/(?<year>\d+).$/,
                     ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -1177,7 +1214,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 7) {
+                    if (eV1State.version < 8) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
