@@ -17,7 +17,7 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.min.js
 // ==/UserScript==
 
-// Copyright 2023 tehstone, bilde
+// Copyright 2024 tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify

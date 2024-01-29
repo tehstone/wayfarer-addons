@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2023 tehstone, bilde, AlfonsoML
+// Copyright 2024 AlfonsoML, tehstone, bilde
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 
 /* eslint-env es6 */
 /* eslint no-var: "error" */
+/* eslint indent: ['error', 4] */
 
 function init() {
 	let tryNumber = 15;
