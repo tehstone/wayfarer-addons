@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.4
+// @version      1.1.5
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 8;
+    const eV1ProcessingStateVersion = 9;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -836,7 +836,7 @@
                 subject: /-এর জন্য Niantic Wayspot মনোনয়নের সিদ্ধান্ত নেওয়া হয়েছে/,
                 status: this.#eStatusHelpers.WF_DECIDED(
                     'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে চানদ',
-                    undefined //'has decided not to accept your Wayspot nomination.'
+                    'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে স্বীকার করতে চান না'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+)-এ আপনার Wayspot মনোনয়ন (?<title>.*) করার জন্য আপনাকে ধন্যবাদ জানাই!$/,
                     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -991,7 +991,7 @@
                 // Nomination decided (Wayfarer)
                 subject: /에 대한 Niantic Wayspot 후보 결정이 완료됨$/,
                 status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                    '제안한 Wayspot 후보를 승인했습니다',
                     '제안한 Wayspot 후보를 승인하지않았습니다 .'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^(?<year>\d+). (?<month>). (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
@@ -1066,7 +1066,7 @@
                 subject: /^Podjęto decyzję na temat nominacji Wayspotu/,
                 status: this.#eStatusHelpers.WF_DECIDED(
                     'zdecydowała zaakceptować nominacji Wayspotu.',
-                    undefined //'has decided not to accept your Wayspot nomination.'
+                    'zdecydowała nie przyjąć nominacji Wayspotu.'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
                     ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
@@ -1091,7 +1091,7 @@
                 // Nomination decided (Wayfarer)
                 subject: /^Вынесено решение по номинации Niantic Wayspot для/,
                 status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'решило принять вашу номинацию Wayspot.',
                     'решило отклонить вашу номинацию Wayspot.'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
@@ -1214,7 +1214,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 8) {
+                    if (eV1State.version < 9) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
