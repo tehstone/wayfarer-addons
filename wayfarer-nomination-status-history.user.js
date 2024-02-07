@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.5
+// @version      1.1.6
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 9;
+    const eV1ProcessingStateVersion = 10;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -978,7 +978,7 @@
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
                 status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                    'コミュニティはあなたのWayspot候補を承認しました。',
                     '不幸にも コミュニティはあなたのWayspot候補を承認しませんでした。'
                 ), image: [this.#eQuery.WF_DECIDED(
                     /^(?<year>\d+)\/(?<month>)\/(?<day>\d+)にWayspot申請「(?<title>.*)」をご提出いただき、ありがとうございました。$/,
@@ -1214,7 +1214,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 9) {
+                    if (eV1State.version < 10) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
