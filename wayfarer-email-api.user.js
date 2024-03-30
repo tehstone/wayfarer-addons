@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.10
+// @version      1.1.11
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -34,6 +34,14 @@
 
 The API is available under: window.wft_plugins_api.emailImport
 
+API.prepare ()
+    returns: Promise
+    \- resolves: undefined
+
+    Prepares the API for usage by another script. This function must be called before other scripts open IDB
+    connections. It serves to ensure that the importedEmails object store exists in the database before usage to
+    avoid deadlocks with API consumers which also use IDB connections.
+
 API.get (id: str)
     returns: Promise
     |- resolves: WayfarerEmail
@@ -43,8 +51,12 @@ API.get (id: str)
     if the email database could not be opened. In the former case nothing is returned, in the latter case,
     an Error is returned by the promise.
 
+    Before calling this function, API.prepare() must have been called and awaited at least once to avoid
+    deadlocks. Otherwise, an error is thrown.
+
 API.iterate async* ()
     yields: WayfarerEmail
+    throws: Error
 
     Returns an asynchronous generator that iterates over all emails that have been imported to the local
     database. The generator must be fully iterated, otherwise the database will not be closed!
@@ -53,6 +65,9 @@ API.iterate async* ()
     for await (const email of API.iterate()) {
         console.log('Processing email', email);
     }
+
+    Before calling this function, API.prepare() must have been called and awaited at least once to avoid
+    deadlocks. Otherwise, an error is thrown.
 
 API.addListener (id: str, listener: object)
     returns: undefined
@@ -179,6 +194,7 @@ WayfarerEmail.display ()
     const OBJECT_STORE_NAME = 'importedEmails';
     const apiEventListeners = {};
     const DEBUGGING_MODE = false;
+    let isPrepared = false;
 
     // Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
     (function (open) {
@@ -243,20 +259,39 @@ WayfarerEmail.display ()
     });
 
     const selfAPI = {
-        get: id => new Promise((resolve, reject) => getIDBInstance().then(db => {
-            const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
-            tx.oncomplete = event => db.close();
-            const objectStore = tx.objectStore(OBJECT_STORE_NAME);
-            const getEmail = objectStore.get(id);
-            getEmail.onsuccess = () => {
-                const { result } = getEmail;
-                if (result) resolve(new WayfarerEmail(result));
-                else reject();
-            };
-            getEmail.onerror = () => reject(getEmail.error);
-        })),
+        prepare: () => new Promise((resolve, reject) => {
+            if (!isPrepared) {
+                getIDBInstance().then(db => {
+                    // Ensure that the importedEmails object store exists to avoid deadlocks.
+                    console.log('Email API is preparing...');
+                    db.close();
+                    isPrepared = true;
+                    console.log('Email API is now ready for use.');
+                    resolve();
+                });
+            } else {
+                resolve();
+            }
+        }),
+
+        get: id => new Promise((resolve, reject) => {
+            if (!isPrepared) throw new Error('Attempted usage of Email API .get() before invocation of .prepare()');
+            getIDBInstance().then(db => {
+                const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
+                tx.oncomplete = event => db.close();
+                const objectStore = tx.objectStore(OBJECT_STORE_NAME);
+                const getEmail = objectStore.get(id);
+                getEmail.onsuccess = () => {
+                    const { result } = getEmail;
+                    if (result) resolve(new WayfarerEmail(result));
+                    else reject();
+                };
+                getEmail.onerror = () => reject(getEmail.error);
+            })
+        }),
 
         iterate: async function*() {
+            if (!isPrepared) throw new Error('Attempted usage of Email API .iterate() before invocation of .prepare()');
             for await (const obj of iterateIDBCursor()) {
                 yield new WayfarerEmail(obj);
             }

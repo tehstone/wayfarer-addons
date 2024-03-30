@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.6
+// @version      1.1.7
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -188,6 +188,7 @@
                 const epInstance = new EmailProcessor(nominations);
                 console.log('Starting to process stored emails for history events...');
                 const start = new Date();
+                await windowRef.wft_plugins_api.emailImport.prepare();
                 await epInstance.open();
                 for await (const email of windowRef.wft_plugins_api.emailImport.iterate()) {
                     await epInstance.importEmail(email);
