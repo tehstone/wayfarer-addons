@@ -1705,6 +1705,12 @@ td:first-child {
                 language: 'hi'
             },
             {
+                subject: /^धन्यवाद! .* के लिए Niantic Wayspot Photo प्राप्त हुआ!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'hi',
+            },
+            {
                 subject: /^धन्यवाद! .* के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ!$/,
                 disambiguate: email => {
                     const doc = email.getDocument();
@@ -1803,6 +1809,18 @@ td:first-child {
             {
                 subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
                 type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^ありがとうございます。 Niantic Wayspotに関する申し立て「.*」が受領されました。$/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'jp'
+            },
+            {
+                subject: /^Niantic Wayspot「.*」に関する申し立てが決定しました。$/,
+                type: 'APPEAL_DECIDED',
                 style: 'WAYFARER',
                 language: 'jp'
             },
