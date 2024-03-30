@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.11
+// @version      2.0
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
