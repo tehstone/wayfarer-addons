@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 10;
+    const eV1ProcessingStateVersion = 11;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -1262,7 +1262,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 10) {
+                    if (eV1State.version < 11) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
