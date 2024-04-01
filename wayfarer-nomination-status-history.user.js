@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.0
+// @version      1.2.1
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 11;
+    const eV1ProcessingStateVersion = 12;
     const strictClassificationMode = true;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -623,7 +623,8 @@
                 const header = (doc.querySelector('.em_font_20') || doc.querySelector('.em_org_u').firstChild).textContent.trim();
                 let month = null;
                 let match = null;
-                for (const months in monthNames) {
+                for (let i = 0; i < monthNames.length; i++) {
+                    const months = monthNames[i];
                     const mr = new RegExp(regex.source.split('(?<month>)').join(`(?<month>${months.join('|')})`));
                     match = header.match(mr);
                     if (match) {
@@ -1262,7 +1263,7 @@
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 11) {
+                    if (eV1State.version < 12) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
