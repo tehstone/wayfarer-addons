@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.1
+// @version      1.2.2
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,8 +46,11 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 12;
+    const eV1ProcessingStateVersion = 13;
     const strictClassificationMode = true;
+
+    const eV1CutoffParseErrors = 13;
+    const eV1CutoffEverything = 5;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -758,7 +761,7 @@
                     'has decided to accept your Wayspot nomination.',
                     'has decided not to accept your Wayspot nomination.'
                 ), this.#eStatusHelpers.WF_DECIDED_NIA(
-                    undefined, // Accepted - this email template has not been used for acceptances yet
+                    'Congratulations, our team has decided to accept your Wayspot nomination',
                     'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Thank you for your Wayspot nomination (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)!$/,
@@ -772,7 +775,7 @@
                 // Nomination decided (Wayfarer, NIA)
                 subject: /^Decision on your? Wayfarer Nomination,/,
                 status: [this.#eStatusHelpers.WF_DECIDED_NIA(
-                    undefined, // Accepted - this email template has not been used for acceptances yet
+                    undefined, // Accepted - this email template was never used for acceptances
                     'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Thank you for taking the time to nominate (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)\./,
@@ -1043,8 +1046,8 @@
                     '제안한 Wayspot 후보를 승인했습니다',
                     '제안한 Wayspot 후보를 승인하지않았습니다 .'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^(?<year>\d+). (?<month>). (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
-                    [this.#eMonths.ZERO_PREFIXED]
+                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
+                    [this.#eMonths.NUMERIC]
                 )]
             },
 
@@ -1057,7 +1060,10 @@
                     'तुमचे Wayspot नामांकन न स्वीकारण्याचा निर्णय घेतला आहे'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^तुमच्या (?<month>) (?<day>\d+), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
-                    [this.#eMonths.ENGLISH, this.#eMonths.MARATHI]
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^तुमच्या (?<day>\d+) (?<month>), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
+                    [this.#eMonths.MARATHI]
                 )]
             },
             {
@@ -1181,7 +1187,10 @@
                     undefined //'has decided not to accept your Wayspot nomination.',
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^நாளது தேதியில் (?<month>) (?<day>\d+), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
-                    [this.#eMonths.ENGLISH, this.#eMonths.TAMIL]
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^நாளது தேதியில் (?<day>\d+) (?<month>), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
+                    [this.#eMonths.TAMIL]
                 )]
             },
 
@@ -1194,7 +1203,10 @@
                     undefined //'has decided not to accept your Wayspot nomination.',
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
-                    [this.#eMonths.ENGLISH, this.#eMonths.TELUGU]
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
+                    [this.#eMonths.TELUGU]
                 )]
             },
 
@@ -1220,6 +1232,9 @@
                     undefined //'has decided not to accept your Wayspot nomination.'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^感謝你在 (?<year>\d+)-(?<month>)-(?<day>\d+) 提交 Wayspot 候選 (?<title>.*)！$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^感謝你在 (?<year>\d+)年(?<month>)月(?<day>\d+)日 提交 Wayspot 候選 (?<title>.*)！$/,
                     [this.#eMonths.NUMERIC]
                 )]
             },
@@ -1259,11 +1274,11 @@
                         ? JSON.parse(localStorage.wfnshV1ProcessedEmailStates)
                         : { version: eV1ProcessingStateVersion, states: {} };
                     this.#messageStatus = eV1State.states;
-                    if (eV1State.version < 5) {
+                    if (eV1State.version < eV1CutoffEverything) {
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 12) {
+                    if (eV1State.version < eV1CutoffParseErrors) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
