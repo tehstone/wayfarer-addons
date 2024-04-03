@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      2.0.1
+// @version      2.0.2
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1385,6 +1385,12 @@ td:first-child {
             {
                 subject: /^Děkujeme! Přijali jsme odvolání proti odmítnutí Niantic Wayspotu/,
                 type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o odvolání proti nominaci na Niantic Wayspot pro/,
+                type: 'APPEAL_DECIDED',
                 style: 'WAYFARER',
                 language: 'cs'
             },

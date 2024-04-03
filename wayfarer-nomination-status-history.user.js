@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.2
+// @version      1.2.3
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,10 +46,10 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 13;
+    const eV1ProcessingStateVersion = 14;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 13;
+    const eV1CutoffParseErrors = 14;
     const eV1CutoffEverything = 5;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -892,7 +892,18 @@
                     'se rozhodla přijmout vaši nominaci na Wayspot',
                     'se rozhodla nepřijmout vaši nominaci na Wayspot'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
+                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\. ?(?<month>)\. ?(?<year>\d+)!$/,
+                    [this.#eMonths.NUMERIC]
+                )]
+            },
+            {
+                // Appeal decided
+                subject: /^Rozhodnutí o odvolání proti nominaci na Niantic Wayspot pro/,
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                    'Niantic se rozhodla, že vaše nominace ACCEPT by měla/by neměla být přidána jako Wayspot',
+                    undefined //'Niantic has decided that your nomination should not be added as a Wayspot'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^děkujeme za vaše odvolání proti odmítnutí nominace na Wayspot (?<title>.*) ze dne (?<day>\d+)\. (?<month>)\. (?<year>\d+)\.$/,
                     [this.#eMonths.NUMERIC]
                 )]
             },
@@ -1184,7 +1195,7 @@
                 subject: /-க்கான Niantic Wayspot பணிந்துரை பரிசீலிக்கப்பட்டது.$/,
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'உங்கள் Wayspot பரிந்துரையை ஏற்றுக்கொள்வதாக முடிவு செய்திருக்கிறது',
-                    undefined //'has decided not to accept your Wayspot nomination.',
+                    'உங்கள் Wayspot பரிந்துரையை நிராகரிப்பதாக முடிவு செய்திருக்கிறது'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^நாளது தேதியில் (?<month>) (?<day>\d+), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
                     [this.#eMonths.ENGLISH]
