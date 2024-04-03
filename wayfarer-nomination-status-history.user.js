@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.3
+// @version      1.2.4
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,10 +46,10 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 14;
+    const eV1ProcessingStateVersion = 15;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 14;
+    const eV1CutoffParseErrors = 15;
     const eV1CutoffEverything = 5;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -1240,7 +1240,7 @@
                 subject: /^社群已對 Niantic Wayspot 候選 .* 做出決定$/,
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     '社群已決定 接受 Wayspot 候選地。',
-                    undefined //'has decided not to accept your Wayspot nomination.'
+                    '社群已決定 不接受你的 Wayspot 候選地。'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^感謝你在 (?<year>\d+)-(?<month>)-(?<day>\d+) 提交 Wayspot 候選 (?<title>.*)！$/,
                     [this.#eMonths.NUMERIC]
