@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.4
+// @version      1.2.5
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -901,7 +901,7 @@
                 subject: /^Rozhodnutí o odvolání proti nominaci na Niantic Wayspot pro/,
                 status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic se rozhodla, že vaše nominace ACCEPT by měla/by neměla být přidána jako Wayspot',
-                    undefined //'Niantic has decided that your nomination should not be added as a Wayspot'
+                    'Niantic se rozhodla, že vaše nominace REJECT by měla/by neměla být přidána jako Wayspot'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^děkujeme za vaše odvolání proti odmítnutí nominace na Wayspot (?<title>.*) ze dne (?<day>\d+)\. (?<month>)\. (?<year>\d+)\.$/,
                     [this.#eMonths.NUMERIC]
@@ -1081,7 +1081,7 @@
                 // Appeal decided
                 subject: /^तुमचे Niantic वेस्पॉट आवाहन .* साठी निश्चित करण्यात आले आहे$/,
                 status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
-                    undefined, //'Niantic has decided that your nomination should be added as a Wayspot',
+                    'Niantic ने ठरवले आहे की तुमचे नामांकन ACCEPT वेस्पॉट म्हणून जोडले जाऊ नये/नसावे',
                     'Niantic ने ठरवले आहे की तुमचे नामांकन REJECT वेस्पॉट म्हणून जोडले जाऊ नये/नसावे'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) रोजी (?<title>.*) साठी तुमच्या वेस्पॉट नामांकन आवाहनाबद्दल धन्यवाद.$/,
@@ -1182,7 +1182,7 @@
                 subject: /^Din Niantic Wayspot-överklagan har beslutats om för/,
                 status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic har beslutat att din nominering ACCEPT ska/inte ska läggas till som en Wayspot',
-                    undefined //'Niantic has decided that your nomination should not be added as a Wayspot'
+                    'Niantic har beslutat att din nominering REJECT ska/inte ska läggas till som en Wayspot'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
                     [this.#eMonths.SWEDISH]
