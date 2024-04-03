@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      2.0.2
+// @version      2.1.0
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -1811,115 +1811,115 @@ td:first-child {
                 style: 'WAYFARER',
                 language: 'it'
             },
-            //  ---------------------------------------- JAPANESE [jp] ----------------------------------------
+            //  ---------------------------------------- JAPANESE [ja] ----------------------------------------
             {
                 subject: /^ありがとうございます。 Niantic Wayspotの申請「.*」が受領されました。$/,
                 type: 'NOMINATION_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
                 type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspotに関する申し立て「.*」が受領されました。$/,
                 type: 'APPEAL_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspot「.*」に関する申し立てが決定しました。$/,
                 type: 'APPEAL_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspot Photo「.*」が受領されました。$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotのメディア申請「.*」が決定しました。$/,
                 type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspot「.*」の編集提案が受領されました。$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotの編集提案「.*」が決定しました。$/,
                 type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspotに関する報告「.*」が受領されました。$/,
                 type: 'REPORT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotの報告「.*」が決定しました$/,
                 type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
-            //  ---------------------------------------- KOREAN [kr] ----------------------------------------
+            //  ---------------------------------------- KOREAN [ko] ----------------------------------------
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 후보 신청이 완료되었습니다!$/,
                 type: 'NOMINATION_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 후보 결정이 완료됨$/,
                 type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot Photo 제출 완료$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 미디어 제안 결정 완료$/,
                 type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 수정이 제안되었습니다!$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 수정 제안 결정 완료$/,
                 type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 보고 접수$/,
                 type: 'REPORT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 보고 결정 완료$/,
                 type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             //  ---------------------------------------- MARATHI [mr] ----------------------------------------
             {
