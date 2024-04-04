@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.5
+// @version      1.2.6
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,10 +46,10 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 15;
+    const eV1ProcessingStateVersion = 16;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 15;
+    const eV1CutoffParseErrors = 16;
     const eV1CutoffEverything = 5;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -732,6 +732,12 @@
                 if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
             },
+            WF_DECIDED_NIA_2: (acceptText, rejectText) => (doc, nom, email) => {
+                const text = doc.querySelector('.em_font_20').textContent.split('\n')[2].replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                return null;
+            },
             WF_APPEAL_DECIDED: (acceptText, rejectText) => (doc, nom) => {
                 const text = doc.querySelector('.em_font_20').parentNode.nextElementSibling.textContent.replaceAll(/\s+/g, ' ').trim();
                 if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
@@ -878,9 +884,15 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে চানদ',
                     'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে স্বীকার করতে চান না'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'অভিনন্দন, আমাদের দল আপনার Wayspot-এর মনোনয়ন গ্রহণ করার সিদ্ধান্ত নিয়েছেন।',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+)-এ আপনার Wayspot মনোনয়ন (?<title>.*) করার জন্য আপনাকে ধন্যবাদ জানাই!$/,
                     [this.#eMonths.ENGLISH, this.#eMonths.BENGALI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<title>.*)-কে(?<day>\d+) (?<month>), (?<year>\d+) -তে মনোয়ন করতে সময় দেওয়ার জন্য আপনাকে ধন্যবাদ।/,
+                    [this.#eMonths.BENGALI]
                 )]
             },
 
@@ -980,8 +992,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'ha decidido aceptartu propuesta de Wayspot.',
                     'ha decidido no aceptar tu propuesta de Wayspot.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Enhorabuena, nuestro equipo ha decidido aceptar tu propuesta de Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^¡Gracias por tu propuesta de Wayspot (?<title>.*) enviada el (?<day>\d+)-(?<month>)-(?<year>\d+)!$/,
+                    [this.#eMonths.SPANISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Gracias por dedicar algo de tiempo para realizar tu propuesta de (?<title>.*) el (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
                     [this.#eMonths.SPANISH]
                 )]
             },
@@ -993,8 +1011,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'a décidé d’accepter votre proposition de Wayspot.',
                     'a décidé de ne pas accepter votre proposition de Wayspot.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Félicitations, notre équipe a décidé d’accepter votre proposition de Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Merci pour votre proposition de Wayspot (?<title>.*) le (?<day>\d+) (?<month>)\.? (?<year>\d+)\u2009!$/,
+                    [this.#eMonths.FRENCH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Merci d’avoir pris le temps de nous envoyer votre proposition (?<title>.*) le (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
                     [this.#eMonths.FRENCH]
                 )]
             },
@@ -1006,9 +1030,15 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'ने को आपके Wayspot नामांकन को स्वीकार करने का निर्णय लिया है',
                     'ने को आपके Wayspot नामांकन को अस्वीकार करने का निर्णय लिया है'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'बधाई हो, हमारी टीम ने आपके Wayspot नामांकन को मंज़ूरी दे दी है.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
                     [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>) (?<year>\d+) को (?<title>.*) के नामांकन के लिए आपने समय निकाला, उसके लिए आपका धन्यवाद\./,
+                    [this.#eMonths.HINDI]
                 )]
             },
 
@@ -1019,8 +1049,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'Congratulazioni, la tua proposta di Wayspot è stata accettata',
                     'Sfortunatamente, la tua proposta di Wayspot è stata respinta'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Congratulazioni, il nostro team ha deciso di accettare la tua proposta di Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Grazie per la proposta di Wayspot (?<title>.*) in data (?<day>\d+)-(?<month>)-(?<year>\d+).$/,
+                    /^Grazie per la proposta di Wayspot (?<title>.*) in data (?<day>\d+)-(?<month>)-(?<year>\d+)\.$/,
+                    [this.#eMonths.ITALIAN]
+                ), this.#eQuery.WF_DECIDED(
+                    /^grazie per aver trovato il tempo di inviare la tua proposta (?<title>.*) in data (?<day>\d+) (?<month>) (?<year>\d+)\.$/,
                     [this.#eMonths.ITALIAN]
                 )]
             },
@@ -1032,8 +1068,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'コミュニティはあなたのWayspot候補を承認しました。',
                     '不幸にも コミュニティはあなたのWayspot候補を承認しませんでした。'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'チームでの検討の結果、あなたのお送りいただいたWayspot候補が採用されましたので、お知らせいたします。',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<year>\d+)\/(?<month>)\/(?<day>\d+)にWayspot申請「(?<title>.*)」をご提出いただき、ありがとうございました。$/,
+                    [this.#eMonths.ZERO_PREFIXED]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<year>\d+)\/(?<month>)\/(?<day>\d+)に「(?<title>.*)」を候補としてお送りいただき、ありがとうございました。/,
                     [this.#eMonths.ZERO_PREFIXED]
                 )]
             },
@@ -1056,8 +1098,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     '제안한 Wayspot 후보를 승인했습니다',
                     '제안한 Wayspot 후보를 승인하지않았습니다 .'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    '축하합니다, 귀하께서 추천하신 Wayspot 후보가 승인되었습니다\.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)\.에 시간을 내어 (?<title>.*) \(을\)를 추천해 주셔서 감사합니다\./,
                     [this.#eMonths.NUMERIC]
                 )]
             },
@@ -1069,11 +1117,17 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'तुमचे Wayspot नामांकन स्वीकारण्याचा निर्णय घेतला आहे',
                     'तुमचे Wayspot नामांकन न स्वीकारण्याचा निर्णय घेतला आहे'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'अभिनंदन, आमच्या टीमने तुमचे Wayspot नामांकन स्वीकारण्याचा निर्णय घेतला आहे\.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^तुमच्या (?<month>) (?<day>\d+), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
                     [this.#eMonths.ENGLISH]
                 ), this.#eQuery.WF_DECIDED(
                     /^तुमच्या (?<day>\d+) (?<month>), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
+                    [this.#eMonths.MARATHI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>), (?<year>\d+) तारखेला (?<title>.*) वर नामांकन करण्यासाठी वेळ दिल्याबद्दल धन्यवाद\./,
                     [this.#eMonths.MARATHI]
                 )]
             },
@@ -1096,8 +1150,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'heeft besloten om je Wayspot-nominatie wel te accepteren.',
                     'heeft besloten om je Wayspot-nominatie niet te accepteren.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Gefeliciteerd, ons team heeft besloten je Wayspot-nominatie te accepteren.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Bedankt voor je Wayspot-nominatie (?<title>.*) op (?<day>\d+)-(?<month>)-(?<year>\d+)!$/,
+                    [this.#eMonths.DUTCH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Bedankt dat je de tijd hebt genomen om (?<title>.*) te nomineren op (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
                     [this.#eMonths.DUTCH]
                 )]
             },
@@ -1133,9 +1193,15 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'zdecydowała zaakceptować nominacji Wayspotu.',
                     'zdecydowała nie przyjąć nominacji Wayspotu.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Gratulację, nasz zespół zaakceptował Twoją nominację Punktu trasy.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.POLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Dziękujemy za poświęcenie czasu na przesłanie nominacji (?<title>.*) (?<day>\d+) (?<month>) (?<year>\d+)\./,
+                    [this.#eMonths.POLISH]
                 )]
             },
 
@@ -1146,8 +1212,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'a comunidade decidiu aceitar a sua indicação de Wayspot.',
                     'a comunidade decidiu recusar a sua indicação de Wayspot.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Parabéns! Nossa equipe aceitou sua indicação de Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Agradecemos a sua indicação do Wayspot (?<title>.*) em (?<day>\d+)\/(?<month>)\/(?<year>\d+).$/,
+                    [this.#eMonths.PORTUGUESE]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Agradecemos por indicar (?<title>.*) em (?<day>\d+) de (?<month>) de (?<year>\d+)\./,
                     [this.#eMonths.PORTUGUESE]
                 )]
             },
@@ -1159,9 +1231,15 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'решило принять вашу номинацию Wayspot.',
                     'решило отклонить вашу номинацию Wayspot.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Поздравляем, наша команда решила принять вашу номинацию Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
+                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)(\.| )(?<month>)(\.| )(?<year>\d+)!$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.RUSSIAN]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Благодарим вас за то, что нашли время выдвинуть номинацию (?<title>.*) (?<day>\d+) (?<month>) (?<year>\d+) г\./,
+                    [this.#eMonths.RUSSIAN]
                 )]
             },
 
@@ -1172,8 +1250,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'har beslutat att accepteradin Wayspot-nominering.',
                     'har beslutat att inte acceptera din Wayspot-nominering.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Grattis, vårt team har beslutat att acceptera din Wayspot-nominering.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Tack för din Wayspot-nominering (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+)!$/,
+                    [this.#eMonths.SWEDISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Tack för att du tog dig tiden att nominera (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
                     [this.#eMonths.SWEDISH]
                 )]
             },
@@ -1196,11 +1280,17 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'உங்கள் Wayspot பரிந்துரையை ஏற்றுக்கொள்வதாக முடிவு செய்திருக்கிறது',
                     'உங்கள் Wayspot பரிந்துரையை நிராகரிப்பதாக முடிவு செய்திருக்கிறது'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA(
+                    'Congratulations, our team has decided to accept your Wayspot nomination',
+                    'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^நாளது தேதியில் (?<month>) (?<day>\d+), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
                     [this.#eMonths.ENGLISH]
                 ), this.#eQuery.WF_DECIDED(
                     /^நாளது தேதியில் (?<day>\d+) (?<month>), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
+                    [this.#eMonths.TAMIL]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Thank you for taking the time to nominate (?<title>.*) on (?<day>\d+) (?<month>), (?<year>\d+)\./,
                     [this.#eMonths.TAMIL]
                 )]
             },
@@ -1212,11 +1302,17 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'మీ వేస్పాట్ నామినేషన్‌ను అంగీకరించడానికి ఉండటానికి',
                     undefined //'has decided not to accept your Wayspot nomination.',
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'శుభాకాంక్షలు, మీ Wayspot నామినేషన్‌ ఆమోదించాలని మా టీమ్ నిర్ణయించింది',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
                     [this.#eMonths.ENGLISH]
                 ), this.#eQuery.WF_DECIDED(
                     /^(?<day>\d+) (?<month>), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
+                    [this.#eMonths.TELUGU]
+                ), this.#eQuery.WF_DECIDED(
+                    /^నామినేట్ చేయడానికి సమయం వెచ్చించినందుకు ధన్యవాదాలు (?<title>.*) on (?<day>\d+) (?<month>), (?<year>\d+)\./,
                     [this.#eMonths.TELUGU]
                 )]
             },
@@ -1228,8 +1324,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'ชุมชนได้ตัดสินใจ ยอมรับ Wayspot ของคุณ',
                     'ชุมชนได้ตัดสินใจ ไม่ยอมรับการ Wayspot ของคุณ'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'ขอแสดงความยินดีด้วย ทีมงานของเราได้ตัดสินใจยอมรับการเสนอ Wayspot ของคุณแล้ว',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^ขอบคุณสำหรับการเสนอสถานที่ Wayspot ของคุณ เรื่อง (?<title>.*) เมื่อวันที่ (?<day>\d+) (?<month>) (?<year>\d+)!$/,
+                    [this.#eMonths.THAI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^ขอบคุณที่สละเวลาเสนอ (?<title>.*) ในวันที่ (?<day>\d+) (?<month>) (?<year>\d+)/,
                     [this.#eMonths.THAI]
                 )]
             },
@@ -1241,11 +1343,17 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     '社群已決定 接受 Wayspot 候選地。',
                     '社群已決定 不接受你的 Wayspot 候選地。'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    '您的Wayspot提名地點已通過團隊審查，在此誠摯恭喜您！',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^感謝你在 (?<year>\d+)-(?<month>)-(?<day>\d+) 提交 Wayspot 候選 (?<title>.*)！$/,
                     [this.#eMonths.NUMERIC]
                 ), this.#eQuery.WF_DECIDED(
                     /^感謝你在 (?<year>\d+)年(?<month>)月(?<day>\d+)日 提交 Wayspot 候選 (?<title>.*)！$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^感謝您於(?<year>\d+)年(?<month>)月(?<day>\d+)日提交提名地點：(?<title>.*)。/,
                     [this.#eMonths.NUMERIC]
                 )]
             },
