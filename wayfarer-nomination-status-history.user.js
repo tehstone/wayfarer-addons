@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.6
+// @version      1.2.7
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,11 +46,11 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 16;
+    const eV1ProcessingStateVersion = 17;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 16;
-    const eV1CutoffEverything = 5;
+    const eV1CutoffParseErrors = 17;
+    const eV1CutoffEverything = 17;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -721,7 +721,9 @@
 
         #eStatusHelpers = {
             WF_DECIDED: (acceptText, rejectText) => (doc, nom, email) => {
-                const text = doc.querySelector('.em_font_20').parentNode.nextElementSibling.textContent.replaceAll(/\s+/g, ' ').trim();
+                const tn = doc.querySelector('.em_font_20').parentNode;
+                if (!tn) return null;
+                const text = tn.nextElementSibling.textContent.replaceAll(/\s+/g, ' ').trim();
                 if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
                 if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
@@ -903,8 +905,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'se rozhodla přijmout vaši nominaci na Wayspot',
                     'se rozhodla nepřijmout vaši nominaci na Wayspot'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA(
+                    'Gratulujeme, náš tým se rozhodl vaši nominaci na Wayspot přijmout.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\. ?(?<month>)\. ?(?<year>\d+)!$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^děkujeme za vaši nominaci (?<title>.*) ze dne (?<day>\d+)\. ?(?<month>)\. ?(?<year>\d+)\./,
                     [this.#eMonths.NUMERIC]
                 )]
             },
@@ -927,8 +935,14 @@
                 status: [this.#eStatusHelpers.WF_DECIDED(
                     'hat entschieden, deinen Wayspot-Vorschlag zu akzeptieren.',
                     'hat entschieden, deinen Wayspot-Vorschlag nicht zu akzeptieren.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Glückwunsch, unser Team hat entschieden, deinen Wayspot-Vorschlag zu akzeptieren.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^danke, dass du den Wayspot-Vorschlag (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) eingereicht hast.$/,
+                    /^danke, dass du den Wayspot-Vorschlag (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) eingereicht hast\.$/,
+                    [this.#eMonths.ZERO_PREFIXED]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Danke, dass du dir die Zeit genommen hast, (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) vorzuschlagen\.$/,
                     [this.#eMonths.ZERO_PREFIXED]
                 )]
             },
@@ -1281,8 +1295,8 @@
                     'உங்கள் Wayspot பரிந்துரையை ஏற்றுக்கொள்வதாக முடிவு செய்திருக்கிறது',
                     'உங்கள் Wayspot பரிந்துரையை நிராகரிப்பதாக முடிவு செய்திருக்கிறது'
                 ), this.#eStatusHelpers.WF_DECIDED_NIA(
-                    'Congratulations, our team has decided to accept your Wayspot nomination',
-                    'did not meet the criteria required to be accepted and has been rejected'
+                    'did not meet the criteria required to be accepted and has been rejected', // Actually acceptance, bugged template
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^நாளது தேதியில் (?<month>) (?<day>\d+), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
                     [this.#eMonths.ENGLISH]
@@ -1561,7 +1575,7 @@
             let except = null
             try {
                 const emlClass = email.classify();
-                if (!['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'].includes(emlClass.type)) {
+                if (!['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'].includes(emlClass.type) || ['LIGHTSHIP'].includes(emlClass.style)) {
                     returnStatus = this.#eProcessingStatus.SKIPPED;
                     reason = 'This email is either for a type of contribution that is not trackable in Niantic Wayfarer, or for content that is unrelated to Wayfarer.';
                 } else {
