@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.7
+// @version      1.2.8
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // @run-at       document-start
+// @grant        GM_info
 // ==/UserScript==
 
 // Copyright 2024 tehstone, bilde
@@ -721,23 +722,21 @@
 
         #eStatusHelpers = {
             WF_DECIDED: (acceptText, rejectText) => (doc, nom, email) => {
-                const tn = doc.querySelector('.em_font_20').parentNode;
-                if (!tn) return null;
-                const text = tn.nextElementSibling.textContent.replaceAll(/\s+/g, ' ').trim();
-                if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
-                if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                const text = doc.querySelector('.em_font_20')?.parentNode?.nextElementSibling?.textContent.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text?.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text?.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
             },
             WF_DECIDED_NIA: (acceptText, rejectText) => (doc, nom, email) => {
-                const text = doc.querySelector('.em_org_u').textContent.replaceAll(/\s+/g, ' ').trim();
-                if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
-                if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                const text = doc.querySelector('.em_org_u')?.textContent.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text?.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text?.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
             },
             WF_DECIDED_NIA_2: (acceptText, rejectText) => (doc, nom, email) => {
-                const text = doc.querySelector('.em_font_20').textContent.split('\n')[2].replaceAll(/\s+/g, ' ').trim();
-                if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
-                if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                const text = doc.querySelector('.em_font_20')?.textContent?.split('\n')[2]?.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text?.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text?.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
             },
             WF_APPEAL_DECIDED: (acceptText, rejectText) => (doc, nom) => {
@@ -942,7 +941,7 @@
                     /^danke, dass du den Wayspot-Vorschlag (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) eingereicht hast\.$/,
                     [this.#eMonths.ZERO_PREFIXED]
                 ), this.#eQuery.WF_DECIDED(
-                    /^Danke, dass du dir die Zeit genommen hast, (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) vorzuschlagen\.$/,
+                    /^Danke, dass du dir die Zeit genommen hast, (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) vorzuschlagen\./,
                     [this.#eMonths.ZERO_PREFIXED]
                 )]
             },
@@ -1067,10 +1066,10 @@
                     'Congratulazioni, il nostro team ha deciso di accettare la tua proposta di Wayspot.',
                     undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Grazie per la proposta di Wayspot (?<title>.*) in data (?<day>\d+)-(?<month>)-(?<year>\d+)\.$/,
+                    /^Grazie per la proposta di Wayspot (?<title>.*) in data (?<day>\d+)[ -](?<month>)[ -](?<year>\d+)\.$/,
                     [this.#eMonths.ITALIAN]
                 ), this.#eQuery.WF_DECIDED(
-                    /^grazie per aver trovato il tempo di inviare la tua proposta (?<title>.*) in data (?<day>\d+) (?<month>) (?<year>\d+)\.$/,
+                    /^grazie per aver trovato il tempo di inviare la tua proposta (?<title>.*) in data (?<day>\d+) (?<month>) (?<year>\d+)\./,
                     [this.#eMonths.ITALIAN]
                 )]
             },
@@ -1249,7 +1248,7 @@
                     'Поздравляем, наша команда решила принять вашу номинацию Wayspot.',
                     undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)(\.| )(?<month>)(\.| )(?<year>\d+)!$/,
+                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)[\. ](?<month>)[\. ](?<year>\d+)!$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.RUSSIAN]
                 ), this.#eQuery.WF_DECIDED(
                     /^Благодарим вас за то, что нашли время выдвинуть номинацию (?<title>.*) (?<day>\d+) (?<month>) (?<year>\d+) г\./,
@@ -1438,7 +1437,13 @@
                 createNotification(`${total} emails from Email API were processed by Nomination Status History (of which ${cUpdated} change(s), ${cUnchanged} unchanged, ${cSkipped} skipped, ${cAmbiguous} unmatched, and ${cErrors} error(s)).`, "gray");
             }
             if (errorReportingPrompt && this.#errors.length) {
-                const errors = JSON.stringify(this.#errors);
+                const errors = { errors: JSON.stringify(this.#errors) };
+                try {
+                    if (GM_info) {
+                        errors.version = GM_info.script.version;
+                    }
+                } catch (e) {
+                }
                 const anchorp = document.createElement('p');
                 const aReport = document.createElement('a');
                 aReport.textContent = 'Submit report';
