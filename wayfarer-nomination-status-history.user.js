@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.11
+// @version      1.2.12
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -47,11 +47,11 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 20;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 20;
-    const eV1CutoffEverything = 20;
+    const eV1ProcessingStateVersion = 21;
+    const eV1CutoffParseErrors = 21;
+    const eV1CutoffEverything = 21;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -1251,7 +1251,7 @@
                     /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)[\. ](?<month>)[\. ](?<year>\d+)!$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.RUSSIAN]
                 ), this.#eQuery.WF_DECIDED(
-                    /^Благодарим вас за то, что нашли время выдвинуть номинацию (?<title>.*) (?<day>\d+) (?<month>) (?<year>\d+) г\./,
+                    /^Благодарим вас за то, что нашли время выдвинуть номинацию (?<title>.*)  (?<day>\d+) (?<month>) (?<year>\d+) г\./,
                     [this.#eMonths.RUSSIAN]
                 )]
             },
