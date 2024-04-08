@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.9
+// @version      1.2.11
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -47,11 +47,11 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 18;
+    const eV1ProcessingStateVersion = 20;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 18;
-    const eV1CutoffEverything = 18;
+    const eV1CutoffParseErrors = 20;
+    const eV1CutoffEverything = 20;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -1045,7 +1045,7 @@
                     'ने को आपके Wayspot नामांकन को अस्वीकार करने का निर्णय लिया है'
                 ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
                     'बधाई हो, हमारी टीम ने आपके Wayspot नामांकन को मंज़ूरी दे दी है.',
-                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                    'खेद है कि हमारी टीम ने आपका Wayspot नामांकन नामंज़ूर कर दिया है.'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
                     [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
@@ -1140,7 +1140,7 @@
                     /^तुमच्या (?<day>\d+) (?<month>), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
                     [this.#eMonths.MARATHI]
                 ), this.#eQuery.WF_DECIDED(
-                    /^(?<day>\d+) (?<month>), (?<year>\d+) तारखेला (?<title>.*) वर नामांकन करण्यासाठी वेळ दिल्याबद्दल धन्यवाद\./,
+                    /^(?<day>\d+) (?<month>), (?<year>\d+) तारखेला (?<title>.*)  वर नामांकन करण्यासाठी वेळ दिल्याबद्दल धन्यवाद\./,
                     [this.#eMonths.MARATHI]
                 )]
             },
@@ -1437,7 +1437,7 @@
                 createNotification(`${total} emails from Email API were processed by Nomination Status History (of which ${cUpdated} change(s), ${cUnchanged} unchanged, ${cSkipped} skipped, ${cAmbiguous} unmatched, and ${cErrors} error(s)).`, "gray");
             }
             if (errorReportingPrompt && this.#errors.length) {
-                const errors = { errors: JSON.stringify(this.#errors) };
+                const errors = { errors: this.#errors };
                 try {
                     if (GM_info) {
                         errors.version = GM_info.script.version;
@@ -1459,7 +1459,7 @@
                         xhr.open('POST', 'https://api.varden.info/wft/nsh/submit-crash.php', true);
                         xhr.setRequestHeader('Content-Type', 'application/json');
                         xhr.onload = () => alert(xhr.response);
-                        xhr.send(errors);
+                        xhr.send(JSON.stringify(errors));
                     } else {
                         alert('Crash report has been discarded, and no data was submitted.');
                     }
