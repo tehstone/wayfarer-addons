@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.8
+// @version      1.2.9
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -47,11 +47,11 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 17;
+    const eV1ProcessingStateVersion = 18;
     const strictClassificationMode = true;
 
-    const eV1CutoffParseErrors = 17;
-    const eV1CutoffEverything = 17;
+    const eV1CutoffParseErrors = 18;
+    const eV1CutoffEverything = 18;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -1050,7 +1050,7 @@
                     /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
                     [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
                 ), this.#eQuery.WF_DECIDED(
-                    /^(?<day>\d+) (?<month>) (?<year>\d+) को (?<title>.*) के नामांकन के लिए आपने समय निकाला, उसके लिए आपका धन्यवाद\./,
+                    /^(?<day>\d+) (?<month>) (?<year>\d+) को (?<title>.*)  के नामांकन के लिए आपने समय निकाला, उसके लिए आपका धन्यवाद\./,
                     [this.#eMonths.HINDI]
                 )]
             },
@@ -1213,7 +1213,7 @@
                     /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.POLISH]
                 ), this.#eQuery.WF_DECIDED(
-                    /^Dziękujemy za poświęcenie czasu na przesłanie nominacji (?<title>.*) (?<day>\d+) (?<month>) (?<year>\d+)\./,
+                    /^Dziękujemy za poświęcenie czasu na przesłanie nominacji (?<title>.*)  (?<day>\d+) (?<month>) (?<year>\d+)\./,
                     [this.#eMonths.POLISH]
                 )]
             },
@@ -1366,7 +1366,7 @@
                     /^感謝你在 (?<year>\d+)年(?<month>)月(?<day>\d+)日 提交 Wayspot 候選 (?<title>.*)！$/,
                     [this.#eMonths.NUMERIC]
                 ), this.#eQuery.WF_DECIDED(
-                    /^感謝您於(?<year>\d+)年(?<month>)月(?<day>\d+)日提交提名地點：(?<title>.*)。/,
+                    /^感謝您於(?<year>\d+)年(?<month>)月(?<day>\d+)日提交提名地點：(?<title>.*)。 為了構築獨一無二的AR世界地圖，並且打造所有人都能身歷其境的冒險體驗，像您這樣的探索者是不可或缺的關鍵之一。/,
                     [this.#eMonths.NUMERIC]
                 )]
             },
