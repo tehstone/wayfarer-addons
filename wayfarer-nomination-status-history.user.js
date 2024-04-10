@@ -1036,7 +1036,7 @@
                 )]
             },
 
-            //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
+            //  ---------------------------------------- PORTUGUESE [pt] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Decisão sobre a indicação do Niantic Wayspot/,

@@ -1182,7 +1182,7 @@ function init() {
         clearMarkers() {
             this.resetViewport(true);
 
-            // Set the markers a empty array.
+            // Set the markers an empty array.
             this.markers_ = [];
         }
 
