@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.17
+// @version      1.2.18
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1173,7 +1173,7 @@
                     'Gefeliciteerd, ons team heeft besloten je Wayspot-nominatie te accepteren.',
                     undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Bedankt voor je Wayspot-nominatie (?<title>.*) op (?<day>\d+)-(?<month>)-(?<year>\d+)!$/,
+                    /^Bedankt voor je Wayspot-nominatie (?<title>.*) op (?<day>\d+)[- ](?<month>)(-|\. )(?<year>\d+)!$/,
                     [this.#eMonths.DUTCH]
                 ), this.#eQuery.WF_DECIDED(
                     /^Bedankt dat je de tijd hebt genomen om (?<title>.*) te nomineren op (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
@@ -1219,6 +1219,9 @@
                     /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.POLISH]
                 ), this.#eQuery.WF_DECIDED(
+                    /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<day>\d+) (?<month>) (?<year>\d+).$/,
+                    [this.#eMonths.POLISH]
+                ), this.#eQuery.WF_DECIDED(
                     /^Dziękujemy za poświęcenie czasu na przesłanie nominacji (?<title>.*)  (?<day>\d+) (?<month>) (?<year>\d+)\./,
                     [this.#eMonths.POLISH]
                 )]
@@ -1235,7 +1238,7 @@
                     'Parabéns! Nossa equipe aceitou sua indicação de Wayspot.',
                     undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Agradecemos a sua indicação do Wayspot (?<title>.*) em (?<day>\d+)\/(?<month>)\/(?<year>\d+).$/,
+                    /^Agradecemos a sua indicação do Wayspot (?<title>.*) em (?<day>\d+)(\/| de )(?<month>)(\/| de )(?<year>\d+).$/,
                     [this.#eMonths.PORTUGUESE]
                 ), this.#eQuery.WF_DECIDED(
                     /^Agradecemos por indicar (?<title>.*) em (?<day>\d+) de (?<month>) de (?<year>\d+)\./,
@@ -1254,7 +1257,7 @@
                     'Поздравляем, наша команда решила принять вашу номинацию Wayspot.',
                     undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)[\. ](?<month>)[\. ](?<year>\d+)!$/,
+                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)[\. ](?<month>)[\. ](?<year>\d+)( г)?!$/,
                     [this.#eMonths.ZERO_PREFIXED, this.#eMonths.RUSSIAN]
                 ), this.#eQuery.WF_DECIDED(
                     /^Благодарим вас за то, что нашли время выдвинуть номинацию (?<title>.*)  (?<day>\d+) (?<month>) (?<year>\d+) г\./,
