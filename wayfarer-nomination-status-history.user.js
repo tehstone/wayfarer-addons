@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.14
+// @version      1.2.15
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1048,6 +1048,9 @@
                     'खेद है कि हमारी टीम ने आपका Wayspot नामांकन नामंज़ूर कर दिया है.'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
+                    [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>) (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
                     [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
                 ), this.#eQuery.WF_DECIDED(
                     /^(?<day>\d+) (?<month>) (?<year>\d+) को (?<title>.*)  के नामांकन के लिए आपने समय निकाला, उसके लिए आपका धन्यवाद\./,
