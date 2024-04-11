@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.12
+// @version      1.2.13
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -49,8 +49,8 @@
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
     const strictClassificationMode = true;
 
-    const eV1ProcessingStateVersion = 21;
-    const eV1CutoffParseErrors = 21;
+    const eV1ProcessingStateVersion = 22;
+    const eV1CutoffParseErrors = 22;
     const eV1CutoffEverything = 21;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
@@ -1026,7 +1026,7 @@
                     'a décidé de ne pas accepter votre proposition de Wayspot.'
                 ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
                     'Félicitations, notre équipe a décidé d’accepter votre proposition de Wayspot.',
-                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                    'Malheureusement, l’équipe a décidé de ne pas accepter votre proposition de Wayspot.'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^Merci pour votre proposition de Wayspot (?<title>.*) le (?<day>\d+) (?<month>)\.? (?<year>\d+)\u2009!$/,
                     [this.#eMonths.FRENCH]
@@ -1339,7 +1339,7 @@
                     'ชุมชนได้ตัดสินใจ ไม่ยอมรับการ Wayspot ของคุณ'
                 ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
                     'ขอแสดงความยินดีด้วย ทีมงานของเราได้ตัดสินใจยอมรับการเสนอ Wayspot ของคุณแล้ว',
-                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                    'ขออภัย ทีมงานของเราได้ตัดสินใจที่จะไม่ยอมรับการเสนอ Wayspot ของคุณ'
                 )], image: [this.#eQuery.WF_DECIDED(
                     /^ขอบคุณสำหรับการเสนอสถานที่ Wayspot ของคุณ เรื่อง (?<title>.*) เมื่อวันที่ (?<day>\d+) (?<month>) (?<year>\d+)!$/,
                     [this.#eMonths.THAI]
