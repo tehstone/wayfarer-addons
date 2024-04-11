@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.18
+// @version      1.2.19
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1279,6 +1279,9 @@
                     /^Tack för din Wayspot-nominering (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+)!$/,
                     [this.#eMonths.SWEDISH]
                 ), this.#eQuery.WF_DECIDED(
+                    /^Tack för din Wayspot-nominering (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)!$/,
+                    [this.#eMonths.SWEDISH]
+                ), this.#eQuery.WF_DECIDED(
                     /^Tack för att du tog dig tiden att nominera (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
                     [this.#eMonths.SWEDISH]
                 )]
@@ -1290,7 +1293,10 @@
                     'Niantic har beslutat att din nominering ACCEPT ska/inte ska läggas till som en Wayspot',
                     'Niantic har beslutat att din nominering REJECT ska/inte ska läggas till som en Wayspot'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
+                    /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+)\.$/,
+                    [this.#eMonths.SWEDISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)\.$/,
                     [this.#eMonths.SWEDISH]
                 )]
             },
