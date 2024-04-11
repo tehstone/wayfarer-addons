@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.15
+// @version      1.2.16
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -1118,10 +1118,10 @@
                     '축하합니다, 귀하께서 추천하신 Wayspot 후보가 승인되었습니다\.',
                     undefined //'did not meet the criteria required to be accepted and has been rejected'
                 )], image: [this.#eQuery.WF_DECIDED(
-                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
+                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)\.?에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
                     [this.#eMonths.NUMERIC]
                 ), this.#eQuery.WF_DECIDED(
-                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)\.에 시간을 내어 (?<title>.*) \(을\)를 추천해 주셔서 감사합니다\./,
+                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)\.?에 시간을 내어 (?<title>.*) \(을\)를 추천해 주셔서 감사합니다\./,
                     [this.#eMonths.NUMERIC]
                 )]
             },
