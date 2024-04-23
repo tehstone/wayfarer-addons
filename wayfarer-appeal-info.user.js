@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.0.2
+// @version      0.0.3
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -102,7 +102,7 @@ function init() {
                 } else {
                 	appealTimestamp = parseInt(appealTimestamp);
                 	const current = Date.now();
-                	const daysUntil = Math.round(((appealTimestamp + (25 * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
+                	const daysUntil = Math.round(((appealTimestamp + (20 * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
                 	appeal.textContent = `in ~${daysUntil} days`
                 }
                 
