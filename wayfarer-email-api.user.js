@@ -154,7 +154,7 @@ WayfarerEmail.getBody (contentType: str)
     returns: str?
 
     Returns the body of the email in the given Content-Type format. Accepted values are usually one of
-    ["text/html", "text/plain"]. Returns null if the email does not have an altenative body that matches the
+    ["text/html", "text/plain"]. Returns null if the email does not have an alternative body that matches the
     requested Content-Type. This is a convenience wrapper around getMultipartAlternatives().
 
 WayfarerEmail.getMultipartAlternatives ()
