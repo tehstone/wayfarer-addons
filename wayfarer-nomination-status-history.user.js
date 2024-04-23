@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.1.3
+// @version      1.2.19
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // @run-at       document-start
+// @grant        GM_info
 // ==/UserScript==
 
 // Copyright 2024 tehstone, bilde
@@ -46,8 +47,11 @@
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
     const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
-    const eV1ProcessingStateVersion = 7;
     const strictClassificationMode = true;
+
+    const eV1ProcessingStateVersion = 22;
+    const eV1CutoffParseErrors = 22;
+    const eV1CutoffEverything = 21;
 
     let errorReportingPrompt = !localStorage.hasOwnProperty('wfnshStopAskingAboutCrashReports');
     const importCache = {};
@@ -188,6 +192,7 @@
                 const epInstance = new EmailProcessor(nominations);
                 console.log('Starting to process stored emails for history events...');
                 const start = new Date();
+                await windowRef.wft_plugins_api.emailImport.prepare();
                 await epInstance.open();
                 for await (const email of windowRef.wft_plugins_api.emailImport.iterate()) {
                     await epInstance.importEmail(email);
@@ -617,11 +622,21 @@
             },
             PGO_TYPE_1: doc => this.#tryNull(() => doc.querySelector('h2 ~ p:last-of-type').previousElementSibling.textContent.trim()),
             PGO_TYPE_2: doc => this.#tryNull(() => doc.querySelector('h2 ~ p:last-of-type').previousElementSibling.querySelector('img').src),
-            WF_DECIDED: (regex, months) => doc => {
+            WF_DECIDED: (regex, monthNames) => doc => {
                 const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-                const mr = new RegExp(regex.source.split('(?<month>)').join(`(?<month>${months.join('|')})`));
-                const match = (doc.querySelector('.em_font_20') || doc.querySelector('.em_org_u').firstChild).textContent.trim().match(mr);
-                const month = months.indexOf(match.groups.month) + 1;
+                const header = (doc.querySelector('.em_font_20') || doc.querySelector('.em_org_u').firstChild).textContent.trim();
+                let month = null;
+                let match = null;
+                for (let i = 0; i < monthNames.length; i++) {
+                    const months = monthNames[i];
+                    const mr = new RegExp(regex.source.split('(?<month>)').join(`(?<month>${months.join('|')})`));
+                    match = header.match(mr);
+                    if (match) {
+                        month = months.indexOf(match.groups.month) + 1;
+                        break;
+                    }
+                }
+                if (!match) return null;
                 const date = `${match.groups.year}-${('0' + month).slice(-2)}-${('0' + match.groups.day).slice(-2)}`;
                 // Wayfarer is in UTC, but emails are in local time. Work around this by also matching against the preceding
                 // and following dates from the one specified in the email.
@@ -633,6 +648,27 @@
                 if (candidates.length > 1) throw new NominationMatchingError(`Multiple nominations on this Wayfarer account match the title "${match.groups.title}" and submission date ${date} specified in the email.`);
                 return candidates[0].imageUrl;
             }
+        };
+
+        #eMonths = {
+            ENGLISH:        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            BENGALI:        ['জানু', 'ফেব', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'],
+            SPANISH:        ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'],
+            FRENCH:         ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc'],
+            HINDI:          ['जन॰', 'फ़र॰', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुल॰', 'अग॰', 'सित॰', 'अक्तू॰', 'नव॰', 'दिस॰'],
+            ITALIAN:        ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'],
+            DUTCH:          ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+            MARATHI:        ['जाने', 'फेब्रु', 'मार्च', 'एप्रि', 'मे', 'जून', 'जुलै', 'ऑग', 'सप्टें', 'ऑक्टो', 'नोव्हें', 'डिसें'],
+            NORWEGIAN:      ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'],
+            POLISH:         ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'],
+            PORTUGUESE:     ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
+            RUSSIAN:        ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'],
+            SWEDISH:        ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+            TAMIL:          ['ஜன.', 'பிப்.', 'மார்.', 'ஏப்.', 'மே', 'ஜூன்', 'ஜூலை', 'ஆக.', 'செப்.', 'அக்.', 'நவ.', 'டிச.'],
+            TELUGU:         ['జన', 'ఫిబ్ర', 'మార్చి', 'ఏప్రి', 'మే', 'జూన్', 'జులై', 'ఆగ', 'సెప్టెం', 'అక్టో', 'నవం', 'డిసెం'],
+            THAI:           ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
+            NUMERIC:        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            ZERO_PREFIXED:  ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
         };
 
         #eType = {
@@ -686,15 +722,21 @@
 
         #eStatusHelpers = {
             WF_DECIDED: (acceptText, rejectText) => (doc, nom, email) => {
-                const text = doc.querySelector('.em_font_20').parentNode.nextElementSibling.textContent.replaceAll(/\s+/g, ' ').trim();
-                if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
-                if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                const text = doc.querySelector('.em_font_20')?.parentNode?.nextElementSibling?.textContent.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text?.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text?.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
             },
             WF_DECIDED_NIA: (acceptText, rejectText) => (doc, nom, email) => {
-                const text = doc.querySelector('.em_org_u').textContent.replaceAll(/\s+/g, ' ').trim();
-                if (acceptText && text.includes(acceptText)) return this.#eType.ACCEPTED;
-                if (rejectText && text.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                const text = doc.querySelector('.em_org_u')?.textContent.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text?.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text?.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
+                return null;
+            },
+            WF_DECIDED_NIA_2: (acceptText, rejectText) => (doc, nom, email) => {
+                const text = doc.querySelector('.em_font_20')?.textContent?.split('\n')[2]?.replaceAll(/\s+/g, ' ').trim();
+                if (acceptText && text?.includes(acceptText)) return this.#eType.ACCEPTED;
+                if (rejectText && text?.includes(rejectText)) return this.#eType.determineRejectType(nom, email);
                 return null;
             },
             WF_APPEAL_DECIDED: (acceptText, rejectText) => (doc, nom) => {
@@ -722,40 +764,46 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot nomination decided for/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'has decided to accept your Wayspot nomination.',
                     'has decided not to accept your Wayspot nomination.'
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA(
+                    'Congratulations, our team has decided to accept your Wayspot nomination',
+                    'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Thank you for your Wayspot nomination (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)!$/,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Thank you for taking the time to nominate (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)\./,
+                    [this.#eMonths.ENGLISH]
                 )]
             },
             {
                 // Nomination decided (Wayfarer, NIA)
                 subject: /^Decision on your? Wayfarer Nomination,/,
-                status: this.#eStatusHelpers.WF_DECIDED_NIA(
-                    undefined, // Accepted - this email template has not been used for acceptances yet
+                status: [this.#eStatusHelpers.WF_DECIDED_NIA(
+                    undefined, // Accepted - this email template was never used for acceptances
                     'did not meet the criteria required to be accepted and has been rejected'
-                ), image: [this.#eQuery.WF_DECIDED(
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Thank you for taking the time to nominate (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+)\./,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH]
                 )]
             },
             {
                 // Appeal decided
                 subject: /^Your Niantic Wayspot appeal has been decided for/,
-                status: this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic has decided that your nomination should be added as a Wayspot',
                     'Niantic has decided that your nomination should not be added as a Wayspot'
-                ), image: [this.#eQuery.WF_DECIDED(
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Thank you for your Wayspot nomination appeal for (?<title>.*) on (?<month>) (?<day>\d+), (?<year>\d+).$/,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH]
                 )]
             },
             {
                 // Nomination received (Ingress)
                 subject: /^Portal submission confirmation:/,
-                status: () => this.#eType.NOMINATED,
+                status: [() => this.#eType.NOMINATED],
                 image: [this.#eQuery.IMAGE_ALT('Nomination Photo'), this.#eQuery.ING_TYPE_1, this.#eQuery.ING_TYPE_6(
                     /^Portal submission confirmation: (?<title>.*)$/
                 )]
@@ -763,19 +811,19 @@
             {
                 // Nomination decided (Ingress)
                 subject: /^Portal review complete:/,
-                status: this.#eStatusHelpers.ING_DECIDED(
+                status: [this.#eStatusHelpers.ING_DECIDED(
                     'Good work, Agent:',
                     'Excellent work, Agent.',
                     'we have decided not to accept this candidate.',
                     'your candidate is a duplicate of an existing Portal.',
                     'this candidate is too close to an existing Portal',
                     'Your candidate is a duplicate of either an existing Portal'
-                ), image: [this.#eQuery.IMAGE_ALT('Nomination Photo'), this.#eQuery.ING_TYPE_1, this.#eQuery.ING_TYPE_2, this.#eQuery.ING_TYPE_5, this.#eQuery.ING_TYPE_4]
+                )], image: [this.#eQuery.IMAGE_ALT('Nomination Photo'), this.#eQuery.ING_TYPE_1, this.#eQuery.ING_TYPE_2, this.#eQuery.ING_TYPE_5, this.#eQuery.ING_TYPE_4]
             },
             {
                 // Nomination received (Ingress Redacted)
                 subject: /^Ingress Portal Submitted:/,
-                status: () => this.#eType.NOMINATED,
+                status: [() => this.#eType.NOMINATED],
                 image: [this.#eQuery.ING_TYPE_6(
                     /^Ingress Portal Submitted: (?<title>.*)$/
                 )]
@@ -783,7 +831,7 @@
             {
                 // Nomination duplicated (Ingress Redacted)
                 subject: /^Ingress Portal Duplicate:/,
-                status: () => this.#eType.DUPLICATE,
+                status: [() => this.#eType.DUPLICATE],
                 image: [this.#eQuery.ING_TYPE_3(
                     this.#eType.DUPLICATE,
                     /^Ingress Portal Duplicate: (?<title>.*)$/
@@ -792,13 +840,13 @@
             {
                 // Nomination accepted (Ingress Redacted)
                 subject: /^Ingress Portal Live:/,
-                status: () => this.#eType.ACCEPTED,
+                status: [() => this.#eType.ACCEPTED],
                 image: [this.#eQuery.ING_TYPE_5]
             },
             {
                 // Nomination rejected (Ingress Redacted)
                 subject: /^Ingress Portal Rejected:/,
-                status: () => this.#eType.REJECTED,
+                status: [() => this.#eType.REJECTED],
                 image: [this.#eQuery.ING_TYPE_3(
                     this.#eType.REJECTED,
                     /^Ingress Portal Rejected: (?<title>.*)$/,
@@ -808,38 +856,74 @@
             {
                 // Nomination received (PoGo)
                 subject: /^Trainer [^:]+: Thank You for Nominating a PokéStop for Review.$/,
-                status: () => this.#eType.NOMINATED,
+                status: [() => this.#eType.NOMINATED],
                 image: [this.#eQuery.PGO_TYPE_1]
             },
             {
                 // Nomination accepted (PoGo)
                 subject: /^Trainer [^:]+: Your PokéStop Nomination Is Eligible!$/,
-                status: () => this.#eType.ACCEPTED,
+                status: [() => this.#eType.ACCEPTED],
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
             {
                 // Nomination rejected (PoGo)
                 subject: /^Trainer [^:]+: Your PokéStop Nomination Is Ineligible$/,
-                status: () => this.#eType.REJECTED,
+                status: [() => this.#eType.REJECTED],
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
             {
                 // Nomination duplicated (PoGo)
                 subject: /^Trainer [^:]+: Your PokéStop Nomination Review Is Complete:/,
-                status: () => this.#eType.DUPLICATE,
+                status: [() => this.#eType.DUPLICATE],
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
+            },
+
+            //  ---------------------------------------- BENGALI [bn] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /-এর জন্য Niantic Wayspot মনোনয়নের সিদ্ধান্ত নেওয়া হয়েছে/,
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে চানদ',
+                    'অনুসারে আপনার Wayspot মনোনয়ন স্বীকার করতে স্বীকার করতে চান না'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'অভিনন্দন, আমাদের দল আপনার Wayspot-এর মনোনয়ন গ্রহণ করার সিদ্ধান্ত নিয়েছেন।',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^(?<month>) (?<day>\d+), (?<year>\d+)-এ আপনার Wayspot মনোনয়ন (?<title>.*) করার জন্য আপনাকে ধন্যবাদ জানাই!$/,
+                    [this.#eMonths.ENGLISH, this.#eMonths.BENGALI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<title>.*)-কে(?<day>\d+) (?<month>), (?<year>\d+) -তে মনোয়ন করতে সময় দেওয়ার জন্য আপনাকে ধন্যবাদ।/,
+                    [this.#eMonths.BENGALI]
+                )]
             },
 
             //  ---------------------------------------- CZECH [cs] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Rozhodnutí o nominaci na Niantic Wayspot pro/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'se rozhodla přijmout vaši nominaci na Wayspot',
                     'se rozhodla nepřijmout vaši nominaci na Wayspot'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
-                    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA(
+                    'Gratulujeme, náš tým se rozhodl vaši nominaci na Wayspot přijmout.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^děkujeme za vaši nominaci na Wayspot (?<title>.*) ze dne (?<day>\d+)\. ?(?<month>)\. ?(?<year>\d+)!$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^děkujeme za vaši nominaci (?<title>.*) ze dne (?<day>\d+)\. ?(?<month>)\. ?(?<year>\d+)\./,
+                    [this.#eMonths.NUMERIC]
+                )]
+            },
+            {
+                // Appeal decided
+                subject: /^Rozhodnutí o odvolání proti nominaci na Niantic Wayspot pro/,
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                    'Niantic se rozhodla, že vaše nominace ACCEPT by měla/by neměla být přidána jako Wayspot',
+                    'Niantic se rozhodla, že vaše nominace REJECT by měla/by neměla být přidána jako Wayspot'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^děkujeme za vaše odvolání proti odmítnutí nominace na Wayspot (?<title>.*) ze dne (?<day>\d+)\. (?<month>)\. (?<year>\d+)\.$/,
+                    [this.#eMonths.NUMERIC]
                 )]
             },
 
@@ -847,64 +931,70 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Entscheidung zum Wayspot-Vorschlag/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'hat entschieden, deinen Wayspot-Vorschlag zu akzeptieren.',
                     'hat entschieden, deinen Wayspot-Vorschlag nicht zu akzeptieren.'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^danke, dass du den Wayspot-Vorschlag (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) eingereicht hast.$/,
-                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Glückwunsch, unser Team hat entschieden, deinen Wayspot-Vorschlag zu akzeptieren.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^danke, dass du den Wayspot-Vorschlag (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) eingereicht hast\.$/,
+                    [this.#eMonths.ZERO_PREFIXED]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Danke, dass du dir die Zeit genommen hast, (?<title>.*) am (?<day>\d+)\.(?<month>)\.(?<year>\d+) vorzuschlagen\./,
+                    [this.#eMonths.ZERO_PREFIXED]
                 )]
             },
             {
                 // Appeal decided
                 subject: /^Entscheidung zum Einspruch für den Wayspot/,
-                status: this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic hat entschieden, dass dein Vorschlag ein Wayspot werden sollte.',
                     'Niantic hat entschieden, dass dein Vorschlag kein Wayspot werden sollte.'
-                ), image: [this.#eQuery.WF_DECIDED(
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^danke, dass du am (?<day>\d+)\.(?<month>)\.(?<year>\d+) einen Einspruch für den Wayspot (?<title>.*) eingereicht hast.$/,
-                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                    [this.#eMonths.ZERO_PREFIXED]
                 )]
             },
             {
                 // Nomination received (Ingress)
                 subject: /^Empfangsbestätigung deines eingereichten Portalvorschlags:/,
-                status: () => this.#eType.NOMINATED,
+                status: [() => this.#eType.NOMINATED],
                 image: [this.#eQuery.IMAGE_ALT('Nomination Photo'), this.#eQuery.ING_TYPE_1]
             },
             {
                 // Nomination decided (Ingress)
                 subject: /^Überprüfung des Portals abgeschlossen:/,
-                status: this.#eStatusHelpers.ING_DECIDED(
+                status: [this.#eStatusHelpers.ING_DECIDED(
                     'Gute Arbeit, Agent!',
                     'Hervorragende Arbeit, Agent.',
                     'konnten wir deinen Vorschlag jedoch nicht annehmen.',
                     'Leider ist dieses Portal bereits vorhanden',
                     undefined //'this candidate is too close to an existing Portal.'
-                ), image: [this.#eQuery.IMAGE_ALT('Nomination Photo'), this.#eQuery.ING_TYPE_1, this.#eQuery.ING_TYPE_2]
+                )], image: [this.#eQuery.IMAGE_ALT('Nomination Photo'), this.#eQuery.ING_TYPE_1, this.#eQuery.ING_TYPE_2]
             },
             {
                 // Nomination received (PoGo)
                 subject: /^Trainer [^:]+: Danke, dass du einen PokéStop zur Überprüfung vorgeschlagen hast$/,
-                status: () => this.#eType.NOMINATED,
+                status: [() => this.#eType.NOMINATED],
                 image: [this.#eQuery.PGO_TYPE_1]
             },
             {
                 // Nomination accepted (PoGo)
                 subject: /^Trainer [^:]+: Dein vorgeschlagener PokéStop ist zulässig!$/,
-                status: () => this.#eType.ACCEPTED,
+                status: [() => this.#eType.ACCEPTED],
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
             {
                 // Nomination rejected (PoGo)
                 subject: /^Trainer [^:]+: Dein vorgeschlagener PokéStop ist nicht zulässig$/,
-                status: () => this.#eType.REJECTED,
+                status: [() => this.#eType.REJECTED],
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
             {
                 // Nomination duplicated (PoGo)
                 subject: /^Trainer [^:]+: Die Prüfung deines PokéStop-Vorschlags wurde abgeschlossen:/,
-                status: () => this.#eType.DUPLICATE,
+                status: [() => this.#eType.DUPLICATE],
                 image: [this.#eQuery.PGO_TYPE_1, this.#eQuery.PGO_TYPE_2]
             },
 
@@ -912,12 +1002,18 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Decisión tomada sobre la propuesta de Wayspot de Niantic/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'ha decidido aceptartu propuesta de Wayspot.',
                     'ha decidido no aceptar tu propuesta de Wayspot.'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^¡Gracias por tu propuesta de Wayspot (?<title>.*) enviada el (?<day>\d+)-(?<month>)-(?<year>\d+)!$/,
-                    ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Enhorabuena, nuestro equipo ha decidido aceptar tu propuesta de Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^¡Gracias por tu propuesta de Wayspot (?<title>.*) enviada el (?<day>\d+)[- ](?<month>)(-|\. )(?<year>\d+)!$/,
+                    [this.#eMonths.SPANISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Gracias por dedicar algo de tiempo para realizar tu propuesta de (?<title>.*) el (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
+                    [this.#eMonths.SPANISH]
                 )]
             },
 
@@ -925,12 +1021,18 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Résultat concernant la proposition du Wayspot Niantic/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'a décidé d’accepter votre proposition de Wayspot.',
-                    undefined //'has decided not to accept your Wayspot nomination.'
-                ), image: [this.#eQuery.WF_DECIDED(
+                    'a décidé de ne pas accepter votre proposition de Wayspot.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Félicitations, notre équipe a décidé d’accepter votre proposition de Wayspot.',
+                    'Malheureusement, l’équipe a décidé de ne pas accepter votre proposition de Wayspot.'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Merci pour votre proposition de Wayspot (?<title>.*) le (?<day>\d+) (?<month>)\.? (?<year>\d+)\u2009!$/,
-                    ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc']
+                    [this.#eMonths.FRENCH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Merci d’avoir pris le temps de nous envoyer votre proposition (?<title>.*) le (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
+                    [this.#eMonths.FRENCH]
                 )]
             },
 
@@ -938,12 +1040,21 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot का नामांकन .* के लिए तय किया गया$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'ने को आपके Wayspot नामांकन को स्वीकार करने का निर्णय लिया है',
                     'ने को आपके Wayspot नामांकन को अस्वीकार करने का निर्णय लिया है'
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'बधाई हो, हमारी टीम ने आपके Wayspot नामांकन को मंज़ूरी दे दी है.',
+                    'खेद है कि हमारी टीम ने आपका Wayspot नामांकन नामंज़ूर कर दिया है.'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>) (?<year>\d+) पर Wayspot नामांकन (?<title>.*) के लिए धन्यवाद!$/,
+                    [this.#eMonths.ENGLISH, this.#eMonths.HINDI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>) (?<year>\d+) को (?<title>.*)  के नामांकन के लिए आपने समय निकाला, उसके लिए आपका धन्यवाद\./,
+                    [this.#eMonths.HINDI]
                 )]
             },
 
@@ -951,38 +1062,67 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Proposta di Niantic Wayspot decisa per/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'Congratulazioni, la tua proposta di Wayspot è stata accettata',
                     'Sfortunatamente, la tua proposta di Wayspot è stata respinta'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^Grazie per la proposta di Wayspot (?<title>.*) in data (?<day>\d+)-(?<month>)-(?<year>\d+).$/,
-                    ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Congratulazioni, il nostro team ha deciso di accettare la tua proposta di Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^Grazie per la proposta di Wayspot (?<title>.*) in data (?<day>\d+)[ -](?<month>)[ -](?<year>\d+)\.$/,
+                    [this.#eMonths.ITALIAN]
+                ), this.#eQuery.WF_DECIDED(
+                    /^grazie per aver trovato il tempo di inviare la tua proposta (?<title>.*) in data (?<day>\d+) (?<month>) (?<year>\d+)\./,
+                    [this.#eMonths.ITALIAN]
                 )]
             },
 
-            //  ---------------------------------------- JAPANESE [jp] ----------------------------------------
+            //  ---------------------------------------- JAPANESE [ja] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'コミュニティはあなたのWayspot候補を承認しました。',
                     '不幸にも コミュニティはあなたのWayspot候補を承認しませんでした。'
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'チームでの検討の結果、あなたのお送りいただいたWayspot候補が採用されましたので、お知らせいたします。',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<year>\d+)\/(?<month>)\/(?<day>\d+)にWayspot申請「(?<title>.*)」をご提出いただき、ありがとうございました。$/,
-                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                    [this.#eMonths.ZERO_PREFIXED]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<year>\d+)\/(?<month>)\/(?<day>\d+)に「(?<title>.*)」を候補としてお送りいただき、ありがとうございました。/,
+                    [this.#eMonths.ZERO_PREFIXED]
+                )]
+            },
+            {
+                // Appeal decided
+                subject: /^Niantic Wayspot「.*」に関する申し立てが決定しました。$/,
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                    'Nianticはあなたが申請された候補をWayspotに追加する定しました。',
+                    undefined // 'Niantic has decided that your nomination should not be added as a Wayspot'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^(?<year>\d+)\/(?<month>)\/(?<day>\d+)にWayspot「(?<title>.*)」に関する申し立てをご提出いただき、ありがとうございました。$/,
+                    [this.#eMonths.ZERO_PREFIXED]
                 )]
             },
 
-            //  ---------------------------------------- KOREAN [kr] ----------------------------------------
+            //  ---------------------------------------- KOREAN [ko] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /에 대한 Niantic Wayspot 후보 결정이 완료됨$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    '제안한 Wayspot 후보를 승인했습니다',
                     '제안한 Wayspot 후보를 승인하지않았습니다 .'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^(?<year>\d+). (?<month>). (?<day>\d+)에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
-                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    '축하합니다, 귀하께서 추천하신 Wayspot 후보가 승인되었습니다\.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)\.?에 Wayspot 후보 (?<title>.*)을\(를\) 제출해 주셔서 감사드립니다!$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<year>\d+)\. (?<month>)\. (?<day>\d+)\.?에 시간을 내어 (?<title>.*) \(을\)를 추천해 주셔서 감사합니다\./,
+                    [this.#eMonths.NUMERIC]
                 )]
             },
 
@@ -990,12 +1130,35 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic वेस्पॉट नामांकन .* साठी निश्चित केले$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'तुमचे Wayspot नामांकन स्वीकारण्याचा निर्णय घेतला आहे',
                     'तुमचे Wayspot नामांकन न स्वीकारण्याचा निर्णय घेतला आहे'
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'अभिनंदन, आमच्या टीमने तुमचे Wayspot नामांकन स्वीकारण्याचा निर्णय घेतला आहे\.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^तुमच्या (?<month>) (?<day>\d+), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^तुमच्या (?<day>\d+) (?<month>), (?<year>\d+) रोजी वेस्पॉट नामांकन (?<title>.*) साठी धन्यवाद!$/,
+                    [this.#eMonths.MARATHI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>), (?<year>\d+) तारखेला (?<title>.*)  वर नामांकन करण्यासाठी वेळ दिल्याबद्दल धन्यवाद\./,
+                    [this.#eMonths.MARATHI]
+                )]
+            },
+            {
+                // Appeal decided
+                subject: /^तुमचे Niantic वेस्पॉट आवाहन .* साठी निश्चित करण्यात आले आहे$/,
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                    'Niantic ने ठरवले आहे की तुमचे नामांकन ACCEPT वेस्पॉट म्हणून जोडले जाऊ नये/नसावे',
+                    'Niantic ने ठरवले आहे की तुमचे नामांकन REJECT वेस्पॉट म्हणून जोडले जाऊ नये/नसावे'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^(?<month>) (?<day>\d+), (?<year>\d+) रोजी (?<title>.*) साठी तुमच्या वेस्पॉट नामांकन आवाहनाबद्दल धन्यवाद.$/,
+                    [this.#eMonths.ENGLISH, this.#eMonths.MARATHI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>), (?<year>\d+) रोजी (?<title>.*) साठी तुमच्या वेस्पॉट नामांकन आवाहनाबद्दल धन्यवाद.$/,
+                    [this.#eMonths.ENGLISH, this.#eMonths.MARATHI]
                 )]
             },
 
@@ -1003,12 +1166,18 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Besluit over Niantic Wayspot-nominatie voor/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'heeft besloten om je Wayspot-nominatie wel te accepteren.',
                     'heeft besloten om je Wayspot-nominatie niet te accepteren.'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^Bedankt voor je Wayspot-nominatie (?<title>.*) op (?<day>\d+)-(?<month>)-(?<year>\d+)!$/,
-                    ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Gefeliciteerd, ons team heeft besloten je Wayspot-nominatie te accepteren.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^Bedankt voor je Wayspot-nominatie (?<title>.*) op (?<day>\d+)[- ](?<month>)(-|\. )(?<year>\d+)!$/,
+                    [this.#eMonths.DUTCH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Bedankt dat je de tijd hebt genomen om (?<title>.*) te nomineren op (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
+                    [this.#eMonths.DUTCH]
                 )]
             },
 
@@ -1016,36 +1185,64 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^En avgjørelse er tatt for Niantic Wayspot-nominasjonen for/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'har valgt å godta Wayspot-nominasjonen din.',
                     'har valgt å avvise Wayspot-nominasjonen din.'
-                ), image: [this.#eQuery.WF_DECIDED(
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Takk for Wayspot-nominasjonen (?<title>.*), som du sendte inn (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
-                    ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
+                    [this.#eMonths.NORWEGIAN]
                 )]
             },
             {
                 // Appeal decided
                 subject: /^En avgjørelse er tatt for Niantic Wayspot-klagen for/,
-                status: this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic har valgt å legge til nominasjonen som en Wayspot',
                     'Niantic har valgt ikke legge til nominasjonen som en Wayspot'
-                ), image: [this.#eQuery.WF_DECIDED(
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Takk for klagen i forbindelse med Wayspot-nominasjonen (?<title>.*), som du sendte inn (?<day>\d+)\.(?<month>)\.(?<year>\d+).$/,
-                    ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des']
+                    [this.#eMonths.NORWEGIAN]
                 )]
             },
 
-            //  ---------------------------------------- PORTUGESE [pt] ----------------------------------------
+            //  ---------------------------------------- POLISH [pl] ----------------------------------------
+            {
+                // Nomination decided (Wayfarer)
+                subject: /^Podjęto decyzję na temat nominacji Wayspotu/,
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'zdecydowała zaakceptować nominacji Wayspotu.',
+                    'zdecydowała nie przyjąć nominacji Wayspotu.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Gratulację, nasz zespół zaakceptował Twoją nominację Punktu trasy.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
+                    [this.#eMonths.ZERO_PREFIXED, this.#eMonths.POLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Dziękujemy za nominowanie Wayspotu „(?<title>.*)” (?<day>\d+) (?<month>) (?<year>\d+).$/,
+                    [this.#eMonths.POLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Dziękujemy za poświęcenie czasu na przesłanie nominacji (?<title>.*)  (?<day>\d+) (?<month>) (?<year>\d+)\./,
+                    [this.#eMonths.POLISH]
+                )]
+            },
+
+            //  ---------------------------------------- PORTUGUESE [pt] ----------------------------------------
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Decisão sobre a indicação do Niantic Wayspot/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'a comunidade decidiu aceitar a sua indicação de Wayspot.',
-                    undefined //'has decided not to accept your Wayspot nomination.'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^Agradecemos a sua indicação do Wayspot (?<title>.*) em (?<day>\d+)\/(?<month>)\/(?<year>\d+).$/,
-                    ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+                    'a comunidade decidiu recusar a sua indicação de Wayspot.'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Parabéns! Nossa equipe aceitou sua indicação de Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^Agradecemos a sua indicação do Wayspot (?<title>.*) em (?<day>\d+)(\/| de )(?<month>)(\/| de )(?<year>\d+).$/,
+                    [this.#eMonths.PORTUGUESE]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Agradecemos por indicar (?<title>.*) em (?<day>\d+) de (?<month>) de (?<year>\d+)\./,
+                    [this.#eMonths.PORTUGUESE]
                 )]
             },
 
@@ -1053,12 +1250,18 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Вынесено решение по номинации Niantic Wayspot для/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'решило принять вашу номинацию Wayspot.',
                     'решило отклонить вашу номинацию Wayspot.'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)\.(?<month>)\.(?<year>\d+)!$/,
-                    ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Поздравляем, наша команда решила принять вашу номинацию Wayspot.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^Благодарим за то, что отправили номинацию Wayfarer (?<title>.*) (?<day>\d+)[\. ](?<month>)[\. ](?<year>\d+)( г)?!$/,
+                    [this.#eMonths.ZERO_PREFIXED, this.#eMonths.RUSSIAN]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Благодарим вас за то, что нашли время выдвинуть номинацию (?<title>.*)  (?<day>\d+) (?<month>) (?<year>\d+) г\./,
+                    [this.#eMonths.RUSSIAN]
                 )]
             },
 
@@ -1066,23 +1269,35 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^Niantic Wayspot-nominering har beslutats om för/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'har beslutat att accepteradin Wayspot-nominering.',
                     'har beslutat att inte acceptera din Wayspot-nominering.'
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'Grattis, vårt team har beslutat att acceptera din Wayspot-nominering.',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^Tack för din Wayspot-nominering (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+)!$/,
-                    ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+                    [this.#eMonths.SWEDISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Tack för din Wayspot-nominering (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)!$/,
+                    [this.#eMonths.SWEDISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Tack för att du tog dig tiden att nominera (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)\./,
+                    [this.#eMonths.SWEDISH]
                 )]
             },
             {
                 // Appeal decided
                 subject: /^Din Niantic Wayspot-överklagan har beslutats om för/,
-                status: this.#eStatusHelpers.WF_APPEAL_DECIDED(
+                status: [this.#eStatusHelpers.WF_APPEAL_DECIDED(
                     'Niantic har beslutat att din nominering ACCEPT ska/inte ska läggas till som en Wayspot',
-                    undefined //'Niantic has decided that your nomination should not be added as a Wayspot'
-                ), image: [this.#eQuery.WF_DECIDED(
-                    /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+).$/,
-                    ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+                    'Niantic har beslutat att din nominering REJECT ska/inte ska läggas till som en Wayspot'
+                )], image: [this.#eQuery.WF_DECIDED(
+                    /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<year>\d+)-(?<month>)-(?<day>\d+)\.$/,
+                    [this.#eMonths.SWEDISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Tack för överklagan för din Wayspot-nominering för (?<title>.*) den (?<day>\d+) (?<month>)\. (?<year>\d+)\.$/,
+                    [this.#eMonths.SWEDISH]
                 )]
             },
 
@@ -1090,12 +1305,21 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /-க்கான Niantic Wayspot பணிந்துரை பரிசீலிக்கப்பட்டது.$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'உங்கள் Wayspot பரிந்துரையை ஏற்றுக்கொள்வதாக முடிவு செய்திருக்கிறது',
-                    undefined //'has decided not to accept your Wayspot nomination.',
-                ), image: [this.#eQuery.WF_DECIDED(
+                    'உங்கள் Wayspot பரிந்துரையை நிராகரிப்பதாக முடிவு செய்திருக்கிறது'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA(
+                    'did not meet the criteria required to be accepted and has been rejected', // Actually acceptance, bugged template
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^நாளது தேதியில் (?<month>) (?<day>\d+), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^நாளது தேதியில் (?<day>\d+) (?<month>), (?<year>\d+), (?<title>.*) -க்கான Wayspot பரிந்துரைக்கு நன்றி!$/,
+                    [this.#eMonths.TAMIL]
+                ), this.#eQuery.WF_DECIDED(
+                    /^Thank you for taking the time to nominate (?<title>.*) on (?<day>\d+) (?<month>), (?<year>\d+)\./,
+                    [this.#eMonths.TAMIL]
                 )]
             },
 
@@ -1103,12 +1327,21 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /కొరకు Niantic వేస్పాట్ నామినేషన్‌‌పై నిర్ణయం$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     'మీ వేస్పాట్ నామినేషన్‌ను అంగీకరించడానికి ఉండటానికి',
                     undefined //'has decided not to accept your Wayspot nomination.',
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'శుభాకాంక్షలు, మీ Wayspot నామినేషన్‌ ఆమోదించాలని మా టీమ్ నిర్ణయించింది',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^(?<month>) (?<day>\d+), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
-                    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    [this.#eMonths.ENGLISH]
+                ), this.#eQuery.WF_DECIDED(
+                    /^(?<day>\d+) (?<month>), (?<year>\d+) తేదీన మీరు అందించిన వేస్పాట్ నామినేషన్ (?<title>.*) ను బట్టి ధన్యవాదాలు!$/,
+                    [this.#eMonths.TELUGU]
+                ), this.#eQuery.WF_DECIDED(
+                    /^నామినేట్ చేయడానికి సమయం వెచ్చించినందుకు ధన్యవాదాలు (?<title>.*) on (?<day>\d+) (?<month>), (?<year>\d+)\./,
+                    [this.#eMonths.TELUGU]
                 )]
             },
 
@@ -1116,12 +1349,18 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^ผลการตัดสินการเสนอสถานที่ Niantic Wayspot สำหรับ/,
-                status: this.#eStatusHelpers.WF_DECIDED(
-                    undefined, //'has decided to accept your Wayspot nomination.',
+                status: [this.#eStatusHelpers.WF_DECIDED(
+                    'ชุมชนได้ตัดสินใจ ยอมรับ Wayspot ของคุณ',
                     'ชุมชนได้ตัดสินใจ ไม่ยอมรับการ Wayspot ของคุณ'
-                ), image: [this.#eQuery.WF_DECIDED(
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    'ขอแสดงความยินดีด้วย ทีมงานของเราได้ตัดสินใจยอมรับการเสนอ Wayspot ของคุณแล้ว',
+                    'ขออภัย ทีมงานของเราได้ตัดสินใจที่จะไม่ยอมรับการเสนอ Wayspot ของคุณ'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^ขอบคุณสำหรับการเสนอสถานที่ Wayspot ของคุณ เรื่อง (?<title>.*) เมื่อวันที่ (?<day>\d+) (?<month>) (?<year>\d+)!$/,
-                    ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+                    [this.#eMonths.THAI]
+                ), this.#eQuery.WF_DECIDED(
+                    /^ขอบคุณที่สละเวลาเสนอ (?<title>.*) ในวันที่ (?<day>\d+) (?<month>) (?<year>\d+)/,
+                    [this.#eMonths.THAI]
                 )]
             },
 
@@ -1129,12 +1368,21 @@
             {
                 // Nomination decided (Wayfarer)
                 subject: /^社群已對 Niantic Wayspot 候選 .* 做出決定$/,
-                status: this.#eStatusHelpers.WF_DECIDED(
+                status: [this.#eStatusHelpers.WF_DECIDED(
                     '社群已決定 接受 Wayspot 候選地。',
-                    undefined //'has decided not to accept your Wayspot nomination.'
-                ), image: [this.#eQuery.WF_DECIDED(
+                    '社群已決定 不接受你的 Wayspot 候選地。'
+                ), this.#eStatusHelpers.WF_DECIDED_NIA_2(
+                    '您的Wayspot提名地點已通過團隊審查，在此誠摯恭喜您！',
+                    undefined //'did not meet the criteria required to be accepted and has been rejected'
+                )], image: [this.#eQuery.WF_DECIDED(
                     /^感謝你在 (?<year>\d+)-(?<month>)-(?<day>\d+) 提交 Wayspot 候選 (?<title>.*)！$/,
-                    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^感謝你在 (?<year>\d+)年(?<month>)月(?<day>\d+)日 提交 Wayspot 候選 (?<title>.*)！$/,
+                    [this.#eMonths.NUMERIC]
+                ), this.#eQuery.WF_DECIDED(
+                    /^感謝您於(?<year>\d+)年(?<month>)月(?<day>\d+)日提交提名地點：(?<title>.*)。 為了構築獨一無二的AR世界地圖，並且打造所有人都能身歷其境的冒險體驗，像您這樣的探索者是不可或缺的關鍵之一。/,
+                    [this.#eMonths.NUMERIC]
                 )]
             },
         ];
@@ -1173,11 +1421,11 @@
                         ? JSON.parse(localStorage.wfnshV1ProcessedEmailStates)
                         : { version: eV1ProcessingStateVersion, states: {} };
                     this.#messageStatus = eV1State.states;
-                    if (eV1State.version < 5) {
+                    if (eV1State.version < eV1CutoffEverything) {
                         this.#messageStatus = {};
                     }
                     const stateKeys = Object.keys(this.#messageStatus);
-                    if (eV1State.version < 7) {
+                    if (eV1State.version < eV1CutoffParseErrors) {
                         for (let i = 0; i < stateKeys.length; i++) {
                             // Reprocess old failures due to bugfixes and template additions
                             if (this.#messageStatus[stateKeys[i]] == this.#eProcessingStatus.UNSUPPORTED) delete this.#messageStatus[stateKeys[i]];
@@ -1204,7 +1452,13 @@
                 createNotification(`${total} emails from Email API were processed by Nomination Status History (of which ${cUpdated} change(s), ${cUnchanged} unchanged, ${cSkipped} skipped, ${cAmbiguous} unmatched, and ${cErrors} error(s)).`, "gray");
             }
             if (errorReportingPrompt && this.#errors.length) {
-                const errors = JSON.stringify(this.#errors);
+                const errors = { errors: this.#errors };
+                try {
+                    if (GM_info) {
+                        errors.version = GM_info.script.version;
+                    }
+                } catch (e) {
+                }
                 const anchorp = document.createElement('p');
                 const aReport = document.createElement('a');
                 aReport.textContent = 'Submit report';
@@ -1220,7 +1474,7 @@
                         xhr.open('POST', 'https://api.varden.info/wft/nsh/submit-crash.php', true);
                         xhr.setRequestHeader('Content-Type', 'application/json');
                         xhr.onload = () => alert(xhr.response);
-                        xhr.send(errors);
+                        xhr.send(JSON.stringify(errors));
                     } else {
                         alert('Crash report has been discarded, and no data was submitted.');
                     }
@@ -1341,7 +1595,7 @@
             let except = null
             try {
                 const emlClass = email.classify();
-                if (!['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'].includes(emlClass.type)) {
+                if (!['NOMINATION_RECEIVED', 'NOMINATION_DECIDED', 'APPEAL_RECEIVED', 'APPEAL_DECIDED'].includes(emlClass.type) || ['LIGHTSHIP'].includes(emlClass.style)) {
                     returnStatus = this.#eProcessingStatus.SKIPPED;
                     reason = 'This email is either for a type of contribution that is not trackable in Niantic Wayfarer, or for content that is unrelated to Wayfarer.';
                 } else {
@@ -1350,12 +1604,12 @@
                     let template = null;
                     if (emlClass.style == 'WAYFARER' && emlClass.type == 'NOMINATION_RECEIVED') {
                         template = {
-                            status: () => this.#eType.NOMINATED,
+                            status: [() => this.#eType.NOMINATED],
                             image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
                         };
                     } else if (emlClass.style == 'WAYFARER' && emlClass.type == 'APPEAL_RECEIVED') {
                         template = {
-                            status: () => this.#eType.APPEALED,
+                            status: [() => this.#eType.APPEALED],
                             image: [this.#eQuery.IMAGE_ALT('Submission Photo')]
                         };
                     } else {
@@ -1385,7 +1639,10 @@
                     if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
                     const [nom] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
                     if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
-                    const status = template.status(doc, nom, email);
+                    let status = null;
+                    for (let k = 0; k < template.status.length && status === null; k++) {
+                        status = template.status[k](doc, nom, email);
+                    }
                     if (!status) throw new MissingDataError('Unable to determine the status change that this email represents.');
                     change = {
                         title: nom.title,
