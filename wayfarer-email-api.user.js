@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Email Import API
-// @version      1.1.9
+// @version      2.1.0
 // @description  API for importing Wayfarer-related emails and allowing other scripts to read and parse them
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-email-api.user.js
@@ -34,6 +34,14 @@
 
 The API is available under: window.wft_plugins_api.emailImport
 
+API.prepare ()
+    returns: Promise
+    \- resolves: undefined
+
+    Prepares the API for usage by another script. This function must be called before other scripts open IDB
+    connections. It serves to ensure that the importedEmails object store exists in the database before usage to
+    avoid deadlocks with API consumers which also use IDB connections.
+
 API.get (id: str)
     returns: Promise
     |- resolves: WayfarerEmail
@@ -43,8 +51,12 @@ API.get (id: str)
     if the email database could not be opened. In the former case nothing is returned, in the latter case,
     an Error is returned by the promise.
 
+    Before calling this function, API.prepare() must have been called and awaited at least once to avoid
+    deadlocks. Otherwise, an error is thrown.
+
 API.iterate async* ()
     yields: WayfarerEmail
+    throws: Error
 
     Returns an asynchronous generator that iterates over all emails that have been imported to the local
     database. The generator must be fully iterated, otherwise the database will not be closed!
@@ -53,6 +65,9 @@ API.iterate async* ()
     for await (const email of API.iterate()) {
         console.log('Processing email', email);
     }
+
+    Before calling this function, API.prepare() must have been called and awaited at least once to avoid
+    deadlocks. Otherwise, an error is thrown.
 
 API.addListener (id: str, listener: object)
     returns: undefined
@@ -179,6 +194,7 @@ WayfarerEmail.display ()
     const OBJECT_STORE_NAME = 'importedEmails';
     const apiEventListeners = {};
     const DEBUGGING_MODE = false;
+    let isPrepared = false;
 
     // Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
     (function (open) {
@@ -243,20 +259,39 @@ WayfarerEmail.display ()
     });
 
     const selfAPI = {
-        get: id => new Promise((resolve, reject) => getIDBInstance().then(db => {
-            const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
-            tx.oncomplete = event => db.close();
-            const objectStore = tx.objectStore(OBJECT_STORE_NAME);
-            const getEmail = objectStore.get(id);
-            getEmail.onsuccess = () => {
-                const { result } = getEmail;
-                if (result) resolve(new WayfarerEmail(result));
-                else reject();
-            };
-            getEmail.onerror = () => reject(getEmail.error);
-        })),
+        prepare: () => new Promise((resolve, reject) => {
+            if (!isPrepared) {
+                getIDBInstance().then(db => {
+                    // Ensure that the importedEmails object store exists to avoid deadlocks.
+                    console.log('Email API is preparing...');
+                    db.close();
+                    isPrepared = true;
+                    console.log('Email API is now ready for use.');
+                    resolve();
+                });
+            } else {
+                resolve();
+            }
+        }),
+
+        get: id => new Promise((resolve, reject) => {
+            if (!isPrepared) throw new Error('Attempted usage of Email API .get() before invocation of .prepare()');
+            getIDBInstance().then(db => {
+                const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
+                tx.oncomplete = event => db.close();
+                const objectStore = tx.objectStore(OBJECT_STORE_NAME);
+                const getEmail = objectStore.get(id);
+                getEmail.onsuccess = () => {
+                    const { result } = getEmail;
+                    if (result) resolve(new WayfarerEmail(result));
+                    else reject();
+                };
+                getEmail.onerror = () => reject(getEmail.error);
+            })
+        }),
 
         iterate: async function*() {
+            if (!isPrepared) throw new Error('Attempted usage of Email API .iterate() before invocation of .prepare()');
             for await (const obj of iterateIDBCursor()) {
                 yield new WayfarerEmail(obj);
             }
@@ -1293,6 +1328,12 @@ td:first-child {
                 language: 'bn'
             },
             {
+                subject: /-এর জন্য Niantic Wayspot মনোনয়নের সিদ্ধান্ত নেওয়া হয়েছে/,
+                type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'bn'
+            },
+            {
                 subject: /^ধন্যবাদ! .*( |-)এর জন্য Niantic Wayspot Photo পাওয়া গিয়েছে!$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
@@ -1338,6 +1379,18 @@ td:first-child {
             {
                 subject: /^Rozhodnutí o nominaci na Niantic Wayspot pro/,
                 type: 'NOMINATION_DECIDED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Děkujeme! Přijali jsme odvolání proti odmítnutí Niantic Wayspotu/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'cs'
+            },
+            {
+                subject: /^Rozhodnutí o odvolání proti nominaci na Niantic Wayspot pro/,
+                type: 'APPEAL_DECIDED',
                 style: 'WAYFARER',
                 language: 'cs'
             },
@@ -1664,6 +1717,12 @@ td:first-child {
                 language: 'hi'
             },
             {
+                subject: /^धन्यवाद! .* के लिए Niantic Wayspot Photo प्राप्त हुआ!$/,
+                type: 'PHOTO_RECEIVED',
+                style: 'WAYFARER',
+                language: 'hi',
+            },
+            {
                 subject: /^धन्यवाद! .* के लिए Niantic Wayspot संपादन सुझाव प्राप्त हुआ!$/,
                 disambiguate: email => {
                     const doc = email.getDocument();
@@ -1752,103 +1811,115 @@ td:first-child {
                 style: 'WAYFARER',
                 language: 'it'
             },
-            //  ---------------------------------------- JAPANESE [jp] ----------------------------------------
+            //  ---------------------------------------- JAPANESE [ja] ----------------------------------------
             {
                 subject: /^ありがとうございます。 Niantic Wayspotの申請「.*」が受領されました。$/,
                 type: 'NOMINATION_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotの申請「.*」が決定しました。$/,
                 type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
+            },
+            {
+                subject: /^ありがとうございます。 Niantic Wayspotに関する申し立て「.*」が受領されました。$/,
+                type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'ja'
+            },
+            {
+                subject: /^Niantic Wayspot「.*」に関する申し立てが決定しました。$/,
+                type: 'APPEAL_DECIDED',
+                style: 'WAYFARER',
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspot Photo「.*」が受領されました。$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotのメディア申請「.*」が決定しました。$/,
                 type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspot「.*」の編集提案が受領されました。$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotの編集提案「.*」が決定しました。$/,
                 type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^ありがとうございます。 Niantic Wayspotに関する報告「.*」が受領されました。$/,
                 type: 'REPORT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
             {
                 subject: /^Niantic Wayspotの報告「.*」が決定しました$/,
                 type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
-                language: 'jp'
+                language: 'ja'
             },
-            //  ---------------------------------------- KOREAN [kr] ----------------------------------------
+            //  ---------------------------------------- KOREAN [ko] ----------------------------------------
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 후보 신청이 완료되었습니다!$/,
                 type: 'NOMINATION_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 후보 결정이 완료됨$/,
                 type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot Photo 제출 완료$/,
                 type: 'PHOTO_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 미디어 제안 결정 완료$/,
                 type: 'PHOTO_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 수정이 제안되었습니다!$/,
                 type: 'EDIT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 수정 제안 결정 완료$/,
                 type: 'EDIT_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /^감사합니다! .*에 대한 Niantic Wayspot 보고 접수$/,
                 type: 'REPORT_RECEIVED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             {
                 subject: /에 대한 Niantic Wayspot 보고 결정 완료$/,
                 type: 'REPORT_DECIDED',
                 style: 'WAYFARER',
-                language: 'kr'
+                language: 'ko'
             },
             //  ---------------------------------------- MARATHI [mr] ----------------------------------------
             {
@@ -1866,6 +1937,12 @@ td:first-child {
             {
                 subject: /^धन्यवाद! Niantic वेस्पॉट आवाहन .* साठी प्राप्त झाले!$/,
                 type: 'APPEAL_RECEIVED',
+                style: 'WAYFARER',
+                language: 'mr'
+            },
+            {
+                subject: /^तुमचे Niantic वेस्पॉट आवाहन .* साठी निश्चित करण्यात आले आहे$/,
+                type: 'APPEAL_DECIDED',
                 style: 'WAYFARER',
                 language: 'mr'
             },
@@ -2019,6 +2096,12 @@ td:first-child {
             {
                 subject: /^Dziękujemy! Odebrano nominację Wayspotu/,
                 type: 'NOMINATION_RECEIVED',
+                style: 'WAYFARER',
+                language: 'pl'
+            },
+            {
+                subject: /^Podjęto decyzję na temat nominacji Wayspotu/,
+                type: 'NOMINATION_DECIDED',
                 style: 'WAYFARER',
                 language: 'pl'
             },
