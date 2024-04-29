@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.2.0
+// @version      0.2.1
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -414,7 +414,10 @@
             return "";
         } else if (!review.quality) {
             let rejections = ['❌ Rejected for:'];
-            review.rejectReasons.forEach(r => {
+            if (review["duplicate"]) {
+                rejections.push("duplicate");
+            } else {
+                review.rejectReasons.forEach(r => {
                 let rejectionText = l10n[`reject.reason.${r.toLowerCase()}.short`];
                 if (rejectionText === undefined || rejectionText === "") {
                     if (r in REJECTION_MAPPINGS) {
@@ -425,6 +428,7 @@
                 }
                 rejections.push(rejectionText);
             })
+            }
             return rejections.join("<br />");
         } else {
             return `
