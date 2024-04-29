@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.2.19
+// @version      1.3.1
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -10,7 +10,7 @@
 // @grant        GM_info
 // ==/UserScript==
 
-// Copyright 2024 tehstone, bilde
+// Copyright 2024 tehstone, bilde, Tntnnbltn
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -218,69 +218,76 @@
             let box = null;
             nominations.forEach(nom => { nomCache[nom.imageUrl] = nom.id; });
             ref.addEventListener('click', e => {
+                // Ensure there is only one selection box.
+                var elements = document.querySelectorAll('.wfnshDropdown');
+                if (elements.length > 0) {
+                    elements.forEach(function(element) {
+                        element.remove();
+                    });
+                }
                 const item = e.target.closest('app-nominations-list-item');
                 if (item) {
-                    // Get the nomination ID from the previously built map.
-                    const nomId = nomCache[item.querySelector('img').src];
-                    awaitElement(() => document.querySelector(nomDateSelector)).then(ref => {
-                        // Ensure there is only one selection box.
-                        if (box) box.parentElement.removeChild(box);
-                        box = document.createElement('div');
-                        box.classList.add('wfnshDropdown');
-                        const leftBox = document.createElement('a');
-                        leftBox.classList.add('wfnshDDLeftBox');
-                        leftBox.textContent = '\u25b6';
-                        box.appendChild(leftBox);
-                        const rightBox = document.createElement('div');
-                        rightBox.classList.add('wfnshDDRightBox');
-                        box.appendChild(rightBox);
+                    // hopefully this index is constant and never changes? i don't see a better way to access it
+                    const nomId = item["__ngContext__"][22].id
+                    if (nomId) {
+                        awaitElement(() => document.querySelector(nomDateSelector)).then(ref => {
+                            box = document.createElement('div');
+                            box.classList.add('wfnshDropdown');
+                            const leftBox = document.createElement('a');
+                            leftBox.classList.add('wfnshDDLeftBox');
+                            leftBox.textContent = '\u25b6';
+                            box.appendChild(leftBox);
+                            const rightBox = document.createElement('div');
+                            rightBox.classList.add('wfnshDDRightBox');
+                            box.appendChild(rightBox);
 
-                        const oneLine = document.createElement('p');
-                        oneLine.classList.add('wfnshOneLine');
-                        rightBox.appendChild(oneLine);
-                        const textbox = document.createElement('div');
-                        textbox.classList.add('wfnshInner');
-                        rightBox.appendChild(textbox);
+                            const oneLine = document.createElement('p');
+                            oneLine.classList.add('wfnshOneLine');
+                            rightBox.appendChild(oneLine);
+                            const textbox = document.createElement('div');
+                            textbox.classList.add('wfnshInner');
+                            rightBox.appendChild(textbox);
 
-                        let collapsed = true;
-                        box.addEventListener('click', e => {
-                            e.preventDefault();
-                            oneLine.style.display = collapsed ? 'none' : 'block';
-                            textbox.style.display = collapsed ? 'block' : 'none';
-                            leftBox.textContent = collapsed ? '\u25bc' : '\u25b6';
-                            collapsed = !collapsed;
-                            return false;
-                        });
+                            let collapsed = true;
+                            box.addEventListener('click', e => {
+                                e.preventDefault();
+                                oneLine.style.display = collapsed ? 'none' : 'block';
+                                textbox.style.display = collapsed ? 'block' : 'none';
+                                leftBox.textContent = collapsed ? '\u25bc' : '\u25b6';
+                                collapsed = !collapsed;
+                                return false;
+                            });
 
-                        ref.parentNode.appendChild(box);
-                        // Don't populate the dropdown until the nomination change detection has run successfully.
-                        // That process sets ready = true when done. If it was already ready, then this will
-                        // continue immediately. When ready, that means the previous connection was closed, so we
-                        // open a new connection here to fetch data for the selected nomination.
-                        awaitElement(() => ready).then(() => getIDBInstance()).then(db => {
-                            const objectStore = db.transaction([OBJECT_STORE_NAME], "readonly").objectStore(OBJECT_STORE_NAME);
-                            const getNom = objectStore.get(nomId);
-                            getNom.onsuccess = () => {
-                                const { result } = getNom;
-                                // Create an option for initial nomination; this may not be stored in the IDB history,
-                                // so we need to handle this as a special case here.
-                                if (!result.statusHistory.length || result.statusHistory[0].status !== 'NOMINATED') {
-                                    oneLine.textContent = result.day + ' - Nominated';
-                                    const nomDateLine = document.createElement('p');
-                                    nomDateLine.textContent = result.day + ' - Nominated';
-                                    textbox.appendChild(nomDateLine);
+                            ref.parentNode.appendChild(box);
+                            // Don't populate the dropdown until the nomination change detection has run successfully.
+                            // That process sets ready = true when done. If it was already ready, then this will
+                            // continue immediately. When ready, that means the previous connection was closed, so we
+                            // open a new connection here to fetch data for the selected nomination.
+                            awaitElement(() => ready).then(() => getIDBInstance()).then(db => {
+                                const objectStore = db.transaction([OBJECT_STORE_NAME], "readonly").objectStore(OBJECT_STORE_NAME);
+                                const getNom = objectStore.get(nomId);
+                                getNom.onsuccess = () => {
+                                    const { result } = getNom;
+                                    // Create an option for initial nomination; this may not be stored in the IDB history,
+                                    // so we need to handle this as a special case here.
+                                    if (!result.statusHistory.length || result.statusHistory[0].status !== 'NOMINATED') {
+                                        oneLine.textContent = result.day + ' - Nominated';
+                                        const nomDateLine = document.createElement('p');
+                                        nomDateLine.textContent = result.day + ' - Nominated';
+                                        textbox.appendChild(nomDateLine);
+                                    }
+                                    // Then, add options for each entry in the history.
+                                    let previous = null;
+                                    result.statusHistory.forEach(({ timestamp, status, verified, email }) => {
+                                        addEventToHistoryDisplay(box, timestamp, status, verified, email, previous);
+                                        previous = status;
+                                    });
+                                    // Clean up when we're done.
+                                    db.close();
                                 }
-                                // Then, add options for each entry in the history.
-                                let previous = null;
-                                result.statusHistory.forEach(({ timestamp, status, verified, email }) => {
-                                    addEventToHistoryDisplay(box, timestamp, status, verified, email, previous);
-                                    previous = status;
-                                });
-                                // Clean up when we're done.
-                                db.close();
-                            }
+                            });
                         });
-                    });
+                    }
                 }
             });
         });
@@ -399,7 +406,13 @@
                 createNotification(`${missingCount} of ${userNominationCount} nominations are missing!`, "red");
             }
 
-            let newCount = 0;
+            let newCount = {
+                NOMINATION: 0,
+                EDIT_TITLE: 0,
+                EDIT_DESCRIPTION: 0,
+                EDIT_LOCATION: 0,
+                PHOTO: 0
+            }
             let importCount = 0;
             nominations.forEach(nom => {
                 if (nom.id in savedNominations) {
@@ -415,18 +428,23 @@
                     if (nom.status != saved.status) {
                         history.push({ timestamp: Date.now(), status: nom.status });
                         // For most status updates, it's also desired to send a notification to the user.
-                        if (nom.status !== 'HELD' && saved.status !== 'HELD') {
+                        if (nom.status !== 'HELD' && !(nom.status === 'NOMINATED' && saved.status === 'HELD')) {
                             const { text, color } = getStatusNotificationText(nom.status);
-                            createNotification(`${nom.title} ${text}`, color);
+                            const title = nom.title || (nom.poiData && nom.poiData.title) || "[Title]";
+                            const icon = createNotificationIcon(nom.type);
+                            createNotification(`${title} ${text}`, color, icon);
                         }
                     }
-                    // Filter out irrelevant fields that we don't need store.
+                    // Filter out irrelevant fields that we don't need to store.
                     // Only retain fields from savedFields before we put it in IDB
                     const toSave = filterObject(nom, savedFields);
+                    if (nom.poiData) {
+                        toSave.poiData = { ...nom.poiData };
+                    }
                     objectStore.put({ ...toSave, statusHistory: history, userHash });
                 } else {
                     // Nomination DOES NOT EXIST in IDB yet
-                    newCount++;
+                    newCount[nom.type]++;
                     // Maybe it has WFES history? Check. This returns an empty array if not.
                     const history = importWFESHistoryFor(nom.id);
                     if (history.length) importCount++;
@@ -440,23 +458,35 @@
                     }
                     // Filter out irrelevant fields that we don't need store.
                     // Only retain fields from savedFields before we put it in IDB
-                    const toSave = filterObject(nom, savedFields);
+                    let toSave = filterObject(nom, savedFields);
+                    if (nom.poiData) {
+                        toSave.poiData = { ...nom.poiData };
+                    }
                     objectStore.put({ ...toSave, statusHistory: history, userHash });
                 }
             });
             // Commit all changes. (And close the database connection due to tx.oncomplete.)
             tx.commit();
-            if (newCount > 0) {
-                let suffix = '';
-                if (newCount > 1) {
-                    suffix = 's';
+            const actionTypes = ['NOMINATION', 'EDIT_TITLE', 'EDIT_DESCRIPTION', 'EDIT_LOCATION', 'PHOTO'];
+
+            const messageTypeMapping = {
+                'NOMINATION': (importCount) => newCount.NOMINATION > 0 ?
+                (importCount > 0 ?
+                 `Found ${newCount.NOMINATION} new nomination${newCount.NOMINATION > 1 ? 's' : ''} in the list, of which ${importCount} had its history imported from WFES Nomination Notify.` :
+                 `Found ${newCount.NOMINATION} new nomination${newCount.NOMINATION > 1 ? 's' : ''} in the list!`) :
+                '',
+                'EDIT_TITLE': () => newCount.EDIT_TITLE > 0 ? `Found ${newCount.EDIT_TITLE} new title edit${newCount.EDIT_TITLE > 1 ? 's' : ''} in the list!` : '',
+                'EDIT_DESCRIPTION': () => newCount.EDIT_DESCRIPTION > 0 ? `Found ${newCount.EDIT_DESCRIPTION} new description edit${newCount.EDIT_DESCRIPTION > 1 ? 's' : ''} in the list!` : '',
+                'EDIT_LOCATION': () => newCount.EDIT_LOCATION > 0 ? `Found ${newCount.EDIT_LOCATION} new location edit${newCount.EDIT_LOCATION > 1 ? 's' : ''} in the list!` : '',
+                'PHOTO': () => newCount.PHOTO > 0 ? `Found ${newCount.PHOTO} new photo${newCount.PHOTO > 1 ? 's' : ''} in the list!` : ''
+            };
+
+            actionTypes.forEach(actionType => {
+                const message = messageTypeMapping[actionType](importCount);
+                if (message) {
+                    createNotification(message, 'gray', createNotificationIcon(actionType));
                 }
-                if (importCount > 0) {
-                    createNotification(`Found ${newCount} new nomination${suffix} in the list, of which ${importCount} had its history imported from WFES Nomination Notify.`, 'green');
-                } else {
-                    createNotification(`Found ${newCount} new nomination${suffix} in the list!`, 'green');
-                }
-            }
+            });
         }
     };
 
@@ -498,6 +528,11 @@
                 text = 'was accepted!';
                 color = 'green';
                 break;
+            case 'NOMINATED':
+                // This is only generated when it used to have a status other than hold
+                text = 'returned to the queue!';
+                color = 'brown';
+                break;
             case 'REJECTED':
                 text = 'was rejected!';
                 color = 'red';
@@ -514,6 +549,10 @@
                 text = 'went into Niantic review!';
                 color = 'blue';
                 break;
+            case 'APPEALED':
+                text = 'was appealed!';
+                color = 'purple';
+                break;
             default:
                 text = `: unknown status: ${status}`;
                 color = 'red';
@@ -521,6 +560,35 @@
         }
         return { text, color };
     };
+
+        const createNotificationIcon = (type) => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("version", "1.1");
+        svg.setAttribute("viewBox", "0 0 512 512");
+        svg.setAttribute("xml:space", "preserve");
+        svg.setAttribute("width", "20");
+        svg.setAttribute("height", "20");
+        switch (type) {
+            case 'NOMINATION':
+                svg.innerHTML = `<g transform="matrix(5.5202 0 0 5.5202 7.5948 7.5921)"><path d="m45 0c-19.537 0-35.375 15.838-35.375 35.375 0 8.722 3.171 16.693 8.404 22.861l26.971 31.764 26.97-31.765c5.233-6.167 8.404-14.139 8.404-22.861 1e-3 -19.536-15.837-35.374-35.374-35.374zm0 48.705c-8.035 0-14.548-6.513-14.548-14.548s6.513-14.548 14.548-14.548 14.548 6.513 14.548 14.548-6.513 14.548-14.548 14.548z" fill="#ffffff" stroke-linecap="round"/></g>`
+                break;
+            case 'PHOTO':
+                svg.innerHTML = `<path d="m190.39 84.949c-6.6975 5.26e-4 -12.661 4.2407-14.861 10.566l-16.951 48.736h-86.783c-16.463 8e-5 -29.807 13.346-29.807 29.809v221.27c-1.31e-4 17.518 14.201 31.719 31.719 31.719h360.38c19.84 1.8e-4 35.922-16.084 35.922-35.924v-215.54c5.2e-4 -17.307-14.029-31.337-31.336-31.338h-86.865l-16.549-48.605c-2.1787-6.3967-8.1858-10.698-14.943-10.697h-129.92zm224.45 102.69c12.237 5.2e-4 22.156 9.8009 22.156 21.889 3.9e-4 12.088-9.9185 21.888-22.156 21.889-12.238 5.4e-4 -22.161-9.7994-22.16-21.889 7e-4 -12.088 9.9224-21.889 22.16-21.889zm-158.85 30.947c37.042-8.9e-4 67.071 30.028 67.07 67.07-1.9e-4 37.042-30.029 67.069-67.07 67.068-37.041-1.8e-4 -67.07-30.028-67.07-67.068-8.9e-4 -37.041 30.029-67.07 67.07-67.07z" fill="#ffffff" />`;
+                break;
+            case 'EDIT_LOCATION':
+                svg.innerHTML = `<path d="m275.28 191.57-37.927 265.39-182.75-401.92zm182.12 46.046-274.31 38.177-128.26-220.75z" stroke-linecap="round" stroke-linejoin="round" fill="#ffffff" stroke="#ffffff" stroke-width="26.07"/>`;
+                break;
+            case 'EDIT_TITLE':
+                svg.innerHTML = `<path d="m15.116 412.39v84.373h84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m496.66 412.24v84.373h-84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m14.915 100.07v-84.373h84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m496.46 100.22v-84.373h-84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m81.232 82.633v142.8l29.4 1.4004c1.2444-20.844 3.4221-38.112 6.5332-51.801 3.4222-14 7.7775-25.044 13.066-33.133 5.6-8.4 12.291-14.156 20.068-17.268 7.7778-3.4222 16.955-5.1328 27.533-5.1328h42.467v261.33c0 14.311-13.844 21.467-41.533 21.467v27.066h155.4v-27.066c-28 0-42-7.1557-42-21.467v-261.33h42c10.578 0 19.755 1.7106 27.533 5.1328 7.7778 3.1111 14.313 8.8676 19.602 17.268 5.6 8.0889 9.9553 19.133 13.066 33.133 3.4222 13.689 5.7556 30.956 7 51.801l29.4-1.4004v-142.8h-349.54z" fill="#ffffff" />`
+                break;
+            case 'EDIT_DESCRIPTION':
+                svg.innerHTML = `<path d="m15.116 412.39v84.373h84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m496.66 412.24v84.373h-84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m14.915 100.07v-84.373h84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m496.46 100.22v-84.373h-84.373" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/><path d="m79.133 82.633v27.533c27.689 0 41.533 7.1557 41.533 21.467v249.2c0 14.311-13.844 21.467-41.533 21.467v27.066h182c28.311 0 53.201-2.9561 74.668-8.8672s39.355-15.867 53.666-29.867c14.622-14 25.51-32.667 32.666-56 7.1556-23.333 10.734-52.577 10.734-87.732 0-34.533-3.5788-62.533-10.734-84-7.1556-21.467-18.044-38.111-32.666-49.934-14.311-11.822-32.199-19.756-53.666-23.801-21.467-4.3556-46.357-6.5332-74.668-6.5332h-182zm112.93 36.867h76.533c17.422 0 31.889 2.489 43.4 7.4668 11.822 4.6667 21.156 12.134 28 22.4 7.1556 10.267 12.134 23.644 14.934 40.133 2.8 16.178 4.1992 35.779 4.1992 58.801 0 23.022-1.3992 43.555-4.1992 61.6s-7.778 33.288-14.934 45.732c-6.8444 12.133-16.178 21.467-28 28-11.511 6.2222-25.978 9.334-43.4 9.334h-76.533v-273.47z" fill="#ffffff"/>`
+                break;
+        }
+        return svg;
+    };
+
+
 
     // Returns an copy of obj containing only the keys specified in the keys array.
     const filterObject = (obj, keys) => Object
@@ -536,14 +604,26 @@
         }
     };
 
-    const createNotification = (message, color = 'red') => {
+    const createNotification = (message, color = 'red', icon) => {
         const notification = document.createElement('div');
         notification.classList.add('wfnshNotification');
         notification.classList.add('wfnshBg-' + color);
         notification.addEventListener('click', () => notification.parentNode.removeChild(notification));
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.style.display = 'flex';
+        contentWrapper.style.alignItems = 'center';
         const content = document.createElement('p');
         content.textContent = message;
-        notification.appendChild(content);
+        
+        if (icon) {
+            const iconWrapper = document.createElement('div');
+            iconWrapper.appendChild(icon);
+            iconWrapper.style.width = '30px';
+            contentWrapper.appendChild(iconWrapper);
+        }
+        contentWrapper.appendChild(content);
+        notification.appendChild(contentWrapper);
         awaitElement(() => document.getElementById('wfnshNotify')).then(ref => ref.appendChild(notification));
         return notification;
     };
@@ -1721,11 +1801,17 @@
             .wfnshBg-blue {
                 background-color: #1a3aad;
             }
+            .wfnshBg-purple {
+                background-color: #8b5cf6;
+            }
             .wfnshBg-gold {
                 background-color: goldenrod;
             }
             .wfnshBg-gray {
                 background-color: gray;
+            }
+            .wfnshBg-brown {
+                background-color: #755534;
             }
             .wfnshDropdown {
                 cursor: pointer;

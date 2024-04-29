@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.6.1
+// @version      0.7.0
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2024 tehstone
+// Copyright 2024 tehstone, Tntnnbltn
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -78,124 +78,144 @@ function init() {
         }
     }
 
-    function addNominationDetails() {
+    async function addNominationDetails() {
         awaitElement(() => document.querySelector('app-nominations-list'))
             .then((ref) => {
-                addNotificationDiv();
-                addCss();
-                const nomCount = nominations.length;
-                let acceptedCount = 0;
-                let appealedCount = 0;
-                let deniedCount = 0;
-                let inVoteCount = 0;
-                let inVoteUpgradeCount = 0;
-                let inQueueCount = 0;
-                let inQueueUpgradeCount = 0;
-                let dupeCount = 0;
-                let withdrawnCount = 0;
-                let niaReviewCount = 0;
-                let nextUpgradeSet = false;
-                let heldCount = 0;
+            addNotificationDiv();
+            addCss();
 
-                for(let i = 0; i < nomCount; i++){
-                    if (nominations[i]["nextUpgrade"] === true) {
-                        nextUpgradeSet = true;
-                    }
-                    switch (nominations[i].status){
-                        case "NOMINATED":
-                            inQueueCount++;
-                            if (nominations[i].upgraded)
-                                inQueueUpgradeCount++;
-                            break;
-                        case "VOTING":
-                            inVoteCount++;
-                            if (nominations[i].upgraded)
-                                inVoteUpgradeCount++;
-                            break;
-                        case "REJECTED":
-                            deniedCount++;
-                            break;
-                        case "APPEALED":
-                            appealedCount++;
-                            break;
-                        case "ACCEPTED":
-                            acceptedCount++;
-                            break;
-                        case "DUPLICATE":
-                            dupeCount++;
-                            break;
-                        case "WITHDRAWN":
-                            withdrawnCount++;
-                            break;
-                        case "NIANTIC_REVIEW":
-                            niaReviewCount++;
-                            break;
-                        case "HELD":
-                            heldCount++;
-                            break;
-                        default:
-                            console.log("Wayfarer Nomination Stats encountered unknown status: " + nominations[i].status);
-                            break;
-                    }
+            const countsByTypeAndStatus = {
+                "NOMINATION": {},
+                "EDIT": {},
+                "EDIT_LOCATION": {},
+                "EDIT_DESCRIPTION": {},
+                "EDIT_TITLE": {},
+                "PHOTO": {},
+                "TOTAL": {},
+            };
+
+            for (let i = 0; i < nominations.length; i++) {
+                const { type, status, upgraded } = nominations[i];
+
+                if (!countsByTypeAndStatus[type]) {
+                    countsByTypeAndStatus[type] = {};
+                }
+                if (!countsByTypeAndStatus[type][status]) {
+                    countsByTypeAndStatus[type][status] = 0;
                 }
 
-                const statsContainer = document.createElement('div');
-                statsContainer.setAttribute('class', 'wrap-collabsible')
-                statsContainer.id = "nomStats";
-
-                const collapsibleInput = document.createElement("input");
-                collapsibleInput.id = "collapsed-stats";
-                collapsibleInput.setAttribute("class", "toggle");
-                collapsibleInput.type = "checkbox";
-
-                const collapsibleLabel = document.createElement("label");
-                collapsibleLabel.setAttribute("class", "lbl-toggle-ns");
-                collapsibleLabel.innerText = "View Nomination Stats";
-                collapsibleLabel.setAttribute("for", "collapsed-stats");
-
-                const collapsibleContent = document.createElement("div");
-                collapsibleContent.setAttribute("class", "collapsible-content-ns");
-
-                const totalReviewed = parseInt(acceptedCount) + parseInt(deniedCount) + parseInt(dupeCount);
-                let html = "";
-                console.log("click here!!!!!!!!!!")
-                html += "Total Nominations: " + parseInt(nomCount) +
-                    "<br/>Total Reviewed: " + parseInt(totalReviewed) +
-                    "<br/>Accepted: " + parseInt(acceptedCount) + " (" + (Math.round((acceptedCount/totalReviewed)*10000)/100) + "%)" +
-                    "<br/>Rejected: " + parseInt(deniedCount) + " (" + (Math.round((deniedCount/totalReviewed)*10000)/100) + "%)" +
-                    "<br/>Duplicates: " + parseInt(dupeCount) + " (" + (Math.round((dupeCount/totalReviewed)*10000)/100) + "%)" +
-                    "<br/>In Voting: " + parseInt(inVoteCount) + " (" + parseInt(inVoteUpgradeCount) + " upgraded)" +
-                    "<br/>In Queue: " + parseInt(inQueueCount) + " (" + parseInt(inQueueUpgradeCount) + " upgraded)" +
-                    "<br/>NIA Review: " + parseInt(niaReviewCount) +
-                    "<br/>Appealed: " + parseInt(appealedCount) + " (" + (Math.round(appealedCount/nomCount*100)) + "%)" +
-                    "<br/>Withdrawn: " + parseInt(withdrawnCount) + " (" + (Math.round(withdrawnCount/nomCount*100)) + "%)" +
-                    "<br/>On Hold: " + parseInt(heldCount) + "<br/>";
-
-                const div = document.createElement('div');
-                div.classList.add('wayfarernd');
-                div.innerHTML = html;
-                collapsibleContent.appendChild(div);
-
-                statsContainer.appendChild(collapsibleInput);
-                statsContainer.appendChild(collapsibleLabel);
-                statsContainer.appendChild(collapsibleContent);
-
-                const container = ref.parentNode;
-                container.appendChild(statsContainer);
-
-                const userId = getUserId();
-                let upgradeNotify = localStorage.getItem(`wfns_upgrade_notify_${userId}`);
-                if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === ""){
-                    upgradeNotify = false;
+                // Increment counts based on status and upgraded flag
+                // Not currently displayed in the stats
+                countsByTypeAndStatus[type][status]++;
+                if (status === "NOMINATED" && upgraded) {
+                    countsByTypeAndStatus[type]["NOMINATED_UPGRADED"] = (countsByTypeAndStatus[type]["NOMINATED_UPGRADED"] || 0) + 1;
+                } else if (status === "VOTING" && upgraded) {
+                    countsByTypeAndStatus[type]["VOTING_UPGRADED"] = (countsByTypeAndStatus[type]["VOTING_UPGRADED"] || 0) + 1;
                 }
 
-                if (upgradeNotify === "true") {
-                    if (!nextUpgradeSet) {
-                        createNotification("No Upgrade Next is set!");
+                if (["ACCEPTED", "REJECTED", "DUPLICATE"].includes(status)) {
+                    countsByTypeAndStatus[type]["DECIDED"] = (countsByTypeAndStatus[type]["DECIDED"] || 0) + 1;
+                }
+                if (["ACCEPTED", "REJECTED", "DUPLICATE", "VOTING", "NOMINATED", "NIANTIC_REVIEW", "APPEALED", "WITHDRAWN", "HELD"].includes(status)) {
+                    countsByTypeAndStatus[type]["SUBMITTED"] = (countsByTypeAndStatus[type]["SUBMITTED"] || 0) + 1;
+                }
+
+            }
+
+            // Sum the stats for the different types of edits
+            const statusTypes = ["SUBMITTED", "DECIDED", "ACCEPTED", "REJECTED", "DUPLICATE", "VOTING", "NOMINATED", "NIANTIC_REVIEW", "APPEALED", "WITHDRAWN", "HELD"];
+            for (const type of statusTypes) {
+                countsByTypeAndStatus.EDIT[type] = 0;
+                for (const editType of ["EDIT_TITLE", "EDIT_DESCRIPTION", "EDIT_LOCATION"]) {
+                    countsByTypeAndStatus.EDIT[type] += countsByTypeAndStatus[editType][type] ?? 0;
+                }
+            }
+
+            // Sum the total stats
+            for (const type of statusTypes) {
+                countsByTypeAndStatus.TOTAL[type] = 0;
+                for (const editType of ["EDIT", "NOMINATION", "PHOTO"]) {
+                    countsByTypeAndStatus.TOTAL[type] += countsByTypeAndStatus[editType][type] ?? 0;
+                }
+            }
+
+
+            let html = "<table class='wfns-stats-table'>";
+            html += "<colgroup>";
+            html += "<col style='width: 20%;'>".repeat(4);
+            html += "</colgroup>";
+            html += "<tr><th></th><th>Nominations</th><th>Edits</th><th>Photos</th><th>Total</th></tr>";
+
+            const statusLabels = ["Submitted", "Decided", "Accepted", "Rejected", "Duplicates", "In Voting", "In Queue", "NIA Review", "Appealed", "Withdrawn", "On Hold"];
+            const columnTypes = ["NOMINATION", "EDIT", "PHOTO", "TOTAL"];
+
+            for (let i = 0; i < statusLabels.length; i++) {
+                const status = statusTypes[i];
+                html += "<tr><td>" + statusLabels[i] + "</td>";
+
+                for (let j = 0; j < columnTypes.length; j++) {
+                    const columnType = columnTypes[j];
+                    let count = 0;
+                    let decidedCount = countsByTypeAndStatus[columnType]["DECIDED"] || 0;
+
+                    count += countsByTypeAndStatus[columnType][status] || 0;
+
+                    // Append percentage only for "Accepted" and "Rejected" statuses
+                    if (status === "ACCEPTED" || status === "REJECTED") {
+                        let percentage = Math.round((count / decidedCount) * 100);
+                        if (isNaN(percentage)) {
+                            percentage = "—%";
+                        } else {
+                            percentage += "%";
+                        }
+                        html += "<td id='" + columnType + "-" + status.replace(/ /g, '-') + "'>" + count + "<br><span style='font-size: smaller'>" + percentage + "</span></td>";;
+                    } else {
+                        html += "<td id='" + columnType + "-" + status.replace(/ /g, '-') + "'>" + count + "</td>";
                     }
                 }
-            });
-        
+                html += "</tr>";
+            }
+
+            html += "</table>";
+
+            const statsContainer = document.createElement('div');
+            statsContainer.setAttribute('class', 'wrap-collabsible');
+            statsContainer.id = "nomStats";
+
+            const collapsibleInput = document.createElement("input");
+            collapsibleInput.id = "collapsed-stats";
+            collapsibleInput.setAttribute("class", "toggle");
+            collapsibleInput.type = "checkbox";
+
+            const collapsibleLabel = document.createElement("label");
+            collapsibleLabel.setAttribute("class", "lbl-toggle-ns");
+            collapsibleLabel.innerText = "View Nomination Stats";
+            collapsibleLabel.setAttribute("for", "collapsed-stats");
+
+            const collapsibleContent = document.createElement("div");
+            collapsibleContent.setAttribute("class", "collapsible-content-ns");
+            collapsibleContent.innerHTML = html;
+
+            statsContainer.appendChild(collapsibleInput);
+            statsContainer.appendChild(collapsibleLabel);
+            statsContainer.appendChild(collapsibleContent);
+
+            const container = ref.parentNode;
+            container.appendChild(statsContainer);
+
+            // Check upgrade notification
+            const userId = getUserId();
+            let upgradeNotify = localStorage.getItem(`wfns_upgrade_notify_${userId}`);
+            if (upgradeNotify === undefined || upgradeNotify === null || upgradeNotify === "") {
+                upgradeNotify = false;
+            }
+
+            // Display notification if upgrade is not set
+            const nextUpgradeSet = nominations.some(nom => nom.nextUpgrade);
+            if (upgradeNotify === "true" && !nextUpgradeSet) {
+                createNotification("No Upgrade Next is set!");
+            }
+        });
     }
 
     function addExportButtons() {
@@ -258,24 +278,53 @@ function init() {
 
     function convertToCSV(objArray) {
         let array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
-        let str = 'id,group,type,title,description,lat,lng,city,state,day,order,imageUrl,nextUpgrade,upgraded,status,isMutable,isNianticControlled,statement,supportingImageUrl,rejectReasons,canAppeal,isClosed,appealNotes,canHold,canReleaseHold\r\n';
 
-        for (let i = 0; i < array.length; i++) {
-            let line = '';
-            for (let index in array[i]) {
-                if (index === 'title' || index === 'description' || index === 'statement' || index === 'appealNotes') {
-                    array[i][index] = array[i][index].replace(/#/g, '').replace(/"/g, '""');
-                    array[i][index] = `"${array[i][index]}"`;
+        // Extract all possible headers including poiData fields
+        let headers = new Set();
+        array.forEach(item => {
+            Object.keys(item).forEach(key => {
+                if (Array.isArray(item[key])) {
+                    item[key].forEach(poi => {
+                        Object.keys(poi).forEach(poiKey => {
+                            headers.add(`poiData_${poiKey}`);
+                        });
+                    });
+                } else if (key === 'poiData') {
+                    Object.keys(item[key]).forEach(poiKey => {
+                        headers.add(`poiData_${poiKey}`);
+                    });
+                } else {
+                    headers.add(key);
                 }
-                if (line != '') line += ','
+            });
+        });
 
-                line += array[i][index];
-            }
+        // Generate CSV headers dynamically from headers
+        let csv = [...headers].join(',') + '\r\n';
 
-            str += line + '\r\n';
-        }
+        // Generate CSV rows
+        array.forEach(item => {
+            let row = '';
+            [...headers].forEach(header => {
+                if (header.startsWith('poiData_')) {
+                    let poiKey = header.substring(8);
+                    if (Array.isArray(item.poiData)) {
+                        let poiDataValue = '';
+                        item.poiData.forEach(poi => {
+                            poiDataValue += `${poi[poiKey]},`;
+                        });
+                        row += `"${poiDataValue.slice(0, -1)}",`; // Remove trailing comma
+                    } else {
+                        row += `"${String(item.poiData[poiKey] || '').replace(/"/g, '""')}",`;
+                    }
+                } else {
+                    row += `"${String(item[header] || '').replace(/"/g, '""')}",`;
+                }
+            });
+            csv += row.slice(0, -1) + '\r\n'; // Remove trailing comma
+        });
 
-        return str;
+        return csv;
     }
 
     function checkAppealStatus(canAppeal) {
@@ -556,6 +605,17 @@ function init() {
             td {
                 border: white solid 1pt;
                 padding: 1pt 5pt;
+            }
+            .wfns-stats-table {
+                width: 100%;
+            }
+            .wfns-stats-table th:first-child,
+            .wfns-stats-table td:first-child {
+                text-align: left; /* Left-align the content within the first column */
+            }
+            .wfns-stats-table th:not(:first-child),
+            .wfns-stats-table td:not(:first-child) {
+                text-align: center; /* Center-align the content within columns 2 to 5 */
             }
             `;
         const style = document.createElement('style');

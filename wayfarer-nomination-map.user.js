@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.4.3
+// @version      0.5.0
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
@@ -8,7 +8,7 @@
 // @match        https://wayfarer.nianticlabs.com/*
 // ==/UserScript==
 
-// Copyright 2024 tehstone, bilde
+// Copyright 2024 tehstone, bilde, Tntnnbltn
 // This file is part of the Wayfarer Addons collection.
 
 // This script is free software: you can redistribute it and/or modify
@@ -194,7 +194,7 @@ function init() {
             marker.addListener('click', () => {
                 let inputs = document.querySelectorAll('input[type=text]');
                 let input = inputs[0];
-                input.value = nomination.title;
+                input.value = nomination.lat;
                 input.dispatchEvent(new Event('input'));
                 setTimeout(clickFirst, 500);
                 setTimeout(() => {
