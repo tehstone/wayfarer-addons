@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.2.1
+// @version      0.3.0
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -112,6 +112,7 @@
     const renderReviewHistory = result => new Promise((resolve, reject) => {
         getIDBInstance().then(db => {
             const toSave = [];
+            const editsToSave = [];
             const tx = db.transaction([OBJECT_STORE_NAME], 'readonly');
             tx.oncomplete = event => db.close();
             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
@@ -121,9 +122,12 @@
                 for (let i = 0; i < result.length; i++) {
                     if (result[i]["type"] === "NEW") {
                       toSave.push(result[i]);
-                    }
+                    } else if (result[i]["type"] === "EDIT") {
+                      editsToSave.push(result[i]);
+                  }
                 }
                 renderTable(toSave);
+                renderEditsTable(editsToSave);
             };
         }).catch(reject);
     });
@@ -198,7 +202,7 @@
                                 review[0].rejectReasons.forEach(r => {
                                     let rejectionText = l10n[`reject.reason.${r.toLowerCase()}.short`];
                                     if (rejectionText === undefined || rejectionText === "") {
-                                        rejectionText = REJECTION_MAPPINGS[r];    
+                                        rejectionText = REJECTION_MAPPINGS[r];
                                     }
                                     rejections.push(rejectionText);
                                 })
@@ -258,7 +262,6 @@
                 lng,
                 ts,
             } = review;
-        const index = 0;
         if (review.review) {
             const {
                 comment,
@@ -347,6 +350,201 @@
         }
     }
 
+    function renderEditsTable(reviewData) {
+        console.log("history table click here");
+      const tableContainer = document.createElement("div");
+      tableContainer.classList.add("table");
+      tableContainer.insertAdjacentHTML("beforeend",
+        `
+        <div class="table-responsive">
+                <table class="table table-striped table-condensed" id="edit-review-history">
+                </table>
+            </div>
+        `)
+      const ratingNarRef = document.querySelector('wf-rating-bar');
+      const container = ratingNarRef.parentNode.parentNode;
+      container.appendChild(tableContainer);
+
+      l10n = getL10N();
+      $(document).ready(function () {
+        console.log(reviewData);
+      const table = $('#edit-review-history').DataTable({
+          data: reviewData,
+          deferRender: true,
+          order: [[0, 'desc']],
+          columns: [
+            {
+                data: 'ts',
+                defaultContent: '',
+                title: "Date",
+                width: "7%",
+                render: (ts, type) => {
+                    if (type === "display") {
+                        return getFormattedDate(ts);
+                    }
+                    return ts;
+                }
+            },
+            {
+                data: 'review',
+                title: 'Title',
+                width: "16%",
+                render: (...review) => {
+                    let titleOptions = [];
+                    if (review[2].titleEdits.length > 0) {
+                        review[2].titleEdits.forEach(t => {
+                            titleOptions.push(t.value);
+                        })
+                    } else {
+                        titleOptions.push(review[2].title);
+                    }
+                    return titleOptions.join("<br>");
+                }
+            },
+            {
+                data: 'review',
+                title: 'Type',
+                width: "16%",
+                render: (...review) => {
+                    let types = [];
+                    if (review[2].locationEdits.length > 1) {
+                        types.push("Location");
+                    }
+                    if (review[2].descriptionEdits.length > 0) {
+                        types.push("Description");
+                    } 
+                    if (review[2].titleEdits.length > 0) {
+                        types.push("Title");
+                    }
+                    return types.join(", ");
+                }
+            },
+            {
+                data: 'review',
+                defaultContent: '',
+                title: 'Location',
+                width: "15%",
+                render: (...review) => {
+                    return `<a href="https://intel.ingress.com/?ll=${review[2].lat},${review[2].lng}&z=16" "target="_blank">${review[2].lat},${review[2].lng}</a>`;
+                }
+            },
+            {
+                data: 'id',
+                visible: false
+            },
+          ],
+      });
+
+      $('#edit-review-history').on("click", "", (ev) => {
+            var tr = $(ev.target).closest("tr");
+            var row = table.row(tr);
+            const review = row.data();
+
+            if (row.child.isShown()) {
+                tr.removeClass("shown");
+                row.child.hide();
+            } else {
+                tr.addClass("shown");
+                row.child(editReviewContent(review)).show();
+            }
+        });
+    });
+    }
+
+
+    const editReviewContent = (review) => {
+      const {
+            id,
+            title,
+            lat,
+            lng,
+            descriptionEdits,
+            locationEdits,
+            titleEdits,
+            ts,
+        } = review;
+    if (review.review) {
+        return `<div class="panel panel-default review-details">
+          <div class="panel-heading">Edit Review</div>
+          <div class="panel-body">
+              <div class="row">
+                <div class="col-xs-12 col-sm-8" style="float: left; padding: 5px;">
+                  <dl class="dl-horizontal">
+                    ${getDD("Location", getIntelLink(lat, lng, `Open in Intel`))}
+                    ${getDD("Review Date", getFormattedDate(ts, true))}
+                  </dl>
+                  <br>
+                  ${renderEditReviews(descriptionEdits, locationEdits, titleEdits, review.review)}
+                </div>
+              </div>
+            </div>
+          </div>`;
+        } else {
+          return `<div class="panel panel-default review-details">
+          <div class="panel-heading">Edit Review</div>
+          <div class="panel-body">
+              <div class="row">
+                <div class="col-xs-12 col-sm-8" style="float: left; padding: 5px;">
+                  ${getDD("Location", getIntelLink(lat, lng, `Open in Intel`))}
+                  ${getDD("Review Date", getFormattedDate(ts, true))}
+                  <dt class="bbold">Review</dt><dd>Skipped/Timed Out</dd>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }
+    }
+
+    function renderEditReviews(descriptionEdits, locationEdits, titleEdits, review) {
+        const {
+            descriptionUnable,
+            locationUnable,
+            titleUnable,
+            selectedDescriptionHash,
+            selectedLocationHash,
+            selectedTitleHash,
+        } = review;
+        let html = ``;
+        if (titleEdits.length > 0) {
+            html += `<dt class="bbold">Title Edits</dt>${renderSingleEditType(titleEdits, titleUnable, selectedTitleHash)}<br>`;
+        }
+        if (descriptionEdits.length > 0) {
+            html += `<dt class="bbold">Description Edits</dt>${renderSingleEditType(descriptionEdits, descriptionUnable, selectedDescriptionHash)}<br>`;
+        }
+        if (locationEdits.length > 1) {
+            html += `<dt class="bbold">Location Edits</dt>${renderSingleEditType(locationEdits, locationUnable, selectedLocationHash)}<br>`;
+        }
+        return html;
+    }
+
+    function renderSingleEditType(editList, unable, selectedHash) {
+        let rows = [];
+        editList.forEach(e => {
+            let selected = '❌';
+            if (e.hash == selectedHash) {
+                selected = '✔️';
+            }
+            if (unable) {
+                selected = "IDK";
+            }
+            let content = e.value;
+            rows.push(`<tr><td class="text-center">${selected}</td><td class="text-center">${content}</td></tr>`);
+        });
+        return `
+        <table class="table table-condensed scores">
+          <thead>
+              <tr>
+                  <th class="text-center">Selected</th>
+                  <th class="text-center">Content</th>
+              </tr>
+          </thead>
+          <tbody class="review-list">
+                ${rows.join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
     const getDD = (term, definition) =>
         definition ? `<dt class="bbold">${term}</dt><dd>${definition}</dd>` : "";;
 
@@ -384,7 +582,7 @@
         if (review['ts'] < FLOW_CHANGE_TIME) {
             if (!review || typeof review === "string" || !review.quality) {
                 return "";
-            }   
+            }
             return `
             <table class="table table-condensed scores">
               <thead>
@@ -570,6 +768,18 @@
 
     (() => {
       const css = `
+              div.panel-heading {
+                font-weight: bold;
+                font-size: 18px;
+                color: #ff4713;
+              }
+
+              .dark div.panel-heading {
+                font-weight: bold;
+                font-size: 18px;
+                color: #20B8E3;
+              }
+              
               dt.bbold {
                 font-weight: bold;
                 color: #ff4713;
@@ -604,7 +814,9 @@
                 font-weight: normal;
                 text-align: left;
                 white-space: nowrap;
-                color: #eee;
+                .dark & {
+                   color: #eee;
+                }
               }
               div.dataTables_wrapper div.dataTables_length select {
                 width: 75px;
@@ -617,7 +829,9 @@
                 font-weight: normal;
                 white-space: nowrap;
                 text-align: left;
-                color: #eee;
+                .dark & {
+                   color: #eee;
+                }
               }
               div.dataTables_wrapper div.dataTables_filter input {
                 margin-left: 0.5em;
@@ -642,12 +856,18 @@
                 text-align: center;
                 text-decoration: none !important;
                 cursor: pointer;
-                color: #eee !important;
+                .dark & {
+                   color: #eee !important;
+                }
+                color: #5b5b5b !important;
                 border: 1px solid transparent;
                 border-radius: 2px;
               }
               .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-                color: #eee !important;
+                .dark & {
+                   color: #eee !important;
+                }
+                color: #5b5b5b !important;
                 border: 1px solid rgba(0, 0, 0, 0.3);
                 background-color: rgba(230, 230, 230, 0.1);
                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(230, 230, 230, 0.1)), color-stop(100%, rgba(0, 0, 0, 0.1)));
@@ -764,7 +984,9 @@
               }
               table.dataTable thead .sorting_asc_disabled:after,
               table.dataTable thead .sorting_desc_disabled:after {
-                color: #eee;
+                .dark & {
+                   color: #eee;
+                }
               }
 
               div.dataTables_scrollHead table.dataTable {
