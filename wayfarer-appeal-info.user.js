@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.0
+// @version      0.1.1
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -105,11 +105,17 @@ function init() {
             const current = Date.now();
             const daysUntilFirst = Math.round(((firstAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
             const daysUntilSecond = Math.round(((secondAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
-            if (daysUntilFirst <= 0 && daysUntilSecond <= 0) {
-                appeal.textContent = '2';
-            } else if (daysUntilFirst <= 0 || daysUntilSecond <= 0) {
-                appeal.textContent = '1';
+            if (daysUntilFirst <= 0 || daysUntilSecond <= 0) {
+                if (!canAppeal) {
+                    appeal.textContent = 'No';
+                    console.warn("Wayfarer Appeal Info: Appeal is not available but stored history indicates it should be.")
+                } else if (daysUntilFirst <= 0 && daysUntilSecond <= 0) {
+                    appeal.textContent = '2';
+                } else {
+                    appeal.textContent = '1';
+                }
             }
+            
             if (daysUntilFirst > 0 && daysUntilSecond > 0) {
                 if (canAppeal) {
                     console.warn("Wayfarer Appeal Info: Appeal available but stored history indicates otherwise.")
