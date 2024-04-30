@@ -7,7 +7,6 @@
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // @run-at       document-start
-// @grant        GM_info
 // ==/UserScript==
 
 // Copyright 2024 Tntnnbltn
