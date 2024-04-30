@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.1
+// @version      0.1.3
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -30,6 +30,7 @@
 /* eslint no-var: "error" */
 
 function init() {
+    const MAX_APPEALS = 2;
     const APPEAL_COOLDOWN = 20;
     const OBJECT_STORE_NAME = 'appealInfo';
     const idMap = {};
@@ -88,20 +89,28 @@ function init() {
         awaitElement(() => document.querySelector('wf-logo')).then(ref => {      
             let appeal = document.createElement('p');
             const userId = getUserId();
-            let appealHistory;
+            let appealQueue = [];
             if (localStorage.hasOwnProperty(`wfai_appeal_history_${userId}`)) {
-                appealHistory = JSON.parse(localStorage[`wfai_appeal_history_${userId}`])
-            } else {
+                appealHistory = JSON.parse(localStorage[`wfai_appeal_history_${userId}`]);
+                setItem(appealQueue, appealHistory["0"]);
+                setItem(appealQueue, appealHistory["1"]);
+                localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
+                localStorage.removeItem(`wfai_appeal_history_${userId}`);
+            } else if (localStorage.hasOwnProperty(`wfai_last_appeal_date_${userId}`)) {
                 let appealTimestamp = localStorage.getItem(`wfai_last_appeal_date_${userId}`);
                 if (appealTimestamp === undefined || appealTimestamp === null || appealTimestamp === ""){
-                    appealHistory = {"0": "0", "1": "1"};
+                    setItem(appealQueue, 0);
+                    setItem(appealQueue, 1);
                 } else {
-                    appealHistory = {"0": "0", "1": appealTimestamp};
+                    setItem(appealQueue, 0);
+                    setItem(appealQueue, appealTimestamp);
                 }
-                localStorage.setItem(`wfai_appeal_history_${userId}`, JSON.stringify(appealHistory));
+                localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
+                localStorage.removeItem(`wfai_last_appeal_date_${userId}`);
             } 
-            const firstAppealTimestamp = parseInt(appealHistory["0"]);
-            const secondAppealTimestamp = parseInt(appealHistory["1"]);
+            appealQueue = JSON.parse(localStorage[`wfai_appeal_queue_${userId}`]);
+            const firstAppealTimestamp = parseInt(appealQueue[appealQueue.length - 1]);
+            const secondAppealTimestamp = parseInt(appealQueue[appealQueue.length - 2]);
             const current = Date.now();
             const daysUntilFirst = Math.round(((firstAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
             const daysUntilSecond = Math.round(((secondAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
@@ -273,17 +282,21 @@ function init() {
     const handleSubmittedAppeal = (data, result) => new Promise((resolve, reject) => {
         const appealTimestamp = Date.now();
         const userId = getUserId();
-        
-        if (localStorage.hasOwnProperty(`wfai_appeal_history_${userId}`)) {
-            appealHistory = JSON.parse(localStorage[`wfai_appeal_history_${userId}`])
-            console.log(`Wayfarer Appeal Info: Discarding oldest appeal date of ${appealHistory["0"]}, oldest appeal date set to ${appealHistory["1"]}, latest appeal date set to ${appealTimestamp}`);
-            appealHistory["0"] = appealHistory["1"];
-            appealHistory["1"] = appealTimestamp;
-            localStorage.setItem(`wfai_appeal_history_${userId}`, JSON.stringify(appealHistory));
-        } else {
-            console.log(`Wayfarer Appeal Info: No stored appeal history found, oldest appeal date set to 0, latest appeal date set to ${appealTimestamp}`);
-            appealHistory = {"0": "0", "1": appealTimestamp};
-            localStorage.setItem(`wfai_appeal_history_${userId}`, JSON.stringify(appealHistory));
+        let appealQueue = [];
+        try {
+            if (localStorage.hasOwnProperty(`wfai_appeal_queue_${userId}`)) {
+                appealQueue = JSON.parse(localStorage[`wfai_appeal_queue_${userId}`])
+                console.log(`Wayfarer Appeal Info: Discarding oldest appeal date of ${appealQueue[appealQueue.length - 1]}, oldest appeal date set to ${appealQueue[appealQueue.length - 2]}, latest appeal date set to ${appealTimestamp}`);
+                setItem(appealQueue, appealTimestamp);
+                localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
+            } else {
+                console.log(`Wayfarer Appeal Info: No stored appeal history found, oldest appeal date set to 0, latest appeal date set to ${appealTimestamp}`);
+                appealQueue.setItem(appealQueue, 0);
+                setItem(appealQueue, appealTimestamp);
+                localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
+            }
+        } catch (err) {
+            console.warn(`Failed to save appeal timestamp ${appealTimestamp} to local storage with error:\n${err}`);
         }
         data["appealTimestamp"] = appealTimestamp;
         getIDBInstance().then(db => {
@@ -333,6 +346,10 @@ function init() {
            return userId;
         }
         return "temporary_default_userid";
+    }
+
+    function setItem (array, item) {
+        array.unshift(item) > MAX_APPEALS ?  array.pop() : null
     }
 
     const awaitElement = get => new Promise((resolve, reject) => {
