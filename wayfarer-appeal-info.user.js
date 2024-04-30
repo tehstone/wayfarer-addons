@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.0.3
+// @version      0.1.0
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -30,20 +30,21 @@
 /* eslint no-var: "error" */
 
 function init() {
-	const OBJECT_STORE_NAME = 'appealInfo';
-	const idMap = {};
-	const statusMap = {};
-	let nominations;
+    const APPEAL_COOLDOWN = 20;
+    const OBJECT_STORE_NAME = 'appealInfo';
+    const idMap = {};
+    const statusMap = {};
+    let nominations;
 
-	console.log("Wayfarer Appeal Info init");
-	addCss();
+    console.log("Wayfarer Appeal Info init");
+    addCss();
 
-	/**
+    /**
      * Overwrite the open method of the XMLHttpRequest.prototype to intercept the server calls
      */
     (function (open) {
         XMLHttpRequest.prototype.open = function (method, url) {
-        	if (url == '/api/v1/vault/manage/detail' && method == 'POST') {
+            if (url == '/api/v1/vault/manage/detail' && method == 'POST') {
                 this.addEventListener('load', interceptDetail, false);
             } else if (url == '/api/v1/vault/manage'&& method == 'GET') {
                 this.addEventListener('load', interceptManage, false);
@@ -84,55 +85,71 @@ function init() {
     };
 
     function checkAppealStatus(canAppeal) {
-        awaitElement(() => document.querySelector('wf-logo')).then(ref => {
-            const div = document.createElement('div');
-            div.className = 'wfai_can_appeal';
-
-            let appealLabel = document.createElement('p');
-            appealLabel.textContent = 'Appeal eligible: ';
+        awaitElement(() => document.querySelector('wf-logo')).then(ref => {      
             let appeal = document.createElement('p');
-
-            if (canAppeal) {
-                appeal.textContent = 'Yes';
+            const userId = getUserId();
+            let appealHistory;
+            if (localStorage.hasOwnProperty(`wfai_appeal_history_${userId}`)) {
+                appealHistory = JSON.parse(localStorage[`wfai_appeal_history_${userId}`])
             } else {
-            	const userId = getUserId();
-        		let appealTimestamp = localStorage.getItem(`wfai_last_appeal_date_${userId}`);
-        		if (appealTimestamp === undefined || appealTimestamp === null || appealTimestamp === ""){
-                    appeal.textContent = 'No';
+                let appealTimestamp = localStorage.getItem(`wfai_last_appeal_date_${userId}`);
+                if (appealTimestamp === undefined || appealTimestamp === null || appealTimestamp === ""){
+                    appealHistory = {"0": "0", "1": "1"};
                 } else {
-                	appealTimestamp = parseInt(appealTimestamp);
-                	const current = Date.now();
-                	const daysUntil = Math.round(((appealTimestamp + (20 * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
-                	appeal.textContent = `in ~${daysUntil} days`
+                    appealHistory = {"0": "0", "1": appealTimestamp};
                 }
-                
+                localStorage.setItem(`wfai_appeal_history_${userId}`, JSON.stringify(appealHistory));
+            } 
+            const firstAppealTimestamp = parseInt(appealHistory["0"]);
+            const secondAppealTimestamp = parseInt(appealHistory["1"]);
+            const current = Date.now();
+            const daysUntilFirst = Math.round(((firstAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
+            const daysUntilSecond = Math.round(((secondAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
+            if (daysUntilFirst <= 0 && daysUntilSecond <= 0) {
+                appeal.textContent = '2';
+            } else if (daysUntilFirst <= 0 || daysUntilSecond <= 0) {
+                appeal.textContent = '1';
             }
-
-            div.appendChild(appealLabel);
-            div.appendChild(appeal);
-
-            const container = ref.parentNode.parentNode;
-            console.log(document.querySelector('.wfai_can_appeal'));
+            if (daysUntilFirst > 0 && daysUntilSecond > 0) {
+                if (canAppeal) {
+                    console.warn("Wayfarer Appeal Info: Appeal available but stored history indicates otherwise.")
+                    appeal.textContent = 'Yes';
+                } else {
+                    appeal.textContent = `in ~${Math.min(daysUntilFirst, daysUntilSecond)} days`;
+                }
+            }
             if (document.querySelector('.wfai_can_appeal') === null) {
+                const div = document.createElement('div');
+                div.className = 'wfai_can_appeal';
+
+                let appealLabel = document.createElement('p');
+                appealLabel.textContent = 'Appeals available: ';
+                div.appendChild(appealLabel);
+                div.appendChild(appeal);
+
+                const container = ref.parentNode.parentNode;
                 container.appendChild(div);
+            } else {
+                const oldAppeal = document.querySelector('.wfai_can_appeal').childNodes[1];
+                oldAppeal.textContent = appeal.textContent;
             }
         });
     }
 
     function interceptManage(e) {
-    	const list = document.getElementsByTagName('app-nominations-list')[0];
+        const list = document.getElementsByTagName('app-nominations-list')[0];
         list.addEventListener('click', handleNominationClick);
         try {
             const response = this.response;
             const json = JSON.parse(response);
             if (!json) {
-                console.log('Failed to parse response from Wayfarer');
+                console.log('Wayfarer Appeal Info: Failed to parse response from Wayfarer');
                 return;
             }
             if (json.captcha) return; // ignore if it's related to captchas
             nominations = json.result.nominations;
             if (!nominations) {
-                console.log('Wayfarer\'s response didn\'t include nominations.');
+                console.log('Wayfarer Appeal Info: Wayfarer\'s response didn\'t include nominations.');
                 return;
             }
             setTimeout(() => {
@@ -141,7 +158,7 @@ function init() {
                 }
             }, 300);
         } catch (e) {
-            console.log(e); // eslint-disable-line no-console
+            console.warn(`Wayfarer Appeal Info: Exception encountered while processing nominations list:\n${e}`); // eslint-disable-line no-console
         }
     }
 
@@ -155,10 +172,10 @@ function init() {
             idMap[json.result.imageUrl] = id;
             statusMap[id] = json.result.status;
             checkAppealRecord(id).then(result => {
-            	if (result) {
-            		renderAppealHeader();
-            		renderAppealInfo(id);
-            	}
+                if (result) {
+                    renderAppealHeader();
+                    renderAppealInfo(id);
+                }
             })
         } catch (e) {
             console.error(e);
@@ -166,7 +183,7 @@ function init() {
     }
 
     const handleNominationClick = e => {
-    	const item = e.target.closest('app-nominations-list-item');
+        const item = e.target.closest('app-nominations-list-item');
         if (item) {
             // Remove any manually added boxes (for appealed noms) or they will conflict
             const old = document.getElementsByClassName('wfai_appeal-display');
@@ -176,14 +193,14 @@ function init() {
             if (id) {
                 // If the id is stored in idMap then that means a /detail request has already been done for it
                 checkAppealRecord(id).then(result => {
-	            	if (result) {
-		                const header = document.querySelector('app-details-pane .card > div.flex-row + .ng-star-inserted h5');
-		                if (!header) {
-	                		renderAppealHeader();
-	                	}
-	                	renderAppealInfo(id)
-	                }
-	            })
+                    if (result) {
+                        const header = document.querySelector('app-details-pane .card > div.flex-row + .ng-star-inserted h5');
+                        if (!header) {
+                            renderAppealHeader();
+                        }
+                        renderAppealInfo(id)
+                    }
+                })
             }
         }
     }
@@ -206,82 +223,90 @@ function init() {
     }
 
     const renderAppealInfo = (nominationId) => {
-    	getIDBInstance().then(db => {
+        getIDBInstance().then(db => {
             const tx = db.transaction([OBJECT_STORE_NAME], "readonly");
             tx.oncomplete = event => { db.close(); };
             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
             let record = objectStore.get(nominationId);
             record.onsuccess = () => {
-            	let parent = document.getElementsByClassName('wfai_appeal-display');
-            	if (parent && parent.length > 0) {
-            		parent = parent[0];
-            		const { result } = record;
+                let parent = document.getElementsByClassName('wfai_appeal-display');
+                if (parent && parent.length > 0) {
+                    parent = parent[0];
+                    const { result } = record;
 
-            		let dateInfo = document.createElement('span');
-            		const date = new Date(result["appealTimestamp"]);
-            		dateInfo.textContent = `Appeal Date: ${date.toLocaleString()}`;
-            		parent.appendChild(dateInfo);
+                    let dateInfo = document.createElement('span');
+                    const date = new Date(result["appealTimestamp"]);
+                    dateInfo.textContent = `Appeal Date: ${date.toLocaleString()}`;
+                    parent.appendChild(dateInfo);
 
-            		parent.appendChild(document.createElement('br'));
+                    parent.appendChild(document.createElement('br'));
 
-            		let appealText = document.createElement('span');
-            		appealText.textContent = `Appeal Statement:\n${result["statement"]}`;
-            		parent.appendChild(appealText);
-            	}
+                    let appealText = document.createElement('span');
+                    appealText.textContent = `Appeal Statement:\n${result["statement"]}`;
+                    parent.appendChild(appealText);
+                }
 
-            	if (nominationId in statusMap) {
-            		if (statusMap[nominationId] !== 'APPEALED') {
-            			const ref = document.querySelector('app-details-pane');
-            			const tagRef = ref.querySelector('app-nomination-tag-set');
-		                const tag = document.createElement('div');
-		                tag.classList.add('nomination-tag');
-		                const text = document.createElement('span');
-		                text.style.color = "white";
-		                text.style.backgroundColor = "gray";
-		                text.textContent = "Was Appealed";
-		                tag.appendChild(text);
-		                tagRef.appendChild(tag);
-            		}
-            	}
-			}
+                if (nominationId in statusMap) {
+                    if (statusMap[nominationId] !== 'APPEALED') {
+                        const ref = document.querySelector('app-details-pane');
+                        const tagRef = ref.querySelector('app-nomination-tag-set');
+                        const tag = document.createElement('div');
+                        tag.classList.add('nomination-tag');
+                        const text = document.createElement('span');
+                        text.style.color = "white";
+                        text.style.backgroundColor = "gray";
+                        text.textContent = "Was Appealed";
+                        tag.appendChild(text);
+                        tagRef.appendChild(tag);
+                    }
+                }
+            }
         })
     }
 
     const handleSubmittedAppeal = (data, result) => new Promise((resolve, reject) => {
-    	const appealTimestamp = Date.now();
-    	const userId = getUserId();
-    	console.log(`Wayfarer Appeal Info: Setting last appeal date to ${appealTimestamp}`);
-    	console.log(data);
-        localStorage.setItem(`wfai_last_appeal_date_${userId}`, appealTimestamp);
-    	data["appealTimestamp"] = appealTimestamp;
-        console.log(data);
+        const appealTimestamp = Date.now();
+        const userId = getUserId();
+        
+        if (localStorage.hasOwnProperty(`wfai_appeal_history_${userId}`)) {
+            appealHistory = JSON.parse(localStorage[`wfai_appeal_history_${userId}`])
+            console.log(`Wayfarer Appeal Info: Discarding oldest appeal date of ${appealHistory["0"]}, oldest appeal date set to ${appealHistory["1"]}, latest appeal date set to ${appealTimestamp}`);
+            appealHistory["0"] = appealHistory["1"];
+            appealHistory["1"] = appealTimestamp;
+            localStorage.setItem(`wfai_appeal_history_${userId}`, JSON.stringify(appealHistory));
+        } else {
+            console.log(`Wayfarer Appeal Info: No stored appeal history found, oldest appeal date set to 0, latest appeal date set to ${appealTimestamp}`);
+            appealHistory = {"0": "0", "1": appealTimestamp};
+            localStorage.setItem(`wfai_appeal_history_${userId}`, JSON.stringify(appealHistory));
+        }
+        data["appealTimestamp"] = appealTimestamp;
         getIDBInstance().then(db => {
             const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
             tx.oncomplete = event => { db.close(); };
             tx.onerror = reject;
             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
             objectStore.put(data);
-            console.log('appeal data saved to datastore');
+            console.log('Wayfarer Appeal Info: appeal data saved to datastore');
             tx.commit();
             resolve();
         }).catch(reject); 
     });
 
     const checkAppealRecord = (nominationId) => new Promise((resolve, reject) => {
-    	getIDBInstance().then(db => {
+        getIDBInstance().then(db => {
             const tx = db.transaction([OBJECT_STORE_NAME], "readonly");
             tx.oncomplete = event => { db.close(); };
             tx.onerror = reject;
             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
             let count = objectStore.count(nominationId);
             count.onsuccess = () => {
-            	resolve(count.result !== 0);
-			}
+                resolve(count.result !== 0);
+            }
         }).catch(reject);
     });
 
     const addData = (data) => {
-	    getIDBInstance().then(db => {
+        getIDBInstance().then(db => {
             const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
             tx.oncomplete = event => { db.close(); };
             const objectStore = tx.objectStore(OBJECT_STORE_NAME);
@@ -331,17 +356,17 @@ function init() {
         openRequest.onsuccess = event => {
             const db = event.target.result;
             const dbVer = db.version;
-            console.log(`IndexedDB initialization complete (database version ${dbVer}).`);
+            console.log(`Wayfarer Appeal Info: IndexedDB initialization complete (database version ${dbVer}).`);
             if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
                 db.close();
-                console.log(`Database does not contain column ${OBJECT_STORE_NAME}. Closing and incrementing version.`);
+                console.log(`Wayfarer Appeal Info: Database does not contain column ${OBJECT_STORE_NAME}. Closing and incrementing version.`);
                 getIDBInstance(dbVer + 1).then(resolve);
             } else {
                 resolve(db);
             }
         };
         openRequest.onupgradeneeded = event => {
-            console.log('Upgrading database...');
+            console.log('Wayfarer Appeal Info: Upgrading database...');
             const db = event.target.result;
             if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
                 db.createObjectStore(OBJECT_STORE_NAME, { keyPath: 'id' });
