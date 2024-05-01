@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Wayfarer Contribution Management Layout
-// @version      0.0.2
+// @version      0.0.3
 // @description  Improves the layout of the Contribution Management page
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
-// @match        https://wayfarer.nianticlabs.com/*
+// @match        https://*.nianticlabs.com/*
 // @run-at       document-start
 // ==/UserScript==
 
@@ -221,7 +221,7 @@ function init() {
             const parentContainer = await awaitElement(() => document.querySelector('.cdk-virtual-scroll-content-wrapper'));
             // Scan existing elements
             const existingItems = parentContainer.querySelectorAll('app-nominations-list-item');
-            console.log(existingItems);
+
             existingItems.forEach(item => {
                 formatItem(item);
             });
@@ -246,15 +246,47 @@ function init() {
         if (data.poiData) {
             replacePhoto(item, data);
             formatText(item, data);
+            updateRejectionLabels(item, data)
             addClickListener(item, data);
         }
     }
 
     function addClickListener(item, data) {
-        console.log('adding click listener for details');
         item.addEventListener('click', function(event) {
             interceptDetailsPane(data);
         });
+    }
+
+    function updateRejectionLabels(item, data) {
+        // Remove wfcl-overturned class if already present
+        const overturnedTags = item.querySelectorAll('.wfcl-overturned');
+        overturnedTags.forEach(tag => {
+            tag.parentNode.removeChild(tag);
+        });
+
+        // If the current Wayspot data matches the rejected edit data, mark it as 'overturned'.
+        if (
+            data.status === 'REJECTED' &&
+            ((data.type === 'EDIT_TITLE' && data.title === data.poiData.title) ||
+             (data.type === 'EDIT_DESCRIPTION' && data.description === data.poiData.description) ||
+             (data.type === 'EDIT_LOCATION' && data.lat === data.poiData.lat && data.lng === data.poiData.lng) ||
+             (data.type === 'PHOTO' && data.imageUrl === data.poiData.imageUrl))
+        ) {
+            const nominationTagSet = item.querySelector('app-nomination-tag-set');
+            if (nominationTagSet) {
+                const newTag = document.createElement('app-nomination-tag');
+                newTag.classList.add('mr-1');
+                newTag.classList.add('wfcl-overturned');
+                const newTagContent = document.createElement('div');
+                newTagContent.classList.add('nomination-tag');
+                const newSpan = document.createElement('span');
+                newSpan.classList.add('nomination-tag--accepted');
+                newSpan.textContent = 'Overturned';
+                newTagContent.appendChild(newSpan);
+                newTag.appendChild(newTagContent);
+                nominationTagSet.appendChild(newTag);
+            }
+        }
     }
 
     // Show the user's submitted photo thumbnail in the menu instead of current Wayspot photo
@@ -308,12 +340,18 @@ function init() {
                 textSpan.textContent = nominationTitle;
                 textSpan.style.paddingLeft = '5px';
                 textSpan.classList.add('font-bold');
+                textSpan.style.overflow = 'hidden';
+                textSpan.style.textOverflow = 'ellipsis';
                 container.appendChild(textSpan);
 
                 titleElement.appendChild(container);
             } else if (contributionTypeSetting === 'text') {
-                titleElement.textContent = nominationTitle;
-                titleElement.classList.add('font-bold');
+                const textSpan = document.createElement('span');
+                textSpan.textContent = nominationTitle;
+                textSpan.classList.add('font-bold');
+                textSpan.style.overflow = 'hidden';
+                textSpan.style.textOverflow = 'ellipsis';
+                titleElement.appendChild(textSpan);
 
                 // Remove any existing contribution-type-label
                 const existingTypeLabel = item.querySelector('.contribution-type-label');
@@ -381,33 +419,38 @@ function init() {
             existingDetailsContainer.parentNode.removeChild(existingDetailsContainer);
         }
 
+
         const detailsSections = document.querySelectorAll('.details-pane__section');
+
+        // Unhide things that may have been hidden on the Edits page
+        detailsSections.forEach(section => {
+            const elementsToShow = section.querySelectorAll(':scope > *:nth-child(-n+2)');
+            elementsToShow.forEach(element => {
+                element.style.removeProperty('display');
+            });
+        });
 
         addCoordinates(data);
 
         if (data.type === 'NOMINATION') {
-            // Unhide things that may have been hidden on the Edits page
-            detailsSections.forEach(section => {
-                const elementsToShow = section.querySelectorAll(':scope > *:nth-child(-n+2)');
-                elementsToShow.forEach(element => {
-                    element.style.removeProperty('display');
-                });
-            });
             return;
         }
         const detailsContainer = document.createElement('div');
         detailsContainer.classList.add('wfcml-details-container');
         detailsContainer.style.display = 'flex';
+        detailsContainer.style.flexWrap = 'wrap'; // Allow flex items to wrap to the next line
         detailsContainer.style.flexDirection = 'row';
 
         const mapDiv = document.createElement('div');
         mapDiv.textContent = 'Location';
         mapDiv.classList.add('map-column');
         mapDiv.style.flex = '1 1 50%';
+        mapDiv.style.minWidth = '250px';
 
         const infoBoxDiv = document.createElement('div');
         infoBoxDiv.classList.add('details-column');
         infoBoxDiv.style.flex = '1 1 50%';
+        infoBoxDiv.style.minWidth = '250px';
 
         const header = document.createElement('div');
         header.textContent = 'Current Wayspot Details';
@@ -425,11 +468,36 @@ function init() {
         wayspotDetails.style.marginRight = '20px';
 
         // Title
+        const titleContainer = document.createElement('div');
+        titleContainer.style.display = 'flex';
+        titleContainer.style.justifyContent = 'space-between';
+        titleContainer.style.alignItems = 'center';
+
         const title = document.createElement('div');
         title.textContent = data.poiData.title;
         title.style.fontWeight = 'bold';
-        title.style.textAlign = 'center';
-        wayspotDetails.appendChild(title);
+        title.style.marginRight = '10px'; // Adjust margin as needed
+        titleContainer.appendChild(title);
+
+        // Status
+        const statusContainer = document.createElement('div');
+        statusContainer.classList.add('flex', 'flex-wrap', 'nominations-item__tags');
+        const statusTag = document.createElement('div');
+        statusTag.classList.add('nomination-tag', 'ng-star-inserted');
+
+        if (data.poiData.state === 'LIVE') {
+            statusTag.innerHTML = '<span class="nomination-tag--accepted ng-star-inserted"> Live </span>';
+            statusContainer.style.minWidth = '35px';
+        } else if (data.poiData.state === 'RETIRED') {
+            statusTag.innerHTML = '<span class="nomination-tag--rejected ng-star-inserted"> Retired </span>';
+            statusContainer.style.minWidth = '60px';
+            statusContainer.title = `Wayspot retired on ${data.poiData.lastUpdateDate}`;
+        }
+
+        statusContainer.appendChild(statusTag);
+        titleContainer.appendChild(statusContainer);
+
+        wayspotDetails.appendChild(titleContainer);
 
         // Image
         const image = document.createElement('img');
@@ -477,7 +545,12 @@ function init() {
             }
         });
 
-        addStreetView(data);
+        image.addEventListener('click', function() {
+            const newImageUrl = data.poiData.imageUrl + '=s0';
+            window.open(newImageUrl, '_blank');
+        });
+
+        addSatMap(data);
     }
 
 
@@ -499,9 +572,9 @@ function init() {
         });
     }
 
-    async function addStreetView(selected) {
+    async function addSatMap(selected) {
         if (typeof google === 'undefined') {
-            setTimeout(addStreetView, 100, selected);
+            setTimeout(addSatMap, 100, selected);
             return;
         }
 
@@ -520,7 +593,7 @@ function init() {
             ref.appendChild(SVMapElement);
 
             // Create an image element to track the image's loading status
-            // This helps make sure that the streetview window is the right height
+            // This helps make sure that the map window is the right height
             const image = new Image();
             image.src = selected.poiData.imageUrl;
             image.style.display = 'none';
@@ -555,7 +628,7 @@ function init() {
                 const editMarker = new google.maps.Marker({
                     map: SVMap,
                     position: new google.maps.LatLng(editLat, editLng),
-                    icon:  generateSvgMapMarker('c955e0')
+                    icon:  generateSvgMapMarker('c955e0'),
                 });
             }
         }
@@ -563,7 +636,7 @@ function init() {
         const markerNew = new google.maps.Marker({
             map: SVMap,
             position: { lat, lng },
-            icon: generateSvgMapMarker('f21818')
+            icon: generateSvgMapMarker('4cf731')
         });
     }
 
