@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         Wayfarer Contribution Management Layout
-// @version      0.0.5
+// @version      0.0.6
 // @description  Improves the layout of the Contribution Management page
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
+// @updateUrl    https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
 // @match        https://wayfarer.nianticlabs.com/*
 // @run-at       document-start
