@@ -5,7 +5,7 @@
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
 // @homepageURL  https://github.com/tehstone/wayfarer-addons/
-// @match        https://*.nianticlabs.com/*
+// @match        https://wayfarer.nianticlabs.com/*
 // @run-at       document-start
 // ==/UserScript==
 
