@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.5
+// @version      0.1.6
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -108,11 +108,12 @@ function init() {
                 localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
                 localStorage.removeItem(`wfai_last_appeal_date_${userId}`);
             }
-            if (localStorage.hasOwnProperty(`wfai_appeal_history_${userId}`)) {
+            if (localStorage.hasOwnProperty(`wfai_appeal_queue_${userId}`)) {
                 appealQueue = JSON.parse(localStorage[`wfai_appeal_queue_${userId}`]);
             } else {
                 setItem(appealQueue, 0);
                 setItem(appealQueue, 1);
+                localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
             }
             const firstAppealTimestamp = parseInt(appealQueue[appealQueue.length - 1]);
             const secondAppealTimestamp = parseInt(appealQueue[appealQueue.length - 2]);
