@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.7.0
+// @version      0.7.1
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -66,9 +66,6 @@ function init() {
             setTimeout(() => {
                 addNominationDetails();
                 addExportButtons();
-                if ("canAppeal" in json.result) {
-                    checkAppealStatus(json.result["canAppeal"]);
-                }
                 addUpgradeSetting();
             }, 300);
             
@@ -327,32 +324,6 @@ function init() {
         return csv;
     }
 
-    function checkAppealStatus(canAppeal) {
-        awaitElement(() => document.querySelector('wf-logo')).then(ref => {
-            const div = document.createElement('div');
-            div.className = 'wayfarernost';
-
-            let appealLabel = document.createElement('p');
-            appealLabel.textContent = 'Appeal eligible: ';
-            let appeal = document.createElement('p');
-
-            if (canAppeal) {
-                appeal.textContent = 'Yes';
-            } else {
-                appeal.textContent = 'No';
-            }
-
-            div.appendChild(appealLabel);
-            div.appendChild(appeal);
-
-            const container = ref.parentNode.parentNode;
-            console.log(document.querySelector('.wayfarernost'));
-            if (document.querySelector('.wayfarernost') === null) {
-                container.appendChild(div);
-            }
-        });
-    }
-
     function addUpgradeSetting() {
         awaitElement(() => document.querySelector(".cdk-virtual-scroll-content-wrapper")).then(ref => {
             const listEl = document.querySelector(".cdk-virtual-scroll-content-wrapper");
@@ -469,43 +440,9 @@ function init() {
                 .wfnsNotifyCloseButton{
                 float: right;
                 }
-            .wayfarernost {
-                color: #333;
-                margin-left: 2em;
-                padding-top: 0.3em;
-                text-align: center;
-                display: block;
-            }
-
-            .dark .wayfarernost {
-                color: #ddd;
-            }
-
-            .wayfarernost p:nth-child(2) {
-                font-size: 20px;
-                color: #20B8E3;
-            }
-
-            .wayfarernd {
-                color: #333;
-                margin: 20px 50px;
-                padding: 20px 20px;
-                text-align: left;
-                font-size: 16px;
-                background-color: #e5e5e5;
-                border: 1px;
-                border-radius: 3px;
-                border-style: double;
-                border-color: #ff4713;
-                height: 25%
-            }
 
             .wayfarerns__visible {
                 display: block;
-            }
-
-            .dark .wayfarernd {
-                color: #000000;
             }
 
             .wayfarerns__button {
@@ -514,15 +451,26 @@ function init() {
                 color: #ff4713;
                 padding: 10px 10px;
                 margin: 10px;
+                border-radius: .375rem;
                 text-align: center;
                 text-decoration: none;
                 display: inline-block;
                 font-size: 16px;
             }
 
+            .wayfarerns__button:hover {
+                background-color: #bdbbbb;
+                transition: 0.2s;
+            }
+
             .dark .wayfarerns__button {
                 background-color: #404040;
                 color: #20B8E3;
+            }
+
+            .dark .wayfarerns__button:hover {
+                background-color: #707070;
+                transition: 0.2s;
             }
 
             .wrap-collabsible {
