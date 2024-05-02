@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Contribution Management Layout
-// @version      0.0.6
+// @version      0.0.7
 // @description  Improves the layout of the Contribution Management page
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
@@ -219,7 +219,7 @@ function init() {
     // Function to log when <app-nominations-list-item> elements are added to the DOM
     async function detectAppListItems() {
         try {
-            const parentContainer = await awaitElement(() => document.querySelector('.cdk-virtual-scroll-content-wrapper'));
+            const parentContainer = await awaitElement(() => document.querySelector('.nominations'));
             // Scan existing elements
             const existingItems = parentContainer.querySelectorAll('app-nominations-list-item');
 
@@ -268,8 +268,8 @@ function init() {
         // If the current Wayspot data matches the rejected edit data, mark it as 'overturned'.
         if (
             data.status === 'REJECTED' &&
-            ((data.type === 'EDIT_TITLE' && data.title === data.poiData.title) ||
-             (data.type === 'EDIT_DESCRIPTION' && data.description === data.poiData.description) ||
+            ((data.type === 'EDIT_TITLE' && data.title.trim() === data.poiData.title.trim()) ||
+             (data.type === 'EDIT_DESCRIPTION' && data.description.trim() === data.poiData.description.trim()) ||
              (data.type === 'EDIT_LOCATION' && data.lat === data.poiData.lat && data.lng === data.poiData.lng) ||
              (data.type === 'PHOTO' && data.imageUrl === data.poiData.imageUrl))
         ) {
