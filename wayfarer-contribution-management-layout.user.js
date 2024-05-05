@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Contribution Management Layout
-// @version      0.0.7
+// @version      0.0.8
 // @description  Improves the layout of the Contribution Management page
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
@@ -36,14 +36,24 @@ function init() {
     let nominations;
     let darkMode = false;
 
+    // Initialize default settings
     let contributionTypeSetting = 'text';
+    let showCurrentWayspotInfobox = true;
+    let showSummaryOfEdits = true;
 
+    // Load settings from localStorage if available
     const savedSettings = localStorage.getItem('wfcml-settings');
 
     if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
         if (parsedSettings.contributionTypeSetting) {
             contributionTypeSetting = parsedSettings.contributionTypeSetting;
+        }
+        if (parsedSettings.showCurrentWayspotInfobox !== undefined) {
+            showCurrentWayspotInfobox = parsedSettings.showCurrentWayspotInfobox;
+        }
+        if (parsedSettings.showSummaryOfEdits !== undefined) {
+            showSummaryOfEdits = parsedSettings.showSummaryOfEdits;
         }
     }
 
@@ -134,18 +144,19 @@ function init() {
         queryLoop();
     });
 
-    const getL10N = () => {
-        const i18n = JSON.parse(localStorage['@transloco/translations']);
-        return i18n['en'];
-    };
+    // Save settings to localStorage
+    function saveSettings() {
+        localStorage.setItem('wfcml-settings', JSON.stringify({
+            contributionTypeSetting,
+            showCurrentWayspotInfobox,
+            showSummaryOfEdits
+        }));
+    }
 
     function modifySettingsPage() {
-        const l10n = getL10N();
-
         return new Promise(async (resolve, reject) => {
             try {
                 const settingsItem = await awaitElement(() => document.querySelector('.settings__item'));
-
                 const parentDiv = settingsItem.parentElement;
 
                 const newSettingsItem = document.createElement('div');
@@ -153,11 +164,7 @@ function init() {
 
                 const headerDiv = document.createElement('div');
                 headerDiv.classList.add('settings-item__header');
-
-                const titleDiv = document.createElement('div');
-                titleDiv.textContent = 'Contribution Management Layout Plug-In';
-
-                headerDiv.appendChild(titleDiv);
+                headerDiv.textContent = 'Contribution Management Layout Plug-In';
 
                 const valueDiv = document.createElement('div');
                 valueDiv.classList.add('settings-item__value');
@@ -165,15 +172,29 @@ function init() {
                 const descriptionDiv = document.createElement('div');
                 descriptionDiv.classList.add('settings-item__description');
 
-                const descriptionParagraph = document.createElement('div');
-                descriptionParagraph.textContent = 'How would you like the contribution type to be displayed on the Contribution Management list?';
-                descriptionParagraph.style.marginBottom = '10px';
-                descriptionDiv.appendChild(descriptionParagraph);
+                const descriptionParagraph1 = document.createElement('div');
+                descriptionParagraph1.textContent = 'How would you like the contribution type to be displayed on the Contribution Management list?';
+                descriptionParagraph1.style.marginBottom = '10px';
+
+                const descriptionParagraph2 = document.createElement('div');
+                descriptionParagraph2.textContent = 'Tick the modifications you would like enabled on the Details Pane.';
+                descriptionParagraph2.style.marginTop = '20px';
+                descriptionParagraph2.style.marginBottom = '10px';
 
                 // Function to update contributionTypeSetting and save the value to localStorage
                 function updateContributionTypeSetting(setting) {
                     contributionTypeSetting = setting;
-                    localStorage.setItem('wfcml-settings', JSON.stringify({ contributionTypeSetting }));
+                    saveSettings();
+                }
+
+                // Function to update detailsPaneOptions and save the value to localStorage
+                function updateDetailsPaneOptions(option, checked) {
+                    if (option === 'showCurrentWayspotInfobox') {
+                        showCurrentWayspotInfobox = checked;
+                    } else if (option === 'showSummaryOfEdits') {
+                        showSummaryOfEdits = checked;
+                    }
+                    saveSettings(); //
                 }
 
                 const options = [
@@ -193,19 +214,50 @@ function init() {
                     const label = document.createElement('label');
                     label.textContent = option.label;
                     label.style.marginLeft = '10px';
-                    descriptionParagraph.style.marginTop = '10px';
 
                     descriptionDiv.appendChild(radioButton);
                     descriptionDiv.appendChild(label);
                     descriptionDiv.appendChild(document.createElement('br'));
                 });
 
+                // Details Pane modification options
+                const detailsOptions = [
+                    { value: 'showCurrentWayspotInfobox', label: 'Display current Wayspot details and interactive map for edits' },
+                    { value: 'showSummaryOfEdits', label: 'Display a summary of all edits for a given Wayspot' }
+                ];
+
+                // Create a container for checkboxes and labels
+                const checkboxesContainer = document.createElement('div');
+
+                detailsOptions.forEach(option => {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = option.value;
+                    checkbox.checked = option.value === 'showCurrentWayspotInfobox' ? showCurrentWayspotInfobox : showSummaryOfEdits;
+                    checkbox.addEventListener('change', () => updateDetailsPaneOptions(option.value, checkbox.checked));
+
+                    const label = document.createElement('label');
+                    label.textContent = option.label;
+                    label.style.marginLeft = '10px';
+
+                    // Append checkbox and label to the container
+                    checkboxesContainer.appendChild(checkbox);
+                    checkboxesContainer.appendChild(label);
+                    checkboxesContainer.appendChild(document.createElement('br'));
+                });
+
+                // Append descriptionDiv and descriptionParagraph2
                 newSettingsItem.appendChild(headerDiv);
                 newSettingsItem.appendChild(valueDiv);
+                newSettingsItem.appendChild(descriptionParagraph1);
                 newSettingsItem.appendChild(descriptionDiv);
+                newSettingsItem.appendChild(descriptionParagraph2);
+                newSettingsItem.appendChild(checkboxesContainer);
 
+                // Append the newSettingsItem to parentDiv
                 parentDiv.appendChild(newSettingsItem);
 
+                // Insert the newSettingsItem before the 4th child of parentDiv
                 parentDiv.insertBefore(newSettingsItem, parentDiv.children[3]);
 
                 resolve();
@@ -419,6 +471,10 @@ function init() {
         if (existingDetailsContainer) {
             existingDetailsContainer.parentNode.removeChild(existingDetailsContainer);
         }
+        const existingSummaryContainer = document.querySelector('.wfcml-edits-summary');
+        if (existingSummaryContainer) {
+            existingSummaryContainer.parentNode.removeChild(existingSummaryContainer);
+        }
 
 
         const detailsSections = document.querySelectorAll('.details-pane__section');
@@ -436,89 +492,117 @@ function init() {
         if (data.type === 'NOMINATION') {
             return;
         }
+
         const detailsContainer = document.createElement('div');
         detailsContainer.classList.add('wfcml-details-container');
         detailsContainer.style.display = 'flex';
         detailsContainer.style.flexWrap = 'wrap'; // Allow flex items to wrap to the next line
         detailsContainer.style.flexDirection = 'row';
 
-        const mapDiv = document.createElement('div');
-        mapDiv.textContent = 'Location';
-        mapDiv.classList.add('map-column');
-        mapDiv.style.flex = '1 1 50%';
-        mapDiv.style.minWidth = '250px';
+        if (showCurrentWayspotInfobox) {
+            const mapDiv = document.createElement('div');
+            mapDiv.textContent = 'Location';
+            mapDiv.classList.add('map-column');
+            mapDiv.style.flex = '1 1 50%';
+            mapDiv.style.minWidth = '250px';
 
-        const infoBoxDiv = document.createElement('div');
-        infoBoxDiv.classList.add('details-column');
-        infoBoxDiv.style.flex = '1 1 50%';
-        infoBoxDiv.style.minWidth = '250px';
+            const infoBoxDiv = document.createElement('div');
+            infoBoxDiv.classList.add('details-column');
+            infoBoxDiv.style.flex = '1 1 50%';
+            infoBoxDiv.style.minWidth = '250px';
 
-        const header = document.createElement('div');
-        header.textContent = 'Current Wayspot Details';
-        infoBoxDiv.appendChild(header);
+            const header = document.createElement('div');
+            header.textContent = 'Current Wayspot Details';
+            infoBoxDiv.appendChild(header);
 
-        const wayspotDetails = document.createElement('div');
-        if (darkMode) {
-            wayspotDetails.style.backgroundColor = '#444444';
-        } else {
-            wayspotDetails.style.backgroundColor = '#e4e4e4';
+            const wayspotDetails = document.createElement('div');
+            if (darkMode) {
+                wayspotDetails.style.backgroundColor = '#444444';
+            } else {
+                wayspotDetails.style.backgroundColor = '#e4e4e4';
+            }
+            wayspotDetails.style.borderRadius = '10px';
+            wayspotDetails.style.padding = '10px';
+            wayspotDetails.style.marginTop = '10px';
+            wayspotDetails.style.marginRight = '20px';
+
+            // Title
+            const titleContainer = document.createElement('div');
+            titleContainer.style.display = 'flex';
+            titleContainer.style.justifyContent = 'space-between';
+            titleContainer.style.alignItems = 'center';
+
+            const title = document.createElement('div');
+            title.textContent = data.poiData.title;
+            title.style.fontWeight = 'bold';
+            title.style.marginRight = '10px'; // Adjust margin as needed
+            titleContainer.appendChild(title);
+
+            // Status
+            const statusContainer = document.createElement('div');
+            statusContainer.classList.add('flex', 'flex-wrap', 'nominations-item__tags');
+            const statusTag = document.createElement('div');
+            statusTag.classList.add('nomination-tag', 'ng-star-inserted');
+
+            if (data.poiData.state === 'LIVE') {
+                statusTag.innerHTML = '<span class="nomination-tag--accepted ng-star-inserted"> Live </span>';
+                statusContainer.style.minWidth = '35px';
+            } else if (data.poiData.state === 'RETIRED') {
+                statusTag.innerHTML = '<span class="nomination-tag--rejected ng-star-inserted"> Retired </span>';
+                statusContainer.style.minWidth = '60px';
+                statusContainer.title = `Wayspot retired on ${data.poiData.lastUpdateDate}`;
+            }
+
+            statusContainer.appendChild(statusTag);
+            titleContainer.appendChild(statusContainer);
+
+            wayspotDetails.appendChild(titleContainer);
+
+            // Image
+            const image = document.createElement('img');
+            image.src = data.poiData.imageUrl;
+            image.style.width = '100%';
+            image.style.borderRadius = '10px';
+            image.style.marginTop = '5px';
+            image.style.marginBottom = '5px';
+            wayspotDetails.appendChild(image);
+
+            // Description
+            const description = document.createElement('div');
+            description.textContent = data.poiData.description || "<No Description>";
+            description.style.textAlign = 'left';
+            wayspotDetails.appendChild(description);
+
+            infoBoxDiv.appendChild(wayspotDetails);
+
+            detailsContainer.appendChild(infoBoxDiv);
+            detailsContainer.appendChild(mapDiv);
+
+            image.addEventListener('click', function() {
+                const newImageUrl = data.poiData.imageUrl + '=s0';
+                window.open(newImageUrl, '_blank');
+            });
+
+            detailsSections.forEach((section, index) => {
+                if (index === 0) {
+                    // Hide the 'Current Wayspot' data
+                    if (data.type === 'PHOTO') {
+                        const elementsToHide = section.querySelectorAll(':scope > *:nth-child(-n+2)');
+                        elementsToHide.forEach(element => {
+                            element.style.display = 'none';
+                        });
+                    } else {
+                        section.children[0].style.display = 'none';
+                    }
+                } else if (index === 1) {
+                    // For the static map
+                    const elementsToHide = section.querySelectorAll(':scope > *:nth-child(-n+2)');
+                    elementsToHide.forEach(element => {
+                        element.style.display = 'none';
+                    });
+                }
+            });
         }
-        wayspotDetails.style.borderRadius = '10px';
-        wayspotDetails.style.padding = '10px';
-        wayspotDetails.style.marginTop = '10px';
-        wayspotDetails.style.marginRight = '20px';
-
-        // Title
-        const titleContainer = document.createElement('div');
-        titleContainer.style.display = 'flex';
-        titleContainer.style.justifyContent = 'space-between';
-        titleContainer.style.alignItems = 'center';
-
-        const title = document.createElement('div');
-        title.textContent = data.poiData.title;
-        title.style.fontWeight = 'bold';
-        title.style.marginRight = '10px'; // Adjust margin as needed
-        titleContainer.appendChild(title);
-
-        // Status
-        const statusContainer = document.createElement('div');
-        statusContainer.classList.add('flex', 'flex-wrap', 'nominations-item__tags');
-        const statusTag = document.createElement('div');
-        statusTag.classList.add('nomination-tag', 'ng-star-inserted');
-
-        if (data.poiData.state === 'LIVE') {
-            statusTag.innerHTML = '<span class="nomination-tag--accepted ng-star-inserted"> Live </span>';
-            statusContainer.style.minWidth = '35px';
-        } else if (data.poiData.state === 'RETIRED') {
-            statusTag.innerHTML = '<span class="nomination-tag--rejected ng-star-inserted"> Retired </span>';
-            statusContainer.style.minWidth = '60px';
-            statusContainer.title = `Wayspot retired on ${data.poiData.lastUpdateDate}`;
-        }
-
-        statusContainer.appendChild(statusTag);
-        titleContainer.appendChild(statusContainer);
-
-        wayspotDetails.appendChild(titleContainer);
-
-        // Image
-        const image = document.createElement('img');
-        image.src = data.poiData.imageUrl;
-        image.style.width = '100%';
-        image.style.borderRadius = '10px';
-        image.style.marginTop = '5px';
-        image.style.marginBottom = '5px';
-        wayspotDetails.appendChild(image);
-
-        // Description
-        const description = document.createElement('div');
-        description.textContent = data.poiData.description || "<No Description>";
-        description.style.textAlign = 'left';
-        wayspotDetails.appendChild(description);
-
-        infoBoxDiv.appendChild(wayspotDetails);
-
-        detailsContainer.appendChild(infoBoxDiv);
-        detailsContainer.appendChild(mapDiv);
 
         const secondDetailsSection = detailsSections[1];
 
@@ -526,32 +610,82 @@ function init() {
             secondDetailsSection.parentNode.insertBefore(detailsContainer, secondDetailsSection);
         }
 
-        detailsSections.forEach((section, index) => {
-            if (index === 0) {
-                // Hide the 'Current Wayspot' data
-                if (data.type === 'PHOTO') {
-                    const elementsToHide = section.querySelectorAll(':scope > *:nth-child(-n+2)');
-                    elementsToHide.forEach(element => {
-                        element.style.display = 'none';
-                    });
-                } else {
-                    section.children[0].style.display = 'none';
-                }
-            } else if (index === 1) {
-                // For the static map
-                const elementsToHide = section.querySelectorAll(':scope > *:nth-child(-n+2)');
-                elementsToHide.forEach(element => {
-                    element.style.display = 'none';
-                });
+        if (showCurrentWayspotInfobox) {
+            addSatMap(data);
+        }
+
+        // Function to filter edits by type
+        function filterEditsByType(edits, type) {
+            return edits.filter(edit => edit.type === type);
+        }
+
+        // Insert edit summary tables if necessary
+        if (showSummaryOfEdits && data.type.startsWith('EDIT')) {
+            const wayspotEdits = findWayspotEdits(data);
+
+            // Create container for all edit tables
+            const editsSummaryContainer = document.createElement('div');
+            editsSummaryContainer.classList.add('wfcml-edits-summary');
+
+            // Check if there are edits for each type and insert containers accordingly
+            if (wayspotEdits.some(edit => edit.type === 'EDIT_TITLE')) {
+                const titleEditsContainer = document.createElement('div');
+                titleEditsContainer.classList.add('wfcml-title-edits');
+
+                const titleEditsHeader = document.createElement('div');
+                titleEditsHeader.textContent = 'Your Title Edits';
+                titleEditsHeader.style.fontWeight = 'bold';
+                titleEditsContainer.appendChild(titleEditsHeader);
+
+                const titleEdits = filterEditsByType(wayspotEdits, 'EDIT_TITLE');
+                const titleTable = generateEditSummaryTable(titleEdits, 'EDIT_TITLE');
+                titleEditsContainer.appendChild(titleTable);
+
+                titleEditsContainer.style.marginBottom = '24px';
+
+                editsSummaryContainer.appendChild(titleEditsContainer);
             }
-        });
 
-        image.addEventListener('click', function() {
-            const newImageUrl = data.poiData.imageUrl + '=s0';
-            window.open(newImageUrl, '_blank');
-        });
+            if (wayspotEdits.some(edit => edit.type === 'EDIT_DESCRIPTION')) {
+                const descriptionEditsContainer = document.createElement('div');
+                descriptionEditsContainer.classList.add('wfcml-description-edits');
 
-        addSatMap(data);
+                const descriptionEditsHeader = document.createElement('div');
+                descriptionEditsHeader.textContent = 'Your Description Edits';
+                descriptionEditsHeader.style.fontWeight = 'bold';
+                descriptionEditsContainer.appendChild(descriptionEditsHeader);
+
+                const descriptionEdits = filterEditsByType(wayspotEdits, 'EDIT_DESCRIPTION');
+                const descriptionTable = generateEditSummaryTable(descriptionEdits, 'EDIT_DESCRIPTION');
+                descriptionEditsContainer.appendChild(descriptionTable);
+
+                descriptionEditsContainer.style.marginBottom = '24px';
+
+                editsSummaryContainer.appendChild(descriptionEditsContainer);
+            }
+
+            if (wayspotEdits.some(edit => edit.type === 'EDIT_LOCATION')) {
+                const locationEditsContainer = document.createElement('div');
+                locationEditsContainer.classList.add('wfcml-location-edits');
+
+                const locationEditsHeader = document.createElement('div');
+                locationEditsHeader.textContent = 'Your Location Edits';
+                locationEditsHeader.style.fontWeight = 'bold';
+                locationEditsContainer.appendChild(locationEditsHeader);
+
+                const locationEdits = filterEditsByType(wayspotEdits, 'EDIT_LOCATION');
+                const locationTable = generateEditSummaryTable(locationEdits, 'EDIT_LOCATION');
+                locationEditsContainer.appendChild(locationTable);
+
+                locationEditsContainer.style.marginBottom = '24px';
+
+                editsSummaryContainer.appendChild(locationEditsContainer);
+            }
+
+            // Insert edits summary container before details container
+            detailsContainer.parentNode.insertBefore(editsSummaryContainer, detailsContainer);
+        }
+
     }
 
 
@@ -646,19 +780,127 @@ function init() {
         return icon;
     }
 
-    // Unused function. Possible future development -- Identify all edits for a given Wayspot
+    // Function to find and process wayspot edits
     function findWayspotEdits(data) {
         const wayspotId = data.poiData.id;
         const wayspotEdits = [];
 
         for (const nomination of nominations) {
             if (nomination.poiData.id === wayspotId) {
+                // Check if the edit overturns the original data
+                if (nomination.status === 'REJECTED' &&
+                    ((nomination.type === 'EDIT_TITLE' && nomination.title.trim() === data.poiData.title.trim()) ||
+                     (nomination.type === 'EDIT_DESCRIPTION' && nomination.description.trim() === data.poiData.description.trim()) ||
+                     (nomination.type === 'EDIT_LOCATION' && nomination.lat === data.poiData.lat && nomination.lng === data.poiData.lng))
+                   ) {
+                    nomination.status = 'OVERTURNED';
+                }
                 wayspotEdits.push(nomination);
             }
         }
 
         return wayspotEdits;
     }
+
+    function generateEditSummaryTable(edits, type) {
+        // Sort edits by date in descending order (most recent to oldest)
+        edits.sort((a, b) => {
+            const dateA = new Date(a.day);
+            const dateB = new Date(b.day);
+            return dateB - dateA;
+        });
+
+        const table = document.createElement('table');
+        table.classList.add('wfcml-edit-summary-table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+
+        // Populate table with edit data
+        edits.forEach(edit => {
+            const row = table.insertRow();
+            const cell1 = row.insertCell();
+            cell1.textContent = edit.day;
+            cell1.style.width = '100px';
+            cell1.style.border = 'none';
+            const cell2 = row.insertCell();
+            switch (type) {
+                case 'EDIT_TITLE':
+                    cell2.textContent = edit.title;
+                    break;
+                case 'EDIT_DESCRIPTION':
+                    cell2.textContent = edit.description;
+                    break;
+                case 'EDIT_LOCATION':
+                    cell2.textContent = `${edit.lat}, ${edit.lng}`;
+                    break;
+                default:
+                    break;
+            }
+            cell2.style.border = 'none';
+            const cell3 = row.insertCell();
+            const nominationTagHTML = generateNominationTag(edit.status);
+            cell3.innerHTML = nominationTagHTML;
+            cell3.style.width = '95px';
+            cell3.style.textAlign = 'right';
+            cell3.style.border = 'none';
+        });
+
+        return table;
+    }
+
+    function generateNominationTag(status) {
+        let statusText, tagType;
+
+        switch (status) {
+            case 'VOTING':
+                statusText = 'In Voting';
+                tagType = 'queue';
+                break;
+            case 'NOMINATED':
+                statusText = 'In Queue';
+                tagType = 'queue';
+                break;
+            case 'ACCEPTED':
+                statusText = 'Accepted';
+                tagType = 'accepted';
+                break;
+            case 'REJECTED':
+                statusText = 'Not Accepted';
+                tagType = 'rejected';
+                break;
+            case 'APPEALED':
+                statusText = 'Appealed';
+                tagType = 'queue';
+                break;
+            case 'NIANTIC_REVIEW':
+                statusText = 'NIA Voting';
+                tagType = 'queue';
+                break;
+            case 'DUPLICATE':
+                statusText = 'Duplicate';
+                tagType = 'queue';
+                break;
+            case 'HELD':
+                statusText = 'Held';
+                tagType = 'queue';
+                break;
+            case 'WITHDRAWN':
+                statusText = 'Withdrawn';
+                tagType = 'rejected';
+                break;
+            case 'OVERTURNED':
+                statusText = 'Overturned';
+                tagType = 'accepted';
+                break;
+            default:
+                statusText = status;
+                tagType = 'queue';
+                break;
+        }
+
+        return `<app-nomination-tag><div class="nomination-tag"><span class="nomination-tag--${tagType}">${statusText}</span></div></app-nomination-tag>`;
+    }
+
 }
 
 init();
