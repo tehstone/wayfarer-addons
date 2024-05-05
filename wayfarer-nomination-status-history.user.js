@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.3.1
+// @version      1.3.2
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -419,10 +419,12 @@
                     // Nomination ALREADY EXISTS in IDB
                     const saved = savedNominations[nom.id];
                     const history = saved.statusHistory;
+                    const title = nom.title || (nom.poiData && nom.poiData.title) || "[Title]";
+                    const icon = createNotificationIcon(nom.type);
                     // Add upgrade change status if the nomination was upgraded.
                     if (nom.upgraded && !saved.upgraded) {
                         history.push({ timestamp: Date.now(), status: 'UPGRADE' });
-                        createNotification(`${nom.title} was upgraded!`, 'blue');
+                        createNotification(`${title} was upgraded!`, 'blue', icon);
                     }
                     // Add status change if the current status is different to the stored one.
                     if (nom.status != saved.status) {
@@ -430,8 +432,6 @@
                         // For most status updates, it's also desired to send a notification to the user.
                         if (nom.status !== 'HELD' && !(nom.status === 'NOMINATED' && saved.status === 'HELD')) {
                             const { text, color } = getStatusNotificationText(nom.status);
-                            const title = nom.title || (nom.poiData && nom.poiData.title) || "[Title]";
-                            const icon = createNotificationIcon(nom.type);
                             createNotification(`${title} ${text}`, color, icon);
                         }
                     }
