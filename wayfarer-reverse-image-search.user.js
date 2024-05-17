@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Reverse Image Search
-// @version      0.4.0
+// @version      0.4.1
 // @description  Add reverse image search links to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-reverse-image-search.user.js
@@ -70,7 +70,8 @@
 
   const checkReviewType = result => awaitElement(() => (
         document.getElementById('check-duplicates-card') ||
-        document.querySelector('app-review-photo')
+        document.querySelector('app-review-photo') ||
+        document.querySelector('app-review-edit')
     )).then(ref => {
         console.log("checkReviewType")
         switch (ref.tagName) {
@@ -85,6 +86,8 @@
                 .then((ref) => {
                     addPhotoReviewLinks(ref, result);
                 });
+                break;
+            default:
                 break;
         }
     });
