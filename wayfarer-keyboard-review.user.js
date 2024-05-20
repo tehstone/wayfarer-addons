@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.0.3
+// @version      2.1.0
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -141,7 +141,7 @@
                     initForNew(candidate);
                     break;
                 case 'APP-REVIEW-EDIT':
-                    //initForEdit(candidate);
+                    initForEdit(candidate);
                     break;
                 case 'APP-REVIEW-PHOTO':
                     initForPhoto(candidate);
@@ -151,7 +151,7 @@
     };
 
     const makeKeyMap = map => e => {
-        console.log("makeKeyMap")
+        console.log(map);
         let inputActive = false;
         if (document.activeElement.tagName == 'TEXTAREA') inputActive = true;
         if (document.activeElement.tagName == 'INPUT' && !['radio', 'checkbox'].includes(document.activeElement.type.toLowerCase())) inputActive = true;
@@ -192,7 +192,6 @@
     };
 
     const thumbDownOpen = card => new Promise((resolve, reject) => {
-        console.log("thumbDownOpen")
         if (isDialogOpen()) {
             if (!card.opens) {
                 reject();
@@ -528,6 +527,10 @@
                     const card = document.getElementById(cc.id);
                     restyle(card, 'highlighted');
                     cc.draw(card);
+                    /*card.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });*/
                 }
             },
             cards: [
@@ -852,6 +855,128 @@
             keys['+' + String.fromCharCode(65 + i)] = () => window.open(card.querySelector('.photo-card__photo img').src + '=s0');
         }
         setHandler(makeKeyMap(keys));
+    };
+
+    const initForEdit = candidate => {
+        const drawTextEdit = card => {
+            const btns = card.querySelectorAll('mat-radio-button');
+            for (let i = 0; i < btns.length && i < 9; i++) {
+                let btnKey = (i + 1) + '';
+                const label = drawNew('span');
+                label.classList.add('wfkr2-key-label');
+                label.textContent = `[${btnKey}] `;
+                const textNode = btns[i].querySelector('.mat-radio-label-content fragment') || btns[i].querySelector('.mat-radio-label-content');
+                textNode.insertBefore(label, textNode.firstChild);
+            }
+        };
+        const handleTextEditKeys = selector => () => {
+            const keys = {};
+            const btns = document.querySelectorAll(`${selector} mat-radio-button label`);
+            for (let i = 0; i < btns.length && i < 9; i++) {
+                const btn = btns[i];
+                keys['' + (i + 1)] = () => {
+                    btn.click();
+                    context.nextCard();
+                }
+            }
+            return keys;
+        };
+
+        context = {
+            draw: () => {
+                while (context.markers.length) {
+                    context.markers.pop().setMap(null);
+                }
+                const cc = context.cards[context.currentCard];
+                const card = document.querySelector(cc.selector);
+                restyle(card, 'highlighted');
+                cc.draw(card);
+            },
+            cards: [
+                {
+                    selector: 'app-select-title-edit wf-review-card',
+                    draw: drawTextEdit,
+                    extraKeys: handleTextEditKeys('app-select-title-edit wf-review-card')
+                }, {
+                    selector: 'app-select-description-edit wf-review-card',
+                    draw: drawTextEdit,
+                    extraKeys: handleTextEditKeys('app-select-description-edit wf-review-card')
+                }, {
+                    selector: 'app-select-location-edit wf-review-card',
+                    draw: card => {
+                        const gmap = card.querySelector('nia-map');
+                        const { map } = gmap.__ngContext__[gmap.__ngContext__.length - 1].componentRef;
+                        if (!map) {
+                            setTimeout(redrawUI, 50);
+                        } else {
+                            candidate.locationEdits.forEach((marker, i) => {
+                                if (i >= 26) return;
+                                const labelMarker = new google.maps.Marker({
+                                    position: {
+                                        lat: parseFloat(marker.lat),
+                                        lng: parseFloat(marker.lng)
+                                    },
+                                    label: {
+                                        text: String.fromCharCode(65 + i),
+                                        fontWeight: 'bold'
+                                    },
+                                    clickable: false,
+                                    zIndex: 1000,
+                                    map
+                                });
+                                context.markers.push(labelMarker);
+                            });
+                        }
+                    },
+                    extraKeys: () => {
+                        const keys = {};
+                        for (let i = 0; i < candidate.locationEdits.length && i < 26; i++) {
+                            const idx = i;
+                            keys[String.fromCharCode(65 + idx)] = () => {
+                                const gmap = document.querySelector('app-select-location-edit wf-review-card nia-map');
+                                const { markers } = gmap.__ngContext__[gmap.__ngContext__.length - 1].componentRef;
+                                const defaultMarker = markers.default.markers.filter(m => m.id == candidate.locationEdits[idx].hash)[0];
+                                markers.default.markerOnClick(defaultMarker);
+                            }
+                        }
+                        return keys;
+                    }
+                }
+            ].filter(ch => !!document.querySelector(ch.selector)),
+            markers: [],
+            currentCard: 0,
+            nextCard: () => {
+                if (context.currentCard < context.cards.length - 1) {
+                    context.currentCard++;
+                    context.extraKeys = context.cards[context.currentCard].extraKeys
+                    updateKeybindsEdit(candidate);
+                }
+            },
+            prevCard: () => {
+                if (context.currentCard > 0) {
+                    context.currentCard--;
+                    context.extraKeys = context.cards[context.currentCard].extraKeys
+                    updateKeybindsEdit(candidate);
+                }
+            }
+        };
+        context.extraKeys = context.cards[context.currentCard].extraKeys
+        updateKeybindsEdit(candidate);
+    };
+
+    const updateKeybindsEdit = candidate => {
+        console.log(context.currentCard);
+        const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
+        setHandler(makeKeyMap({
+            'Tab': () => context.nextCard(),
+            '+Tab': () => context.prevCard(),
+            'ArrowDown': () => context.nextCard(),
+            'ArrowUp': () => context.prevCard(),
+            'ArrowRight': () => context.nextCard(),
+            'ArrowLeft': () => context.prevCard(),
+            'Enter': () => handleEnterNew(),
+            ...context.extraKeys()
+        }));
     };
 
     (() => {
