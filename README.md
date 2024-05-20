@@ -144,7 +144,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇧🇱 **Saint Barthélemy:** Mappy
 - 🇨🇭 **Switzerland:** Admin.ch
 - 🇨🇳 **China:**
-    - **Mainland:** 高德, 百度
+    - **PRC:** 高德, 百度 (Gaode, Baidu)
 - 🇨🇿 **Czech Republic:** Mapy.cz
 - 🇩🇪 **Germany:**
     - **Baden-Württemberg:** Geoportal BW\*
@@ -188,7 +188,7 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇳🇿 **New Zealand:** Land Information NZ
 - 🇵🇱 **Poland:** Geoportal
 - 🇵🇲 **Saint Pierre and Miquelon:** Mappy
-- 🇵🇸 **Palestinian Territories:**
+- 🇵🇸 **Palestine:**
     - **West Bank:** Govmap
 - 🇷🇪 **Réunion:** Mappy
 - 🇷🇸 **Serbia:** МРЕ Србије

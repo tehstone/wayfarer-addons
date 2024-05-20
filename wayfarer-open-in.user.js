@@ -100,13 +100,13 @@
             regions: ['CH', 'LI']
         },
         {
-            // China (Mainland)
+            // China (PRC)
             label: '高德',
             url: 'https://uri.amap.com/marker?position=%lng%,%lat%&coordinate=wgs84&name=%title%',
             regions: ['CN']
         },
         {
-            // China (Mainland)
+            // China (PRC)
             label: '百度',
             url: 'http://api.map.baidu.com/marker?location=%lat%,%lng%&title=%title%&content=.&output=html&coord_type=wgs84',
             regions: ['CN']
