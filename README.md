@@ -143,6 +143,8 @@ In addition to these providers, the plugin adds support for 52 regional map prov
 - 🇧🇯 **Benin:** IGN Bénin\*
 - 🇧🇱 **Saint Barthélemy:** Mappy
 - 🇨🇭 **Switzerland:** Admin.ch
+- 🇨🇳 **China:**
+    - **Mainland:** 高德, 百度
 - 🇨🇿 **Czech Republic:** Mapy.cz
 - 🇩🇪 **Germany:**
     - **Baden-Württemberg:** Geoportal BW\*
