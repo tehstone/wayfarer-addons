@@ -138,7 +138,9 @@ function init() {
             .then((ref) => {
                 addMapMods();
                 addSettings();
-            })
+            }).catch(() => {
+                return;
+            }); 
     };
 
     function addMapMods() {
