@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.6
+// @version      0.1.7
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -263,7 +263,11 @@ function init() {
                     parent.appendChild(document.createElement('br'));
 
                     let appealText = document.createElement('span');
-                    appealText.textContent = `Appeal Statement:\n${result["appealText"]}`;
+                    let content = result["statement"];
+                    if (content == null || content == undefined) {
+                        content = result["appealText"];
+                    }
+                    appealText.textContent = `Appeal Statement:\n${content}`;
                     parent.appendChild(appealText);
                 }
 
