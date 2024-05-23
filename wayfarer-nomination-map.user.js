@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Map
-// @version      0.5.0
+// @version      0.5.1
 // @description  Add map of all nominations
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-map.user.js
@@ -101,7 +101,7 @@ function init() {
             if (json.captcha)
                 return;
 
-            nominations = json.result.nominations;
+            nominations = json.result.submissions;
             if (!nominations) {
                 alert('Wayfarer\'s response didn\'t include nominations.');
                 return;

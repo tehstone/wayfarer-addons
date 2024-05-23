@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Stats
-// @version      0.7.1
+// @version      0.7.2
 // @description  Add extended Wayfarer Profile stats
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-stats.user.js
@@ -58,7 +58,7 @@ function init() {
             if (json.captcha)
                 return;
 
-            nominations = json.result.nominations;
+            nominations = json.result.submissions;
             if (!nominations) {
                 console.log('Wayfarer\'s response didn\'t include nominations.');
                 return;

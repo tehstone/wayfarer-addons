@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Contribution Management Layout
-// @version      0.0.8
+// @version      0.0.9
 // @description  Improves the layout of the Contribution Management page
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
@@ -91,7 +91,7 @@ function init() {
             if (json.captcha)
                 return;
 
-            nominations = json.result.nominations;
+            nominations = json.result.submissions;
             if (!nominations) {
                 console.log('Wayfarer\'s response didn\'t include nominations.');
                 return;

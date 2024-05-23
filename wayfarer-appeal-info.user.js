@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.7
+// @version      0.1.8
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -168,7 +168,7 @@ function init() {
                 return;
             }
             if (json.captcha) return; // ignore if it's related to captchas
-            nominations = json.result.nominations;
+            nominations = json.result.submissions;
             if (!nominations) {
                 console.log('Wayfarer Appeal Info: Wayfarer\'s response didn\'t include nominations.');
                 return;
