@@ -268,12 +268,12 @@ function init() {
         });
     }
 
-    // Function to log when <app-nominations-list-item> elements are added to the DOM
+    // Function to log when <app-submissions-list-item> elements are added to the DOM
     async function detectAppListItems() {
         try {
-            const parentContainer = await awaitElement(() => document.querySelector('.nominations'));
+            const parentContainer = await awaitElement(() => document.querySelector('.submissions'));
             // Scan existing elements
-            const existingItems = parentContainer.querySelectorAll('app-nominations-list-item');
+            const existingItems = parentContainer.querySelectorAll('app-submissions-list-item');
 
             existingItems.forEach(item => {
                 formatItem(item);
@@ -282,7 +282,7 @@ function init() {
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeName === 'APP-NOMINATIONS-LIST-ITEM') {
+                        if (node.nodeName === 'APP-SUBMISSIONS-LIST-ITEM') {
                             formatItem(node);
                         }
                     });
@@ -325,15 +325,15 @@ function init() {
              (data.type === 'EDIT_LOCATION' && data.lat === data.poiData.lat && data.lng === data.poiData.lng) ||
              (data.type === 'PHOTO' && data.imageUrl === data.poiData.imageUrl))
         ) {
-            const nominationTagSet = item.querySelector('app-nomination-tag-set');
+            const nominationTagSet = item.querySelector('app-submission-tag-set');
             if (nominationTagSet) {
-                const newTag = document.createElement('app-nomination-tag');
+                const newTag = document.createElement('app-submission-tag');
                 newTag.classList.add('mr-1');
                 newTag.classList.add('wfcl-overturned');
                 const newTagContent = document.createElement('div');
-                newTagContent.classList.add('nomination-tag');
+                newTagContent.classList.add('submission-tag');
                 const newSpan = document.createElement('span');
-                newSpan.classList.add('nomination-tag--accepted');
+                newSpan.classList.add('submission-tag--accepted');
                 newSpan.textContent = 'Overturned';
                 newTagContent.appendChild(newSpan);
                 newTag.appendChild(newTagContent);
@@ -359,7 +359,7 @@ function init() {
         }
 
         const titleElement = item.querySelector('.flex-row.items-center .ng-star-inserted');
-        const contentElement = item.querySelector('.nominations-item__content');
+        const contentElement = item.querySelector('.submissions-item__content');
 
         let nominationTitle = '';
 
@@ -542,13 +542,13 @@ function init() {
             const statusContainer = document.createElement('div');
             statusContainer.classList.add('flex', 'flex-wrap', 'nominations-item__tags');
             const statusTag = document.createElement('div');
-            statusTag.classList.add('nomination-tag', 'ng-star-inserted');
+            statusTag.classList.add('submission-tag', 'ng-star-inserted');
 
             if (data.poiData.state === 'LIVE') {
-                statusTag.innerHTML = '<span class="nomination-tag--accepted ng-star-inserted"> Live </span>';
+                statusTag.innerHTML = '<span class="submission-tag--accepted ng-star-inserted"> Live </span>';
                 statusContainer.style.minWidth = '35px';
             } else if (data.poiData.state === 'RETIRED') {
-                statusTag.innerHTML = '<span class="nomination-tag--rejected ng-star-inserted"> Retired </span>';
+                statusTag.innerHTML = '<span class="submission-tag--rejected ng-star-inserted"> Retired </span>';
                 statusContainer.style.minWidth = '60px';
                 statusContainer.title = `Wayspot retired on ${data.poiData.lastUpdateDate}`;
             }
@@ -694,7 +694,7 @@ function init() {
         const lat = data.poiData?.lat || data.lat;
         const lng = data.poiData?.lng || data.lng;
 
-        awaitElement(() => document.querySelector("app-nominations app-details-pane p"))
+        awaitElement(() => document.querySelector("app-submissions app-details-pane p"))
             .then((locationP) => {
             const coordinates = `${lat},${lng}`;
             const newText = `${data.city} ${data.state} (${coordinates})`;
@@ -898,7 +898,7 @@ function init() {
                 break;
         }
 
-        return `<app-nomination-tag><div class="nomination-tag"><span class="nomination-tag--${tagType}">${statusText}</span></div></app-nomination-tag>`;
+        return `<app-submission-tag><div class="submission-tag"><span class="submission-tag--${tagType}">${statusText}</span></div></app-submission-tag>`;
     }
 
 }

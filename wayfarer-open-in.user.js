@@ -977,7 +977,15 @@
             const nomCache = {};
             let box = null;
 
-            result.submissions.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
+            result.submissions.forEach(nomination => { 
+                if (nomination.imageUrl.length > 0) {
+                    nomCache[nomination.imageUrl] = nomination; 
+                } else {
+                    if (nomination.hasOwnProperty('poiData')) {
+                        nomCache[nomination.poiData.imageUrl] = nomination;
+                    }
+                }
+            })
             ref.addEventListener('click', e => {
                 const item = e.target.closest('app-submissions-list-item');
                 if (item) {
