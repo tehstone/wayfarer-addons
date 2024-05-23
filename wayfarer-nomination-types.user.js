@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Types
-// @version      0.2.0
+// @version      0.2.1
 // @description  Shows an indicator for which game you submitted nominations in.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-types.user.js
@@ -77,7 +77,7 @@
     };
 
     const injectNominations = result => {
-        urlMap = Object.assign({}, ...result.nominations.map(e => ({[e.id]: e.imageUrl})));
+        urlMap = Object.assign({}, ...result.submissions.map(e => ({[e.id]: e.imageUrl})));
         // awaitElement(() => document.querySelector('input.w-full')).then(searchInput => {
         //     if (searchInput !== undefined) {
                 
@@ -86,7 +86,7 @@
         window.addEventListener("WFNM_MapFilterChange", renderNominationMapIntegration);
         addNominationListIcons();
         renderNominationMapIntegration();
-        setupDetailsPaneInput(result.nominations);
+        setupDetailsPaneInput(result.submissions);
     };
 
     const injectShowcase = result => awaitElement(() => document.querySelector('.showcase-item')).then(ref => {
@@ -153,11 +153,11 @@
     const setupDetailsPaneInput = nominations => {
         let box = null;
         const idMap = Object.assign({}, ...nominations.map(e => ({[e.imageUrl]: e.id})));
-        awaitElement(() => document.querySelector('app-nominations-list')).then(ref => ref.addEventListener('click', e => {
-            const item = e.target.closest('app-nominations-list-item');
+        awaitElement(() => document.querySelector('app-submissions-list')).then(ref => ref.addEventListener('click', e => {
+            const item = e.target.closest('app-submissions-list-item');
             if (item) {
                 const id = idMap[item.querySelector('img').src];
-                awaitElement(() => document.querySelector('app-details-pane app-nomination-tag-set')).then(tags => {
+                awaitElement(() => document.querySelector('app-details-pane app-submission-tag-set')).then(tags => {
                     const before = tags.parentElement;
                     if (box) box.parentElement.removeChild(box);
                     box = document.createElement('p');
@@ -228,7 +228,7 @@
 
     const addIcon = (id, game) => {
         if (!urlMap.hasOwnProperty(id) || !games.hasOwnProperty(game)) return;
-        const css = `app-nominations-list-item img[src='${urlMap[id]}'] + div app-nomination-tag-set::before {
+        const css = `app-submissions-list-item img[src='${urlMap[id]}'] + div app-submission-tag-set::before {
             content: ' ';
             background-image: url(${games[game].icon});
             background-repeat: no-repeat;

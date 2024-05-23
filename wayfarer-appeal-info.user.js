@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.8
+// @version      0.1.9
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -158,7 +158,7 @@ function init() {
     }
 
     function interceptManage(e) {
-        const list = document.getElementsByTagName('app-nominations-list')[0];
+        const list = document.getElementsByTagName('app-submissions-list')[0];
         list.addEventListener('click', handleNominationClick);
         try {
             const response = this.response;
@@ -204,7 +204,7 @@ function init() {
     }
 
     const handleNominationClick = e => {
-        const item = e.target.closest('app-nominations-list-item');
+        const item = e.target.closest('app-submissions-list-item');
         if (item) {
             // Remove any manually added boxes (for appealed noms) or they will conflict
             const old = document.getElementsByClassName('wfai_appeal-display');
@@ -274,9 +274,9 @@ function init() {
                 if (nominationId in statusMap) {
                     if (statusMap[nominationId] !== 'APPEALED') {
                         const ref = document.querySelector('app-details-pane');
-                        const tagRef = ref.querySelector('app-nomination-tag-set');
+                        const tagRef = ref.querySelector('app-submission-tag-set');
                         const tag = document.createElement('div');
-                        tag.classList.add('nomination-tag');
+                        tag.classList.add('submission-tag');
                         const text = document.createElement('span');
                         text.style.color = "white";
                         text.style.backgroundColor = "gray";

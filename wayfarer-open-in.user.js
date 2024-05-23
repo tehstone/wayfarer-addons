@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.7.2
+// @version      0.7.3
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -973,13 +973,13 @@
             }
         });
 
-        const injectNominations = result => awaitElement(() => document.querySelector('app-nominations-list')).then(ref => {
+        const injectNominations = result => awaitElement(() => document.querySelector('app-submissions-list')).then(ref => {
             const nomCache = {};
             let box = null;
 
-            result.nominations.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
+            result.submissions.forEach(nomination => { nomCache[nomination.imageUrl] = nomination; })
             ref.addEventListener('click', e => {
-                const item = e.target.closest('app-nominations-list-item');
+                const item = e.target.closest('app-submissions-list-item');
                 if (item) {
                     const nom = nomCache[item.querySelector('img').src];
                     const renderRef = () => document.querySelector('app-details-pane .details-pane__map');

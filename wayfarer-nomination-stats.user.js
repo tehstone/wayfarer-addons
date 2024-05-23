@@ -76,7 +76,7 @@ function init() {
     }
 
     async function addNominationDetails() {
-        awaitElement(() => document.querySelector('app-nominations-list'))
+        awaitElement(() => document.querySelector('app-submissions-list'))
             .then((ref) => {
             addNotificationDiv();
             addCss();

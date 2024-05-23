@@ -250,7 +250,7 @@ function init() {
         container.appendChild(collapsibleLabel);
         container.appendChild(collapsibleContent);
 
-        const sectionElement = document.getElementsByTagName("app-nominations")[0];
+        const sectionElement = document.getElementsByTagName("app-submissions")[0];
         sectionElement.insertBefore(container, sectionElement.children[0]);
 
         return mapElement;
@@ -259,7 +259,7 @@ function init() {
     function initPrimaryListener() {
         awaitElement(() => document.querySelector(".cursor-pointer")).then(ref => {
             ref.addEventListener('click', function() {
-            	const modal = document.getElementsByTagName("app-nominations-sort-modal");
+            	const modal = document.getElementsByTagName("app-submissions-sort-modal");
                 const els = modal[0].getElementsByClassName("wf-button--primary");
     	        for (let i = 0; i < els.length; i++) {
     	            els[i].addEventListener('click', function() {

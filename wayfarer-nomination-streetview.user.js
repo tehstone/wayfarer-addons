@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.4.0
+// @version      0.4.1
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
@@ -63,7 +63,7 @@
         }
 
         nomCache = json.result;
-        const list = document.getElementsByTagName('app-nominations-list')[0];
+        const list = document.getElementsByTagName('app-submissions-list')[0];
         list.addEventListener('click', handleNominationClick);
     }
 
@@ -80,11 +80,11 @@
     });
 
     function handleNominationClick(e) {
-        awaitElement(() => e.target.closest('app-nominations-list-item'))
+        awaitElement(() => e.target.closest('app-submissions-list-item'))
             .then((ref) => {
                 const img = ref.querySelector('img').src;
                 let nom = null;
-                for (const nomination of nomCache.nominations) {
+                for (const nomination of nomCache.submissions) {
                     if (nomination.imageUrl === img || (nomination.poiData && nomination.poiData.imageUrl === img)) {
                         nom = nomination;
                         break;
@@ -106,7 +106,7 @@
         const lat = selected.poiData?.lat || selected.lat;
         const lng = selected.poiData?.lng || selected.lng;
 
-        awaitElement(() => document.querySelector("app-nominations app-details-pane p"))
+        awaitElement(() => document.querySelector("app-submissions app-details-pane p"))
             .then((locationP) => {
             const coordinates = `${lat},${lng}`;
             const newText = `${selected.city} ${selected.state} (${coordinates})`;
@@ -118,7 +118,7 @@
             }
         });
 
-        awaitElement(() => document.querySelector("app-nominations app-details-pane h4"))
+        awaitElement(() => document.querySelector("app-submissions app-details-pane h4"))
             .then((titleP) => {
                 if (intelLink === null) {
                 intelLink = document.createElement('a');

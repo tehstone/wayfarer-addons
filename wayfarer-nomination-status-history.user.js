@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.3.2
+// @version      1.3.3
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -46,7 +46,7 @@
         UPGRADE: 'Upgraded'
     };
     const savedFields = ['id', 'type', 'day', 'nextUpgrade', 'upgraded', 'status', 'isNianticControlled', 'canAppeal', 'isClosed', 'canHold', 'canReleaseHold'];
-    const nomDateSelector = 'app-nominations app-details-pane app-nomination-tag-set + span';
+    const nomDateSelector = 'app-submissions app-details-pane app-submission-tag-set + span';
     const strictClassificationMode = true;
 
     const eV1ProcessingStateVersion = 22;
@@ -175,10 +175,10 @@
         if (socialProfile.email) userHash = cyrb53(socialProfile.email);
     };
 
-    const handleNominations = ({ nominations }) => {
+    const handleNominations = ({ submissions }) => {
         addNotificationDiv();
         // Check for changes in nomination list.
-        getIDBInstance().then(db => checkNominationChanges(db, nominations)).catch(console.error).then(async () => {
+        getIDBInstance().then(db => checkNominationChanges(db, submissions)).catch(console.error).then(async () => {
             // Delete old PEIID
             let usedLegacyEmailImport = false;
             if (localStorage.hasOwnProperty('wfnshProcessedEmailIDs')) {
@@ -189,7 +189,7 @@
             const windowRef = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
             if (windowRef.wft_plugins_api && windowRef.wft_plugins_api.emailImport) {
                 console.log('Attaching event handler to Email Import API');
-                const epInstance = new EmailProcessor(nominations);
+                const epInstance = new EmailProcessor(submissions);
                 console.log('Starting to process stored emails for history events...');
                 const start = new Date();
                 await windowRef.wft_plugins_api.emailImport.prepare();
@@ -212,11 +212,11 @@
             }
         });
         // Add event listener for each element in the nomination list, so we can display the history box for nominations on click.
-        awaitElement(() => document.querySelector('app-nominations-list')).then(ref => {
+        awaitElement(() => document.querySelector('app-submissions-list')).then(ref => {
             // Each item in the list only has the image URL for unique identification. Map these to nomination IDs.
             const nomCache = {};
             let box = null;
-            nominations.forEach(nom => { nomCache[nom.imageUrl] = nom.id; });
+            submissions.forEach(nom => { nomCache[nom.imageUrl] = nom.id; });
             ref.addEventListener('click', e => {
                 // Ensure there is only one selection box.
                 var elements = document.querySelectorAll('.wfnshDropdown');
@@ -225,7 +225,7 @@
                         element.remove();
                     });
                 }
-                const item = e.target.closest('app-nominations-list-item');
+                const item = e.target.closest('app-submissions-list-item');
                 if (item) {
                     // hopefully this index is constant and never changes? i don't see a better way to access it
                     const nomId = item["__ngContext__"][22].id
@@ -380,7 +380,7 @@
     });
 
     // Checks for nomination changes. Name should be obvious tbh
-    const checkNominationChanges = (db, nominations) => {
+    const checkNominationChanges = (db, submissions) => {
         console.log("Checking for nomination changes...");
 
         const tx = db.transaction([OBJECT_STORE_NAME], "readwrite");
@@ -401,8 +401,8 @@
             // Count number of nominations that were submitted by the current user by matching userHash.
             const userNominationCount = getList.result.reduce((prev, cur) => prev + (cur.hasOwnProperty('userHash') && cur.userHash == userHash ? 1 : 0), 0);
             // Use this count to determine whether any nominations are missing from Wayfarer currently, that are stored in our cache in IDB.
-            if (nominations.length < userNominationCount) {
-                const missingCount = userNominationCount - nominations.length;
+            if (submissions.length < userNominationCount) {
+                const missingCount = userNominationCount - submissions.length;
                 createNotification(`${missingCount} of ${userNominationCount} nominations are missing!`, "red");
             }
 
@@ -414,7 +414,7 @@
                 PHOTO: 0
             }
             let importCount = 0;
-            nominations.forEach(nom => {
+            submissions.forEach(nom => {
                 if (nom.id in savedNominations) {
                     // Nomination ALREADY EXISTS in IDB
                     const saved = savedNominations[nom.id];
@@ -649,7 +649,7 @@
                 if (tooClose && text.includes(tooClose)) {
                     status = 'ACCEPTED';
                 }
-                const candidates = this.#nominations.filter(e => e.title == match.groups.title && e.status == status);
+                const candidates = this.#submissions.filter(e => e.title == match.groups.title && e.status == status);
                 if (!candidates.length) throw new NominationMatchingError(`Unable to find a nomination with status ${status} that matches the title "${match.groups.title}" on this Wayfarer account.`);
                 if (candidates.length > 1) throw new NominationMatchingError(`Multiple nominations with status ${status} on this Wayfarer account match the title "${match.groups.title}" specified in the email.`);
                 return candidates[0].imageUrl;
@@ -659,7 +659,7 @@
                 if (!query) return null;
                 const [title, desc] = query.textContent.split('\n');
                 if (!title || !desc) return null;
-                const candidates = this.#nominations.filter(e => e.title == title);
+                const candidates = this.#submissions.filter(e => e.title == title);
                 if (!candidates.length) throw new Error(`Unable to find a nomination that matches the title "${title}" on this Wayfarer account.`);
                 if (candidates.length > 1) {
                     const cand2 = candidates.filter(e => e.description == desc);
@@ -674,11 +674,11 @@
                 if (!a) return null;
                 const match = a.href.match(/\?ll=(?<lat>-?\d{1,2}(\.\d{1,6})?),(?<lng>-?\d{1,3}(\.\d{1,6})?)/);
                 if (!match) return;
-                const candidates = this.#nominations.filter(e => e.lat == parseFloat(match.groups.lat) && e.lng == parseFloat(match.groups.lng));
+                const candidates = this.#submissions.filter(e => e.lat == parseFloat(match.groups.lat) && e.lng == parseFloat(match.groups.lng));
                 if (candidates.length != 1) {
                     const m2 = email.getHeader('Subject').match(/^(Ingress Portal Live|Portal review complete): ?(?<title>.*)$/);
                     if (!m2) throw new Error('Unable to extract the name of the Wayspot from this email.');
-                    const cand2 = (candidates.length ? candidates : this.#nominations).filter(e => e.title == m2.groups.title);
+                    const cand2 = (candidates.length ? candidates : this.#submissions).filter(e => e.title == m2.groups.title);
                     if (!cand2.length) throw new NominationMatchingError(`Unable to find a nomination that matches the title "${m2.groups.title}" or is located at ${match.groups.lat},${match.groups.lng} on this Wayfarer account.`);
                     if (cand2.length > 1) throw new NominationMatchingError(`Multiple nominations on this Wayfarer account match the title "${m2.groups.title}" and/or are located at ${match.groups.lat},${match.groups.lng} as specified in the email.`);
                     return cand2[0].imageUrl;
@@ -695,7 +695,7 @@
                 const dateNext = this.#utcDateToISO8601(this.#shiftDays(date, 1));
                 const datePrev = this.#utcDateToISO8601(this.#shiftDays(date, -1));
                 const dates = [datePrev, dateCur, dateNext];
-                const candidates = this.#nominations.filter(e => dates.includes(e.day) && e.title.trim() == match.groups.title);
+                const candidates = this.#submissions.filter(e => dates.includes(e.day) && e.title.trim() == match.groups.title);
                 if (!candidates.length) throw new NominationMatchingError(`Unable to find a nomination that matches the title "${match.groups.title}" and submission date ${dateCur} on this Wayfarer account.`);
                 if (candidates.length > 1) throw new NominationMatchingError(`Multiple nominations on this Wayfarer account match the title "${match.groups.title}" and submission date ${dateCur} specified in the email.`);
                 return candidates[0].imageUrl;
@@ -723,7 +723,7 @@
                 const dateNext = this.#utcDateToISO8601(this.#shiftDays(new Date(date), 1));
                 const datePrev = this.#utcDateToISO8601(this.#shiftDays(new Date(date), -1));
                 const dates = [datePrev, date, dateNext];
-                const candidates = this.#nominations.filter(e => dates.includes(e.day) && windowRef.wft_plugins_api.emailImport.stripDiacritics(e.title) == match.groups.title && ['ACCEPTED', 'REJECTED', 'DUPLICATE', 'APPEALED', 'NIANTIC_REVIEW'].includes(e.status));
+                const candidates = this.#submissions.filter(e => dates.includes(e.day) && windowRef.wft_plugins_api.emailImport.stripDiacritics(e.title) == match.groups.title && ['ACCEPTED', 'REJECTED', 'DUPLICATE', 'APPEALED', 'NIANTIC_REVIEW'].includes(e.status));
                 if (!candidates.length) throw new NominationMatchingError(`Unable to find a nomination that matches the title "${match.groups.title}" and submission date ${date} on this Wayfarer account.`);
                 if (candidates.length > 1) throw new NominationMatchingError(`Multiple nominations on this Wayfarer account match the title "${match.groups.title}" and submission date ${date} specified in the email.`);
                 return candidates[0].imageUrl;
@@ -1476,15 +1476,15 @@
             UNCHANGED: 5,
         };
 
-        #nominations;
+        #submissions;
         #db = null;
         #statusHistory = null;
         #errors = null;
         #stats = null;
         #messageStatus = null;
 
-        constructor(nominations) {
-            this.#nominations = nominations;
+        constructor(submissions) {
+            this.#submissions = submissions;
         }
 
         async open() {
@@ -1717,7 +1717,7 @@
                     }
 
                     if (!url) throw new MissingDataError('Could not determine which nomination this email references.');
-                    const [nom] = this.#nominations.filter(e => e.imageUrl.endsWith('/' + url));
+                    const [nom] = this.#submissions.filter(e => e.imageUrl.endsWith('/' + url));
                     if (!nom) throw new NominationMatchingError(`The nomination that this email refers to cannot be found on this Wayfarer account (failed to match LH3 URL ${url}).`);
                     let status = null;
                     for (let k = 0; k < template.status.length && status === null; k++) {

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Rejections Plus
-// @version      0.2.4
+// @version      0.2.5
 // @description  Improves the display of criteria on rejected nominations, allows displaying more than two rejection reasons, and more.
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-rejections-plus.user.js
@@ -126,7 +126,7 @@
 
     function interceptManage() {
         if (refreshHandler) refreshHandler = null;
-        const list = document.getElementsByTagName('app-nominations-list')[0];
+        const list = document.getElementsByTagName('app-submissions-list')[0];
         list.addEventListener('click', handleNominationClick);
     }
 
@@ -142,7 +142,7 @@
 
     const handleNominationClick = e => {
         if (refreshHandler) refreshHandler = null;
-        const item = e.target.closest('app-nominations-list-item');
+        const item = e.target.closest('app-submissions-list-item');
         if (item) {
             // Remove any manually added boxes (for appealed noms) or they will conflict
             const old = document.getElementsByClassName('wfrcc_custom-rejection-box');
