@@ -120,20 +120,17 @@
 
         awaitElement(() => document.querySelector("app-submissions app-details-pane h4"))
             .then((titleP) => {
-                if (intelLink === null) {
-                intelLink = document.createElement('a');
-                intelLink.id = 'intelLink';
-                intelLink.className = 'anchor-link';
-                intelLink.target = "_blank";
-                intelLink.title = 'Open in Intel';
-                intelLink.style['font-size'] = "1.25rem";
-            }
-
-            intelLink.href = `https://intel.ingress.com/?ll=${lat},${lng}&z=16`;
-            intelLink.innerText = titleP.innerText;
-            
-            insertAfter(intelLink, titleP);
-            titleP.style.display = "none";
+                let titleText = selected.title;
+                if (titleText.length == 0) {
+                    if (selected.hasOwnProperty('poiData')) {
+                        titleText = selected.poiData.title;
+                    }
+                }
+                titleP.style.cursor = 'pointer';
+                titleP.title = 'Copy coordinates to clipboard';
+                titleP.onclick = function() {
+                    navigator.clipboard.writeText(titleText);
+                }
         });     
 	}
 
