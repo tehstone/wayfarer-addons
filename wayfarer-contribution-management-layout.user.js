@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Contribution Management Layout
-// @version      0.0.9
+// @version      0.0.11
 // @description  Improves the layout of the Contribution Management page
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-contribution-management-layout.user.js
@@ -249,8 +249,8 @@ function init() {
                 // Append descriptionDiv and descriptionParagraph2
                 newSettingsItem.appendChild(headerDiv);
                 newSettingsItem.appendChild(valueDiv);
-                newSettingsItem.appendChild(descriptionParagraph1);
-                newSettingsItem.appendChild(descriptionDiv);
+                // newSettingsItem.appendChild(descriptionParagraph1);
+                // newSettingsItem.appendChild(descriptionDiv);
                 newSettingsItem.appendChild(descriptionParagraph2);
                 newSettingsItem.appendChild(checkboxesContainer);
 
@@ -297,8 +297,8 @@ function init() {
     function formatItem(item) {
         const data = item["__ngContext__"][22];
         if (data.poiData) {
-            replacePhoto(item, data);
-            formatText(item, data);
+            modifyPhoto(item, data);
+            // formatText(item, data);
             updateRejectionLabels(item, data)
             addClickListener(item, data);
         }
@@ -343,12 +343,16 @@ function init() {
     }
 
     // Show the user's submitted photo thumbnail in the menu instead of current Wayspot photo
-    function replacePhoto(item, data) {
-        if (data.type === "PHOTO") {
-            const imageUrl = data.imageUrl;
-            const imageElement = item.querySelector('img');
-            if (imageElement) {
-                imageElement.src = imageUrl;
+    function modifyPhoto(item, data) {
+        const imageElements = item.querySelectorAll('img');
+        if (imageElements.length > 1) {
+            const selectedImage = imageElements[1];
+            selectedImage.style.width = '8rem';
+            selectedImage.style.setProperty('width', '8rem', 'important');
+
+            if (data.type === "PHOTO") {
+                const imageUrl = data.imageUrl;
+                selectedImage.src = imageUrl;
             }
         }
     }
