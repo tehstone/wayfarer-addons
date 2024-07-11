@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Skip Counter
-// @version      0.0.1
+// @version      0.0.2
 // @description  Count your skip usage in the last 24 hours
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-skip-count.user.js
@@ -96,13 +96,21 @@ function init() {
             className = 'wayfarerrsc_med';
         } else if (skip_count.length < 85) {
             className = 'wayfarerrsc_high';
+            localStorage.setItem(`wfsc_notify_${userId}`, JSON.stringify(true));
         } else {
             className = 'wayfarerrsc_extreme';
         }
         div.className = className;
 
         if (skip_count.length >= 99) {
-            alert(`Careful using skips! Currently at ${skip_count.length} skips!`)
+            let notify = JSON.parse(localStorage.getItem(`wfsc_notify_${userId}`));
+            if (notify === undefined || notify === null || notify === ""){
+                notify = true;
+            }
+            if (notify) {
+                alert(`Careful using skips! Currently at ${skip_count.length} skips!`);
+                localStorage.setItem(`wfsc_notify_${userId}`, JSON.stringify(false));
+            }
         }
 
         const container = ref.parentNode.parentNode;
@@ -131,6 +139,7 @@ function init() {
                 }
                 if (skip_count.size <= 1) {
                     console.log("Skip Count: completed comparison: none left to check");
+                    localStorage.setItem(`wfsc_notify_${userId}`, JSON.stringify(true));
                     break;
                 }
             }
