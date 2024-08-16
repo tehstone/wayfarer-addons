@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Streetview
-// @version      0.4.2
+// @version      0.4.3
 // @description  Add Streetview to selected nomination
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-streetview.user.js
@@ -106,7 +106,7 @@
         const lat = selected.poiData?.lat || selected.lat;
         const lng = selected.poiData?.lng || selected.lng;
 
-        awaitElement(() => document.querySelector("app-submissions app-details-pane p"))
+        awaitElement(() => document.querySelector("div.card > p:nth-child(3)") )
             .then((locationP) => {
             const coordinates = `${lat},${lng}`;
             const newText = `${selected.city} ${selected.state} (${coordinates})`;
