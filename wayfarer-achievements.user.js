@@ -146,6 +146,7 @@
     }
 
     function parseNominations(e) {
+        console.log("parsing nom nom noms")
         try {
             const response = this.response;
             const json = JSON.parse(response);
