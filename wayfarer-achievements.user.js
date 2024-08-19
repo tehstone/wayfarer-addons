@@ -408,7 +408,7 @@
             margin: 5px;
             padding: 4px;
             width: 32%;
-            min-width: 150px;
+            min-width: 300px;
             max-width: 400px;
             display: flex;
         }
