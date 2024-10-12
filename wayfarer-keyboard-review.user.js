@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Wayfarer Keyboard Review
-// @version      2.1.0
-// @description  Add keyboard review to Wayfarer
-// @namespace    https://github.com/tehstone/wayfarer-addons
-// @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
-// @homepageURL  https://github.com/tehstone/wayfarer-addons
+// @name         Wayfarer Keyboard Review & One click Review
+// @version      2.1.0.1
+// @description  Add keyboard & One click review to Wayfarer
+// @namespace    https://github.com/Shinku1014/wayfarer-addons
+// @downloadURL  https://github.com/Shinku1014/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
+// @homepageURL  https://github.com/Shinku1014/wayfarer-addons
 // @match        https://wayfarer.nianticlabs.com/*
 // @run-at       document-start
 // ==/UserScript==
@@ -30,6 +30,23 @@
 /* eslint-env es6 */
 /* eslint no-var: "error" */
 /* eslint indent: ['error', 2] */
+
+var buttons = [
+    {button:"1111111", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 1, EXPLORE: 1},
+    {button:"1111122", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
+    {button:"1111212", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 2, EXERCISE: 1, EXPLORE: 2},
+    {button:"GENERIC", APPROPRIATE: 'G', SAFE: 0, ACCURATE: 0, PERMANENT: 0, SOCIALIZE: 0, EXERCISE: 0, EXPLORE: 0},
+];
+
+var keyVal = {
+    Z: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 1, EXPLORE: 1},
+    X: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
+    C: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 2, EXERCISE: 1, EXPLORE: 2},
+    V: { APPROPRIATE: 'G', SAFE: 0, ACCURATE: 0, PERMANENT: 0, SOCIALIZE: 0, EXERCISE: 0, EXPLORE: 0},
+};
+/* ============================================ */
+/* ============================================ */
+/* ============================================ */
 
 (function() {
     let kdEvent = null;
@@ -217,6 +234,35 @@
         reject();
     });
 
+    const thumb = (card, type) => {
+        if (type == 1)
+        {
+            console.log("thumbUp")
+            const btns = document.getElementById(card.id).querySelectorAll('button.thumbs-button');
+            for (let i = 0; i < btns.length; i++) {
+                if (btns[i].querySelector('mat-icon').textContent == 'thumb_up') {
+                    btns[i].click();
+                    awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => {
+                        redrawUI();
+                    });
+                    return;
+                }
+            }
+        }
+        else {
+            console.log("thumbDown")
+            const btns = document.getElementById(card.id).querySelectorAll('button.thumbs-button');
+            for (let i = 0; i < btns.length; i++) {
+                if (btns[i].querySelector('mat-icon').textContent == 'thumb_down') {
+                    btns[i].click();
+                    awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => {
+                        redrawUI();
+                    });
+                    return;
+                }
+            }
+        }
+    };
     const selectDialogRadio = value => new Promise((resolve, reject) => {
         const btns = document.querySelectorAll('mat-dialog-container mat-radio-button');
         for (let i = 0; i < btns.length; i++) {
@@ -305,7 +351,10 @@
         APPROPRIATE: { id: 'appropriate-card', opens: 'app-appropriate-rejection-flow-modal' },
         SAFE: { id: 'safe-card', opens: 'app-safe-rejection-flow-modal' },
         ACCURATE: { id: 'accurate-and-high-quality-card', opens: 'app-accuracy-rejection-flow-modal' },
-        PERMANENT: { id: 'permanent-location-card', opens: 'app-location-permanent-rejection-flow-modal' }
+        PERMANENT: { id: 'permanent-location-card', opens: 'app-location-permanent-rejection-flow-modal' },
+        SOCIALIZE: { id: 'socialize-card', opens: '' },
+        EXERCISE: { id: 'exercise-card', opens: '' },
+        EXPLORE: { id: 'explore-card', opens: '' }
     }
 
     const initForNew = candidate => {
@@ -738,9 +787,65 @@
             btn.click();
         }
     };
+    const rate_portal = (appropriate, safe, accurate, permanent, socialize, exercise, explore) => new Promise((resolve, reject) => {
+        if (appropriate == 'G')
+        {
+            thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('GENERIC'));
+            resolve();
+            return;
+        }
+        thumb(ThumbCards.APPROPRIATE, appropriate);
+        thumb(ThumbCards.SAFE, safe);
+        thumb(ThumbCards.ACCURATE, accurate);
+        thumb(ThumbCards.PERMANENT, permanent);
+        thumb(ThumbCards.SOCIALIZE, socialize);
+        thumb(ThumbCards.EXERCISE, exercise);
+        thumb(ThumbCards.EXPLORE, explore);
+        const setAllNo = evenIfYes => {
+            const rows = document.querySelectorAll('#categorization-card mat-button-toggle-group');
+            for (let i = 0; i < rows.length; i++) {
+                if (evenIfYes || !rows[i].querySelector('mat-button-toggle.mat-button-toggle-checked')) {
+                    rows[i].querySelector('mat-button-toggle:last-of-type button').click();
+                }
+            }
+        };
+        setAllNo(true);
+        resolve();
+    });
+    function add_button() {
+        //    var button_region = document.getElementById("submitDiv");
+            var button_region = document.getElementById("appropriate-card");
+            button_region.style.display = 'inline';
+                button_region.style.overflow = 'scroll';
+            if (true) {
+                buttons.forEach(function(button_data) {
+                    var button = document.createElement("button");
+                    var textnode = document.createTextNode(button_data["button"]);
+                    button.className = "button submit-button";
+                 //   button.style.minwidth = '70px';
+                    button.style.height = '32px';
+                    button.style.background = '#F1F1F1';
+                    button.style.border = '0px';
+                    button.style.borderRadius = '0px';
+                    button.style.color = '#202020';
+                    button.style.fontSize = '16px';
+                    button.style.fontWeight = 500;
+                    button.appendChild(textnode);
+                  //  button_region.insertBefore(button);
+                    button_region.appendChild(button);
+                    button.onclick = function()
+                    {
+                        rate_portal(button_data["APPROPRIATE"], button_data["SAFE"], button_data["ACCURATE"], button_data["PERMANENT"], button_data["SOCIALIZE"], button_data["EXERCISE"], button_data["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000));
+                    };
+                }
+            );}
 
+            //w.$scope = element => w.angular.element(element).scope();
+        }
     const updateKeybindsNew = candidate => {
         const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
+        add_button();
+
         setHandler(makeKeyMap({
             '+P': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('PRIVATE')),
             '+I': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('INAPPROPRIATE')),
