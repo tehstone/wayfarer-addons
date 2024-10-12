@@ -847,6 +847,11 @@ var keyVal = {
         add_button();
 
         setHandler(makeKeyMap({
+            
+            'Z': () => rate_portal(keyVal["Z"]["APPROPRIATE"],keyVal["Z"]["SAFE"],keyVal["Z"]["ACCURATE"],keyVal["Z"]["PERMANENT"],keyVal["Z"]["SOCIALIZE"],keyVal["Z"]["EXERCISE"],keyVal["Z"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
+            'X': () => rate_portal(keyVal["X"]["APPROPRIATE"],keyVal["X"]["SAFE"],keyVal["X"]["ACCURATE"],keyVal["X"]["PERMANENT"],keyVal["X"]["SOCIALIZE"],keyVal["X"]["EXERCISE"],keyVal["X"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
+            'C': () => rate_portal(keyVal["C"]["APPROPRIATE"],keyVal["C"]["SAFE"],keyVal["C"]["ACCURATE"],keyVal["C"]["PERMANENT"],keyVal["C"]["SOCIALIZE"],keyVal["C"]["EXERCISE"],keyVal["C"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
+            'V': () => rate_portal(keyVal["V"]["APPROPRIATE"],keyVal["V"]["SAFE"],keyVal["V"]["ACCURATE"],keyVal["V"]["PERMANENT"],keyVal["V"]["SOCIALIZE"],keyVal["V"]["EXERCISE"],keyVal["V"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
             '+P': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('PRIVATE')),
             '+I': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('INAPPROPRIATE')),
             '+K': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('SCHOOL')),
