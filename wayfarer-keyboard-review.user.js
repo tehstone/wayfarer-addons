@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review & One click Review
-// @version      2.1.0.1
+// @version      2.1.0.2
 // @description  Add keyboard & One click review to Wayfarer
 // @namespace    https://github.com/Shinku1014/wayfarer-addons
 // @downloadURL  https://github.com/Shinku1014/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -36,6 +36,7 @@ var buttons = [
     {button:"1111122", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
     {button:"1111212", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 2, EXERCISE: 1, EXPLORE: 2},
     {button:"GENERIC", APPROPRIATE: 'G', SAFE: 0, ACCURATE: 0, PERMANENT: 0, SOCIALIZE: 0, EXERCISE: 0, EXPLORE: 0},
+    {button:"一问七不知", APPROPRIATE: 3, SAFE: 3, ACCURATE: 3, PERMANENT: 3, SOCIALIZE: 3, EXERCISE: 3, EXPLORE: 3},
 ];
 
 var keyVal = {
@@ -44,9 +45,8 @@ var keyVal = {
     C: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 2, EXERCISE: 1, EXPLORE: 2},
     V: { APPROPRIATE: 'G', SAFE: 0, ACCURATE: 0, PERMANENT: 0, SOCIALIZE: 0, EXERCISE: 0, EXPLORE: 0},
 };
-/* ============================================ */
-/* ============================================ */
-/* ============================================ */
+/* DO NOT EDIT CODES BELOW */
+
 
 (function() {
     let kdEvent = null;
@@ -235,34 +235,38 @@ var keyVal = {
     });
 
     const thumb = (card, type) => {
-        if (type == 1)
-        {
-            console.log("thumbUp")
-            const btns = document.getElementById(card.id).querySelectorAll('button.thumbs-button');
-            for (let i = 0; i < btns.length; i++) {
-                if (btns[i].querySelector('mat-icon').textContent == 'thumb_up') {
-                    btns[i].click();
-                    awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => {
-                        redrawUI();
-                    });
-                    return;
+        switch (type) {
+            case 1:
+                console.log(card, "thumbUp");
+                document.getElementById(card.id).querySelectorAll('button.thumbs-button').forEach(btn => {
+                    if (btn.querySelector('mat-icon').textContent == 'thumb_up') {
+                        btn.click();
+                        awaitElement(() => document.querySelector('mat-dialog-container > *')).then(redrawUI);
+                        return;
+                    }
+                });
+                break;
+            case 2:
+                console.log(card, "thumbDown");
+                document.getElementById(card.id).querySelectorAll('button.thumbs-button').forEach(btn => {
+                    if (btn.querySelector('mat-icon').textContent == 'thumb_down') {
+                        btn.click();
+                        awaitElement(() => document.querySelector('mat-dialog-container > *')).then(redrawUI);
+                        return;
+                    }
+                });
+                break;
+            case 3:
+                console.log(card, "I don't know");
+                const dontKnowBtn = document.getElementById(card.id).querySelector('button.dont-know-button');
+                if (dontKnowBtn) {
+                    dontKnowBtn.click();
+                    awaitElement(() => document.querySelector('mat-dialog-container > *')).then(redrawUI);
                 }
-            }
-        }
-        else {
-            console.log("thumbDown")
-            const btns = document.getElementById(card.id).querySelectorAll('button.thumbs-button');
-            for (let i = 0; i < btns.length; i++) {
-                if (btns[i].querySelector('mat-icon').textContent == 'thumb_down') {
-                    btns[i].click();
-                    awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => {
-                        redrawUI();
-                    });
-                    return;
-                }
-            }
+                break;
         }
     };
+    
     const selectDialogRadio = value => new Promise((resolve, reject) => {
         const btns = document.querySelectorAll('mat-dialog-container mat-radio-button');
         for (let i = 0; i < btns.length; i++) {
