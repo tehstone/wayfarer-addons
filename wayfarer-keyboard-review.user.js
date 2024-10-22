@@ -33,16 +33,16 @@
 
 var buttons = [
     {button:"1111111", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 1, EXPLORE: 1},
-    {button:"1111122", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
-    {button:"1111212", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 2, EXERCISE: 1, EXPLORE: 2},
+    {button:"1111122", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 1, EXPLORE: 2},
+    {button:"1111212", APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
     {button:"GENERIC", APPROPRIATE: 'G', SAFE: 0, ACCURATE: 0, PERMANENT: 0, SOCIALIZE: 0, EXERCISE: 0, EXPLORE: 0},
     {button:"一问七不知", APPROPRIATE: 3, SAFE: 3, ACCURATE: 3, PERMANENT: 3, SOCIALIZE: 3, EXERCISE: 3, EXPLORE: 3},
 ];
 
 var keyVal = {
     Z: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 1, EXPLORE: 1},
-    X: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
-    C: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 2, EXERCISE: 1, EXPLORE: 2},
+    X: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 1, EXPLORE: 2},
+    C: { APPROPRIATE: 1, SAFE: 1, ACCURATE: 1, PERMANENT: 1, SOCIALIZE: 1, EXERCISE: 2, EXPLORE: 2},
     V: { APPROPRIATE: 'G', SAFE: 0, ACCURATE: 0, PERMANENT: 0, SOCIALIZE: 0, EXERCISE: 0, EXPLORE: 0},
 };
 /* DO NOT EDIT CODES BELOW */
@@ -266,7 +266,7 @@ var keyVal = {
                 break;
         }
     };
-    
+
     const selectDialogRadio = value => new Promise((resolve, reject) => {
         const btns = document.querySelectorAll('mat-dialog-container mat-radio-button');
         for (let i = 0; i < btns.length; i++) {
@@ -816,42 +816,75 @@ var keyVal = {
         setAllNo(true);
         resolve();
     });
-    function add_button() {
-        //    var button_region = document.getElementById("submitDiv");
-            var button_region = document.getElementById("appropriate-card");
-            button_region.style.display = 'inline';
-                button_region.style.overflow = 'scroll';
-            if (true) {
-                buttons.forEach(function(button_data) {
-                    var button = document.createElement("button");
-                    var textnode = document.createTextNode(button_data["button"]);
-                    button.className = "button submit-button";
-                 //   button.style.minwidth = '70px';
-                    button.style.height = '32px';
-                    button.style.background = '#F1F1F1';
-                    button.style.border = '0px';
-                    button.style.borderRadius = '0px';
-                    button.style.color = '#202020';
-                    button.style.fontSize = '16px';
-                    button.style.fontWeight = 500;
-                    button.appendChild(textnode);
-                  //  button_region.insertBefore(button);
-                    button_region.appendChild(button);
-                    button.onclick = function()
-                    {
-                        rate_portal(button_data["APPROPRIATE"], button_data["SAFE"], button_data["ACCURATE"], button_data["PERMANENT"], button_data["SOCIALIZE"], button_data["EXERCISE"], button_data["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000));
-                    };
-                }
-            );}
 
-            //w.$scope = element => w.angular.element(element).scope();
-        }
+
+
+ function getDynamicNgContentAttributes(element) {
+	var randomValue = null;
+     Array.from(element.attributes).forEach(attr => {
+        // 检查属性名是否包含 _ngcontent 或 _nghost
+        if (attr.name.startsWith('_ngcontent') || attr.name.startsWith('_nghost')) {
+           randomValue=attr.name.split('-')[1];
+            }
+    });
+    return randomValue;
+}
+
+function add_button() {
+    var button_region = document.getElementById("appropriate-card");
+    var dynamicAttrs = getDynamicNgContentAttributes(button_region);
+
+    var tempAttr1 = '_ngcontent-'+dynamicAttrs+'-c257';
+    var tempAttr2 = '_nghost-'+dynamicAttrs+'-c253';
+    var tempAttr3 = '_ngcontent-'+dynamicAttrs+'-c253';
+
+    var questionCard = document.createElement("app-question-card");
+    questionCard.setAttribute(tempAttr1,'');
+    questionCard.setAttribute(tempAttr2,'');
+
+    // 创建一个按钮容器 div，并设置样式
+    var buttonContainer = document.createElement("div");
+    buttonContainer.setAttribute(tempAttr3,'');
+    buttonContainer.className = "flex row card w-full p-4 wf-question-card ng-star-inserted wfkr2-touched wfkr2-eds-highlighted center";
+
+    buttonContainer.style.flexDirection = 'row'; // 水平排列
+    buttonContainer.style.flexWrap = 'wrap'; // 如果按钮太多，可以换行
+    buttonContainer.style.justifyContent = 'space-evenly'; // 按钮从左到右排列
+    buttonContainer.style.alignItems = 'center'; // 垂直居中
+    buttonContainer.style.marginTop = '10px'; // 按钮容器的上方间距
+
+    // 遍历按钮数据并生成每个按钮
+    buttons.forEach(function(button_data) {
+        var button = document.createElement("button");
+        var textnode = document.createTextNode(button_data["button"]);
+        button.setAttribute('wf-button', '');
+        button.className = "wf-button";
+
+        // 按钮样式设置
+        button.style.justifyContent = 'space-evenly'; // 按钮从左到右排列
+        button.style.height = '40px'; // 按钮高度
+
+        button.appendChild(textnode);
+        buttonContainer.appendChild(button);
+
+        // 按钮点击事件
+        button.onclick = function() {
+            rate_portal(button_data["APPROPRIATE"], button_data["SAFE"], button_data["ACCURATE"], button_data["PERMANENT"], button_data["SOCIALIZE"], button_data["EXERCISE"], button_data["EXPLORE"]).then(() => setTimeout(() => handleEnterNew(), 1000));
+        };
+    });
+
+    // 将 buttonContainer 添加到 questionCard 组件中
+    questionCard.appendChild(buttonContainer);
+
+    // 将 questionCard 插入到 appropriate-card 之前
+    button_region.parentNode.parentNode.insertBefore(questionCard, button_region.parentNode);
+}
     const updateKeybindsNew = candidate => {
         const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
         add_button();
 
         setHandler(makeKeyMap({
-            
+
             'Z': () => rate_portal(keyVal["Z"]["APPROPRIATE"],keyVal["Z"]["SAFE"],keyVal["Z"]["ACCURATE"],keyVal["Z"]["PERMANENT"],keyVal["Z"]["SOCIALIZE"],keyVal["Z"]["EXERCISE"],keyVal["Z"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
             'X': () => rate_portal(keyVal["X"]["APPROPRIATE"],keyVal["X"]["SAFE"],keyVal["X"]["ACCURATE"],keyVal["X"]["PERMANENT"],keyVal["X"]["SOCIALIZE"],keyVal["X"]["EXERCISE"],keyVal["X"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
             'C': () => rate_portal(keyVal["C"]["APPROPRIATE"],keyVal["C"]["SAFE"],keyVal["C"]["ACCURATE"],keyVal["C"]["PERMANENT"],keyVal["C"]["SOCIALIZE"],keyVal["C"]["EXERCISE"],keyVal["C"]["EXPLORE"]).then(()=> setTimeout(()=> handleEnterNew(), 1000)),
