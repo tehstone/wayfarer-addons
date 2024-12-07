@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.6.1
+// @version      0.6.2
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -37,6 +37,7 @@
     let checkTimer = null;
     let rejectCheckTimer = null;
     let dupeModalCheckTimer = null;
+    let rejectModalCheckTimer = null;
     let submitButtonClicked = false;
 
     /**
@@ -304,6 +305,31 @@
                 smartSubmitButton.innerHTML = "Smart Submit";
                 smartSubmitButton.onclick = function() {
                     checkSubmitReview();
+                }
+                insertAfter(smartSubmitButton, buttons[1]);
+
+                buttons[1].style.display = "none";
+            }
+
+            clearInterval(this);
+        }, 500);
+
+        rejectModalCheckTimer = setInterval(() => {
+            const rejectModal = document.querySelector('[id^=mat-dialog]');
+            if (rejectModal.length < 1) {
+                return;
+            }
+            const parent = document.getElementsByClassName("mat-dialog-actions");
+            let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_r`);
+            if (smartSubmitButton === null) {
+                const buttons = parent[0].getElementsByTagName('button');
+                smartSubmitButton = document.createElement("button");
+                smartSubmitButton.className = 'wf-button wf-split-button__main wfrt-smart-button';
+                smartSubmitButton.style.marginLeft = "1.5rem";
+                smartSubmitButton.id = `wayfarerrtssbutton_r`;
+                smartSubmitButton.innerHTML = "Smart Submit";
+                smartSubmitButton.onclick = function() {
+                    checkSubmitReview(true);
                 }
                 insertAfter(smartSubmitButton, buttons[1]);
 
