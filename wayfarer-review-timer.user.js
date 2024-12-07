@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.6.2
+// @version      0.6.3
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -316,7 +316,7 @@
 
         rejectModalCheckTimer = setInterval(() => {
             const rejectModal = document.querySelector('[id^=mat-dialog]');
-            if (rejectModal.length < 1) {
+            if (!rejectModal) {
                 return;
             }
             const parent = document.getElementsByClassName("mat-dialog-actions");
