@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.1.1
+// @version      2.1.2
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -594,17 +594,12 @@
                         const dupKeys = {
                             'Enter': () => {
                                 if (!isDialogOpen()) {
-                                    let dupeBtn = document.getElementById('wayfarerrtssbutton_d');
-                                    if (dupeBtn) {
-                                        dupeBtn.click();
-                                    } else {
-                                        document.querySelectorAll('#check-duplicates-card .agm-info-window-content button.wf-button--primary');
-                                        for (let i = 0; i < dupeBtn.length; i++) {
-                                            if (dupeBtn[i] && dupeBtn[i].closest('body')) {
-                                                dupeBtn[i].click();
-                                                awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => redrawUI());
-                                                break;
-                                            }
+                                    document.querySelectorAll('#check-duplicates-card .agm-info-window-content button.wf-button--primary');
+                                    for (let i = 0; i < dupeBtn.length; i++) {
+                                        if (dupeBtn[i] && dupeBtn[i].closest('body')) {
+                                            dupeBtn[i].click();
+                                            awaitElement(() => document.querySelector('mat-dialog-container > *')).then(() => redrawUI());
+                                            break;
                                         }
                                     }
                                 } else {
@@ -737,6 +732,9 @@
         console.log("handleEnterNew");
         if (isDialogOpen() && !isDialogClosing()) {
             btn = document.getElementById('wayfarerrtssbutton_r');
+            if (!btn) {
+                btn = document.getElementById('wayfarerrtssbutton_d');
+            }
             if (!btn) {
                 btn = document.querySelector('mat-dialog-container .mat-dialog-actions button.wf-button--primary');
             }
