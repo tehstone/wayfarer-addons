@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Map Mods
-// @version      0.9.2
+// @version      0.9.3
 // @description  Add Map Mods to Wayfarer Review Page
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-map-mods.user.js
@@ -132,6 +132,7 @@ function init() {
     }
 
     function checkPageType() {
+        console.log("checkPageType")
         awaitElement(() =>
                 document.getElementById('appropriate-card') ||
                 document.querySelector('app-review-edit'))
@@ -144,12 +145,14 @@ function init() {
     };
 
     function addMapMods() {
-        console.log("addMapMods");
+        //console.log("addMapMods");
         if (typeof(google) === 'undefined') {
+            console.log("addMapMods waiting for google");
             setTimeout(addMapMods, 200);
             return;
         }
         let gmap;
+        userId = getUserId();
         awaitElement(() =>
                 document.querySelector('#check-duplicates-card nia-map') ||
                 document.querySelector("app-select-location-edit"))
