@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Open-In
-// @version      0.7.4
+// @version      0.7.5
 // @description  Add open-in buttons to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-open-in.user.js
@@ -137,6 +137,13 @@
             url: 'https://geoportal.bremen.de/geoportal/?layerIDs=410_1,400_1,11,17_1&visibility=true,true,true,true&transparency=0,0,0,0&center=%lng%,%lat%&zoomlevel=11',
             projection: 'EPSG:25832',
             regions: ['DE_HB']
+        },
+        {
+            // Germany (Schleswig-Holstein)
+            label: 'DigitalAtlasNord',
+            url: 'https://danord.gdi-sh.de/viewer/resources/apps/Anonym/index.html?lang=de&c=%lng%%2C%lat%&vm=2D&s=1500&bm=DOP20&r=0&#/',
+            projection: 'EPSG:25832',
+            regions: ['DE_HB', 'DE_HH', 'DE_SH']
         },
         {
             // Germany (Bremen, Hamburg, Schleswig-Holstein)
