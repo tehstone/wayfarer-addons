@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.6.3
+// @version      0.6.4
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -33,10 +33,6 @@
     let tryNumber = 10;
     let expireTime = null;
     let userId = null;
-    let submitPopup = null;
-    let checkTimer = null;
-    let rejectCheckTimer = null;
-    let dupeModalCheckTimer = null;
     let rejectModalCheckTimer = null;
     let submitButtonClicked = false;
 
@@ -289,44 +285,26 @@
 
         addSubmitButtonObserver();
 
-        dupeModalCheckTimer = setInterval(() => {
-            const dupeModal = document.getElementsByTagName("app-confirm-duplicate-modal");
-            if (dupeModal.length < 1) {
-                return;
-            }
-            const parent = document.getElementsByClassName("mat-dialog-actions");
-            let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_d`);
-            if (smartSubmitButton === null) {
-                const buttons = parent[0].getElementsByTagName('button');
-                smartSubmitButton = document.createElement("button");
-                smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--disabled wfrt-smart-button';
-                smartSubmitButton.style.marginLeft = "1.5rem";
-                smartSubmitButton.id = `wayfarerrtssbutton_d`;
-                smartSubmitButton.innerHTML = "Smart Submit";
-                smartSubmitButton.onclick = function() {
-                    checkSubmitReview();
-                }
-                insertAfter(smartSubmitButton, buttons[1]);
-
-                buttons[1].style.display = "none";
-            }
-
-            clearInterval(this);
-        }, 500);
-
         rejectModalCheckTimer = setInterval(() => {
             const rejectModal = document.querySelector('[id^=mat-dialog]');
-            if (!rejectModal) {
+            if (!rejectModal || rejectModal.childElementCount < 1) {
                 return;
             }
+
+            let buttonId;
+            if (rejectModal.childNodes[0].tagName ==  "APP-CONFIRM-DUPLICATE-MODAL"){
+                buttonId = "wayfarerrtssbutton_d";
+            } else {
+                buttonId = "wayfarerrtssbutton_r";
+            }
             const parent = document.getElementsByClassName("mat-dialog-actions");
-            let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_r`);
+            let smartSubmitButton = document.getElementById(buttonId);
             if (smartSubmitButton === null) {
                 const buttons = parent[0].getElementsByTagName('button');
                 smartSubmitButton = document.createElement("button");
                 smartSubmitButton.className = 'wf-button wf-split-button__main wfrt-smart-button';
                 smartSubmitButton.style.marginLeft = "1.5rem";
-                smartSubmitButton.id = `wayfarerrtssbutton_r`;
+                smartSubmitButton.id = buttonId;
                 smartSubmitButton.innerHTML = "Smart Submit";
                 smartSubmitButton.onclick = function() {
                     checkSubmitReview(true);
@@ -341,17 +319,17 @@
 
         let thumbElements = document.querySelectorAll('*[class^="mat-icon"]');
         let found = 0;
-        for (var i = 0; i < thumbElements.length; i++) {
-            if (thumbElements[i].innerHTML.startsWith('thumb_down')) {
-                found++;
-                thumbElements[i].onclick = function() {
-                    setTimeout(addButtonToRejectDialog, 500);
-                };
-            }
-            if (found == 4) {
-                break;
-            }
-        }
+        // for (var i = 0; i < thumbElements.length; i++) {
+        //     if (thumbElements[i].innerHTML.startsWith('thumb_down')) {
+        //         found++;
+        //         thumbElements[i].onclick = function() {
+        //             setTimeout(addButtonToRejectDialog, 500);
+        //         };
+        //     }
+        //     if (found == 4) {
+        //         break;
+        //     }
+        // }
     }
 
     function addSubmitButtonObserver() {
