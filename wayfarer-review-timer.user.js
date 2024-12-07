@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review Timer
-// @version      0.6.0
+// @version      0.6.1
 // @description  Add review timer to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-review-timer.user.js
@@ -102,7 +102,7 @@
                     counter = document.createElement('p');
                     counter.id = "wayfarerrtmr_counter"
                     counter.classList.add("wftmr_counter");
-                    
+
                     div.appendChild(countLabel);
                     div.appendChild(counter);
                     container.appendChild(div);
@@ -258,7 +258,7 @@
             smartSubmitEnabled = false;
         } else {
             smartSubmitEnabled = smartSubmitEnabled === "true";
-        }        
+        }
 
         for(let i=0; i < buttons.length; i++) {
             let smartSubmitButton = document.getElementById(`wayfarerrtssbutton_${i}`);
@@ -315,7 +315,7 @@
 
         let thumbElements = document.querySelectorAll('*[class^="mat-icon"]');
         let found = 0;
-        for (var i = 0; i < thumbElements.length; i++) { 
+        for (var i = 0; i < thumbElements.length; i++) {
             if (thumbElements[i].innerHTML.startsWith('thumb_down')) {
                 found++;
                 thumbElements[i].onclick = function() {
@@ -376,8 +376,7 @@
                 smartSubmitButton.className = 'wf-button wf-split-button__main wf-button--primary';
                 smartSubmitButton.disabled = false;
             }
-            
-            
+
             smartSubmitButton.style.marginLeft = "1.5rem";
             smartSubmitButton.id = `wayfarerrtssbutton_r`;
             smartSubmitButton.innerHTML = "Smart Submit";
@@ -435,11 +434,12 @@
     }
 
     function waitToSubmit(delay, rejection) {
+        let btn;
         let diff = Math.ceil((expireTime - new Date().getTime()) / 1000);
         if (diff + delay < 1200) {
             if (rejection) {
             const parent = document.getElementsByClassName("mat-dialog-container")[0];
-            btn = parent.querySelectorAll('button[class="wf-button wf-button--primary"]')[0];
+            btn = parent.querySelector("[class*='wf-button--primary'][style*='display: none;']")
         } else {
             btn = document.querySelector('button[class="wf-button wf-split-button__main wf-button--primary"]');
         }
@@ -461,7 +461,7 @@
             button.innerHTML = message;
         }
 
-        button = document.getElementById(`wayfarerrtssbutton_r`);
+        let button = document.getElementById(`wayfarerrtssbutton_r`);
         if (button !== null) {
             button.innerHTML = message;
         }
