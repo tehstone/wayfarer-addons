@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.1.4
+// @version      2.1.5
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -273,6 +273,18 @@
         return null;
     }
 
+
+    const getDialogReportCheckbox = text => {
+        const reportModal = document.querySelector("[class*='report-modal-content']")
+        for (let i = 0; i < reportModal.childNodes.length; i++) {
+            const checkbox = reportModal.childNodes[i].childNodes[0];
+            if (checkbox.textContent.trim().includes(text)) {
+                checkbox.querySelector('span').click();
+                return;
+            }
+        }
+    }
+
     const redrawUI = () => {
         const ephemeral = document.getElementsByClassName('wfkr2-ephemeral');
         for (let i = ephemeral.length - 1; i >= 0; i--) {
@@ -412,6 +424,39 @@
                             label.textContent = `[\u{1f879}${btnKey}] `;
                             const textNode = btns[i].querySelector('.mat-radio-label-content > div');
                             textNode.insertBefore(label, textNode.firstChild);
+                        }
+                    } else if (isDialogOpen("app-report-modal")) {
+                        const aahqrl10n = getI18NPrefixResolver('review.report.modal.');
+                        const btns = document.querySelectorAll('mat-dialog-container wf-checkbox');
+                        let btnKey = '';
+                        for (let i = 0; i < btns.length; i++) {
+                            const lbl = btns[i].querySelector('.mat-checkbox-label').textContent.trim();
+                            switch(lbl) {
+                                case aahqrl10n('fake'):
+                                    btnKey = '+5,F'; break;
+                                case aahqrl10n('explicit'):
+                                    btnKey = '+5,X'; break;
+                                case aahqrl10n('influencing'):
+                                    btnKey = '+5,I'; break;
+                                case aahqrl10n('offensive'):
+                                    btnKey = '+5,O'; break;
+                                case aahqrl10n('abuse'):
+                                    btnKey = '+5,A'; break;
+                                default: continue;
+                            }
+                            const label = drawNew('span');
+                            label.classList.add('wfkr2-key-label');
+                            if (btnKey.includes(',')) {
+                                if (keySequence && ('+' + btnKey).startsWith(keySequence)) {
+                                    label.textContent = '\u2026' + btnKey.substring(keySequence.length).split(',').map(key => `[${key}]`).join('') + ' ';
+                                } else {
+                                    label.textContent = ('\u{1f879}' + btnKey).split(',').map(key => `[${key}]`).join('') + ' ';
+                                }
+                            } else {
+                                label.textContent = `[\u{1f879}${btnKey}] `;
+                            }
+                            const eLbl = btns[i].querySelector('.mat-checkbox-label');
+                            eLbl.parentNode.insertBefore(label, eLbl);
                         }
                     } else if (isDialogOpen(ThumbCards.ACCURATE.opens)) {
                         const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
@@ -758,8 +803,25 @@
         }
     }
 
+    const report = () => new Promise((resolve, reject) => {
+        if (isDialogOpen()) {
+            resolve();
+            return;
+        }
+        const aahqrl10n = getI18NPrefixResolver('submission.');
+        const xpath = `//button[contains(text(),'${aahqrl10n("report")}')]`;
+        const matchingElement = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        if (matchingElement) {
+            matchingElement.click();
+            resolve();
+            return;
+        }
+        reject();
+    });
+
     const updateKeybindsNew = candidate => {
         const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
+        const aahqrl10nReport = getI18NPrefixResolver('review.report.modal.');
         setHandler(makeKeyMap({
             '+P': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('PRIVATE')),
             '+I': () => thumbDownOpen(ThumbCards.APPROPRIATE).then(() => selectDialogRadio('INAPPROPRIATE')),
@@ -791,6 +853,12 @@
             '+4,I': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.influencing')),
             '+4,O': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.offensive')),
             '+4,A': () => checkDialogBox(getDialogAccordionPanel(aahqrl10n('abuse')), aahqrl10n('abuse.other')),
+            '+R': () => report(),
+            '+5,F': () => getDialogReportCheckbox(aahqrl10nReport('fake'), aahqrl10nReport('fake')),
+            '+5,X': () => getDialogReportCheckbox(aahqrl10nReport('explicit'), aahqrl10nReport('explicit')),
+            '+5,I': () => getDialogReportCheckbox(aahqrl10nReport('influencing'), aahqrl10nReport('influencing')),
+            '+5,O': () => getDialogReportCheckbox(aahqrl10nReport('offensive'), aahqrl10nReport('offensive')),
+            '+5,A': () => getDialogReportCheckbox(aahqrl10nReport('abuse'), aahqrl10nReport('abuse')),
             '+L': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => checkDialogBox(null, aahqrl10n('inaccuratelocation'))),
             '+O': () => thumbDownOpen(ThumbCards.ACCURATE).then(() => checkDialogBox(null, null)),
             '+T': () => thumbDownOpen(ThumbCards.PERMANENT),
