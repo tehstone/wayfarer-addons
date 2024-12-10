@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.1.3
+// @version      2.1.4
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -750,7 +750,8 @@
     };
 
     const skip = () => {
-        const xpath = "//button[contains(text(),'Skip')]";
+        const aahqrl10n = getI18NPrefixResolver('submission.'); 
+        const xpath = `//button[contains(text(),'${aahqrl10n("skiptonext")}')]`;
         const matchingElement = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; 
         if (matchingElement) {
             matchingElement.click();
@@ -795,7 +796,7 @@
             '+T': () => thumbDownOpen(ThumbCards.PERMANENT),
             'Q': () => window.open(candidate.imageUrl + '=s0'),
             'E': () => window.open(candidate.supportingImageUrl + '=s0'),
-            '+Space': () => skip(),
+            '+Space': () => !isDialogOpen() && skip(),
             'Tab': () => !isDialogOpen() && context.nextCard(),
             '+Tab': () => !isDialogOpen() && context.prevCard(),
             'ArrowDown': () => !isDialogOpen() && context.nextCard(),
