@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Keyboard Review
-// @version      2.1.2
+// @version      2.1.3
 // @description  Add keyboard review to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-keyboard-review.user.js
@@ -749,6 +749,14 @@
         }
     };
 
+    const skip = () => {
+        const xpath = "//button[contains(text(),'Skip')]";
+        const matchingElement = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; 
+        if (matchingElement) {
+            matchingElement.click();
+        }
+    }
+
     const updateKeybindsNew = candidate => {
         const aahqrl10n = getI18NPrefixResolver('review.new.question.accurateandhighquality.reject.');
         setHandler(makeKeyMap({
@@ -787,6 +795,7 @@
             '+T': () => thumbDownOpen(ThumbCards.PERMANENT),
             'Q': () => window.open(candidate.imageUrl + '=s0'),
             'E': () => window.open(candidate.supportingImageUrl + '=s0'),
+            '+Space': () => skip(),
             'Tab': () => !isDialogOpen() && context.nextCard(),
             '+Tab': () => !isDialogOpen() && context.prevCard(),
             'ArrowDown': () => !isDialogOpen() && context.nextCard(),
@@ -857,7 +866,8 @@
         };
         const keys = {
             'Tab': () => acceptAll.click(),
-            'Enter': () => handleEnterNew()
+            'Enter': () => handleEnterNew(),
+             '+Space': () => skip()
         };
         for (let i = 0; i < context.cards.length; i++) {
             const card = context.cards[i];
@@ -985,6 +995,7 @@
             'ArrowRight': () => context.nextCard(),
             'ArrowLeft': () => context.prevCard(),
             'Enter': () => handleEnterNew(),
+            '+Space': () => skip(),
             ...context.extraKeys()
         }));
     };
