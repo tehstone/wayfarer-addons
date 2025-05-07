@@ -67,7 +67,7 @@
             "SENSITIVE": "Sensitive location",
             "EMERGENCY": "Obstructs emergency operations",
             "GENERIC": "Generic business",
-            "": ""
+            "": "(Blank)"
         };
     let l10n;
 
@@ -253,7 +253,7 @@
                                 review[0].rejectReasons.forEach(r => {
                                     let rejectionText = l10n[`reject.reason.${r.toLowerCase()}.short`];
                                     if (rejectionText === undefined || rejectionText === "") {
-                                        rejectionText = REJECTION_MAPPINGS[r];
+                                        rejectionText = REJECTION_MAPPINGS[r] || r;
                                     }
                                     rejections.push(rejectionText);
                                 })
