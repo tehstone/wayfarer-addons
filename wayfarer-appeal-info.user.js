@@ -32,6 +32,10 @@
 function init() {
     const MAX_APPEALS = 2;
     const APPEAL_COOLDOWN = 20;
+    const MINUTE_MILLIS = 1000 * 60;
+    const HOUR_MILLIS = MINUTE_MILLIS * 60;
+    const DAY_MILLIS = HOUR_MILLIS * 24;
+    const APPEAL_MILLIS = (APPEAL_COOLDOWN * DAY_MILLIS);
     const OBJECT_STORE_NAME = 'appealInfo';
     const idMap = {};
     const statusMap = {};
@@ -122,8 +126,8 @@ function init() {
             const current = Date.now();
             const currentUTCDay = new Date(new Date(current).setUTCHours(0,0,0,0)).valueOf();
             // For day calculations, use UTC day
-            const daysUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - currentUTCDay) / (1000 * 60 * 60 * 24));
-            const daysUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - currentUTCDay) / (1000 * 60 * 60 * 24));
+            const daysUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + APPEAL_MILLIS ) - currentUTCDay) / DAY_MILLIS);
+            const daysUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + APPEAL_MILLIS ) - currentUTCDay) / DAY_MILLIS);
             if (daysUntilFirst <= 0 || daysUntilSecond <= 0) {
                 if (!canAppeal) {
                     appeal.textContent = 'No';
@@ -145,14 +149,14 @@ function init() {
                         appeal.textContent = `in ~${minDays} days`;
                     } else {
                         // For less-than-day calculations, use local time, but compared to the UTC day the appeal was made on
-                        const hoursUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60));
-                        const hoursUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60));
+                        const hoursUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + APPEAL_MILLIS ) - current) / HOUR_MILLIS);
+                        const hoursUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + APPEAL_MILLIS ) - current) / HOUR_MILLIS);
                         const minHours = Math.min(hoursUntilFirst, hoursUntilSecond);
                         if (minHours > 2) {
                             appeal.textContent = `in ~${minHours} hours`;
                         } else {
-                            const minsUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60));
-                            const minsUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60));
+                            const minsUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + APPEAL_MILLIS ) - current) / MINUTE_MILLIS);
+                            const minsUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + APPEAL_MILLIS ) - current) / MINUTE_MILLIS);
                             const minMins = Math.min(minsUntilFirst, minsUntilSecond);
                             appeal.textContent = `in ~${minMins} minutes`;
                         }
