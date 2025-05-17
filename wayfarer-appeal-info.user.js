@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.9
+// @version      0.1.10
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -116,10 +116,14 @@ function init() {
                 localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
             }
             const firstAppealTimestamp = parseInt(appealQueue[appealQueue.length - 1]);
+            const firstAppealUTCDay = new Date(new Date(firstAppealTimestamp).setUTCHours(0,0,0,0))
             const secondAppealTimestamp = parseInt(appealQueue[appealQueue.length - 2]);
+            const secondAppealUTCDay = new Date(new Date(secondAppealTimestamp).setUTCHours(0,0,0,0))
             const current = Date.now();
-            const daysUntilFirst = Math.round(((firstAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
-            const daysUntilSecond = Math.round(((secondAppealTimestamp + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60 * 24));
+            const currentUTCDay = new Date(new Date(current).setUTCHours(0,0,0,0)).valueOf();
+            // For day calculations, use UTC day
+            const daysUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - currentUTCDay) / (1000 * 60 * 60 * 24));
+            const daysUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - currentUTCDay) / (1000 * 60 * 60 * 24));
             if (daysUntilFirst <= 0 || daysUntilSecond <= 0) {
                 if (!canAppeal) {
                     appeal.textContent = 'No';
@@ -130,13 +134,29 @@ function init() {
                     appeal.textContent = '1';
                 }
             }
-            
+
             if (daysUntilFirst > 0 && daysUntilSecond > 0) {
                 if (canAppeal) {
                     console.warn("Wayfarer Appeal Info: Appeal available but stored history indicates otherwise.")
                     appeal.textContent = 'Yes';
                 } else {
-                    appeal.textContent = `in ~${Math.min(daysUntilFirst, daysUntilSecond)} days`;
+                    const minDays = Math.min(daysUntilFirst, daysUntilSecond);
+                    if (minDays > 2) {
+                        appeal.textContent = `in ~${minDays} days`;
+                    } else {
+                        // For less-than-day calculations, use local time, but compared to the UTC day the appeal was made on
+                        const hoursUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60));
+                        const hoursUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60 * 60));
+                        const minHours = Math.min(hoursUntilFirst, hoursUntilSecond);
+                        if (minHours > 2) {
+                            appeal.textContent = `in ~${minHours} hours`;
+                        } else {
+                            const minsUntilFirst = Math.round(((firstAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60));
+                            const minsUntilSecond = Math.round(((secondAppealUTCDay.valueOf() + (APPEAL_COOLDOWN * 1000 * 60 * 60 * 24) ) - current) / (1000 * 60));
+                            const minMins = Math.min(minsUntilFirst, minsUntilSecond);
+                            appeal.textContent = `in ~${minMins} minutes`;
+                        }
+                    }
                 }
             }
             if (document.querySelector('.wfai_can_appeal') === null) {
