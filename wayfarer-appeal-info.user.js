@@ -31,7 +31,8 @@
 
 function init() {
     const MAX_APPEALS = 2;
-    const APPEAL_COOLDOWN = 20;
+    const APPEAL_COOLDOWN_DAYS = 20; // number of days appeal cooldown
+    const APPEAL_COOLDOWN = APPEAL_COOLDOWN_DAYS + 1; // exclude day appeal made
     const SECOND_MILLIS = 1000;
     const MINUTE_MILLIS = SECOND_MILLIS * 60;
     const HOUR_MILLIS = MINUTE_MILLIS * 60;
