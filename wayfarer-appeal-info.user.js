@@ -157,14 +157,20 @@ function init() {
                         if (minHours > 9) {
                             appeal.textContent = `in ~${minHours} hours`;
                         } else {
-                            const millisUntilFirst = Math.round(((firstAppealUTCDay + APPEAL_MILLIS) - current));
-                            const millisUntilSecond = Math.round(((secondAppealUTCDay + APPEAL_MILLIS) - current));
-                            const minMillis = Math.min(millisUntilFirst, millisUntilSecond);
-                            const hours = Math.floor(minMillis / HOUR_MILLIS);
-                            const remainingHourMillis = minMillis % HOUR_MILLIS;
-                            const minutes = Math.floor(remainingHourMillis / MINUTE_MILLIS).toString().padStart(2, "0");
-                            const seconds = Math.floor((remainingHourMillis % MINUTE_MILLIS) / SECOND_MILLIS).toString().padStart(2, "0");
-                            appeal.textContent = `in ${hours}:${minutes}:${seconds}`;
+                            const updateTimestamp = (currentTime) => {
+                                const millisUntilFirst = Math.round(((firstAppealUTCDay + APPEAL_MILLIS) - currentTime));
+                                const millisUntilSecond = Math.round(((secondAppealUTCDay + APPEAL_MILLIS) - currentTime));
+                                const minMillis = Math.min(millisUntilFirst, millisUntilSecond);
+                                const hours = Math.floor(minMillis / HOUR_MILLIS);
+                                const remainingHourMillis = minMillis % HOUR_MILLIS;
+                                const minutes = Math.floor(remainingHourMillis / MINUTE_MILLIS).toString().padStart(2, "0");
+                                const seconds = Math.floor((remainingHourMillis % MINUTE_MILLIS) / SECOND_MILLIS).toString().padStart(2, "0");
+                                appeal.textContent = `in ${hours}:${minutes}:${seconds}`;
+                            };
+                            updateTimestamp(current);
+                            setInterval(() => {
+                                updateTimestamp(Date.now());
+                            }, 1000);
                         }
                     }
                 }
