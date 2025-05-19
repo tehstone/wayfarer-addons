@@ -103,7 +103,7 @@ function init() {
                 localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
                 localStorage.removeItem(`wfai_appeal_history_${userId}`);
             } else if (localStorage.hasOwnProperty(`wfai_last_appeal_date_${userId}`)) {
-                let appealTimestamp = localStorage.getItem(`wfai_last_appeal_date_${userId}`);
+                const appealTimestamp = localStorage.getItem(`wfai_last_appeal_date_${userId}`);
                 if (appealTimestamp === undefined || appealTimestamp === null || appealTimestamp === ""){
                     setItem(appealQueue, 0);
                     setItem(appealQueue, 1);
@@ -157,19 +157,27 @@ function init() {
                         if (minHours > 9) {
                             appeal.textContent = `in ~${minHours} hours`;
                         } else {
-                            const updateTimestamp = (currentTime) => {
+                            const updateTimestamp = (currentTime, intervalId) => {
                                 const millisUntilFirst = Math.round(((firstAppealUTCDay + APPEAL_MILLIS) - currentTime));
                                 const millisUntilSecond = Math.round(((secondAppealUTCDay + APPEAL_MILLIS) - currentTime));
                                 const minMillis = Math.min(millisUntilFirst, millisUntilSecond);
-                                const hours = Math.floor(minMillis / HOUR_MILLIS);
-                                const remainingHourMillis = minMillis % HOUR_MILLIS;
-                                const minutes = Math.floor(remainingHourMillis / MINUTE_MILLIS).toString().padStart(2, "0");
-                                const seconds = Math.floor((remainingHourMillis % MINUTE_MILLIS) / SECOND_MILLIS).toString().padStart(2, "0");
-                                appeal.textContent = `in ${hours}:${minutes}:${seconds}`;
+                                if (minMillis <= 0) {
+                                    appeal.textContent = `Reload`;
+                                    if (intervalId) {
+                                        clearInterval(intervalId);
+                                    }
+                                } else {
+                                    const hours = Math.floor(minMillis / HOUR_MILLIS);
+                                    const remainingHourMillis = minMillis % HOUR_MILLIS;
+                                    const minutes = Math.floor(remainingHourMillis / MINUTE_MILLIS).toString().padStart(2, "0");
+                                    const seconds = Math.floor((remainingHourMillis % MINUTE_MILLIS) / SECOND_MILLIS).toString().padStart(2, "0");
+                                    appeal.textContent = `in ${hours}:${minutes}:${seconds}`;
+                                }
                             };
-                            updateTimestamp(current);
-                            setInterval(() => {
-                                updateTimestamp(Date.now());
+                            updateTimestamp(current, null);
+                            let timerId = null;
+                            timerId = setInterval(() => {
+                                updateTimestamp(Date.now(), timerId);
                             }, 1000);
                         }
                     }
@@ -354,7 +362,7 @@ function init() {
             console.log('Wayfarer Appeal Info: appeal data saved to datastore');
             tx.commit();
             resolve();
-        }).catch(reject); 
+        }).catch(reject);
     });
 
     const checkAppealRecord = (nominationId) => new Promise((resolve, reject) => {
