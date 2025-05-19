@@ -178,7 +178,7 @@ function init() {
                             let timerId = null;
                             timerId = setInterval(() => {
                                 updateTimestamp(Date.now(), timerId);
-                            }, 1000);
+                            }, SECOND_MILLIS);
                         }
                     }
                 }
