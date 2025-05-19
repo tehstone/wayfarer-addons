@@ -122,11 +122,11 @@ function init() {
                 localStorage.setItem(`wfai_appeal_queue_${userId}`, JSON.stringify(appealQueue));
             }
             const firstAppealTimestamp = parseInt(appealQueue[appealQueue.length - 1]);
-            const firstAppealUTCDay = new Date(new Date(firstAppealTimestamp).setUTCHours(0,0,0,0)).valueOf()
+            const firstAppealUTCDay = new Date(firstAppealTimestamp).setUTCHours(0,0,0,0);
             const secondAppealTimestamp = parseInt(appealQueue[appealQueue.length - 2]);
-            const secondAppealUTCDay = new Date(new Date(secondAppealTimestamp).setUTCHours(0,0,0,0)).valueOf()
+            const secondAppealUTCDay = new Date(secondAppealTimestamp).setUTCHours(0,0,0,0);
             const current = Date.now();
-            const currentUTCDay = new Date(new Date(current).setUTCHours(0,0,0,0)).valueOf();
+            const currentUTCDay = new Date(current).setUTCHours(0,0,0,0);
             // For day calculations, use UTC day
             const daysUntilFirst = Math.round(((firstAppealUTCDay + APPEAL_MILLIS) - currentUTCDay) / DAY_MILLIS);
             const daysUntilSecond = Math.round(((secondAppealUTCDay + APPEAL_MILLIS) - currentUTCDay) / DAY_MILLIS);
