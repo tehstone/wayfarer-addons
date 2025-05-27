@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Edits Difference
-// @version      1.0.1
+// @version      1.0.2
 // @description  Highlights the differences between similar options on edit reviews in Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-edits-diff.user.js
@@ -58,7 +58,7 @@
             if (!candidate) return;
             awaitElement(() => document.querySelector('app-review-edit')).then(processEdit).catch(() => {});
         } catch (e) {
-            console.err(e);
+            console.error(e);
         }
     }
 
@@ -74,19 +74,91 @@
         queryLoop();
     });
 
-    const processEdit = e => {
+    // Main function to process the edit interface
+    const processEdit = async e => {
+        // Process title edit (if exists)
         const title = e.querySelector('app-select-title-edit');
-        if (title) analyze(title);
+        if (title) {
+            await processEditComponent(title);
+        }
+        
+        // Process description edit (if exists)
         const desc = e.querySelector('app-select-description-edit');
-        if (desc) analyze(desc);
+        if (desc) {
+            await processEditComponent(desc);
+        }
+    };
+
+    // Process individual edit component (title or description)
+    const processEditComponent = async (component) => {
+        // First disable the text diff toggle in this component
+        const diffToggled = await disableNativeTextDiff(component);
+        
+        // If toggle was turned off, wait for UI update
+        if (diffToggled) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        // Analyze and highlight differences
+        analyze(component);
+    };
+
+    // Find and disable Wayfarer's native text diff feature in the specified component
+    const disableNativeTextDiff = async (component) => {
+        try {
+            // Find the text diff toggle within this component
+            const toggleContainer = component.querySelector('wf-slide-toggle mat-slide-toggle.mat-checked');
+            
+            // If found and enabled, click to disable it
+            if (toggleContainer) {
+                const toggleInput = toggleContainer.querySelector('input[type="checkbox"]');
+                if (toggleInput) {
+                    toggleInput.click();
+                    console.log('Disabled native text diff in component');
+                    return true;
+                }
+            }
+            return false;
+        } catch (err) {
+            console.log('Native text diff toggle not found or already disabled in this component');
+            return false;
+        }
     };
 
     const analyze = e => {
-        const opts = [...e.querySelectorAll('mat-radio-button .mat-radio-label-content')];
-        opts.pop();
-        const result = analyzeStrings(opts.map(e => e.textContent.trim()));
-        for (let i = 0; i < opts.length; i++) {
-            opts[i].innerHTML = ' ' + result[i];
+        // Get all radio button label contents
+        const optElements = [...e.querySelectorAll('mat-radio-button .mat-radio-label-content')];
+        optElements.pop(); // Remove the last one (usually "None of the above")
+        
+        // Extract actual content, excluding numbering labels
+        const contents = [];
+        const labels = [];
+        
+        for (let i = 0; i < optElements.length; i++) {
+            const element = optElements[i];
+            // Find option labels like [1], [2], etc.
+            const labelElem = element.querySelector('.wfkr2-ephemeral.wfkr2-key-label');
+            
+            // Save the label element (if any)
+            if (labelElem) {
+                labels.push(labelElem.outerHTML);
+                // Get the actual content without labels
+                const contentElems = [...element.childNodes].filter(node => 
+                    !(node.classList && node.classList.contains('wfkr2-ephemeral')));
+                contents.push(contentElems.map(node => node.textContent || '').join('').trim());
+            } else {
+                // If no label element found, use all content
+                labels.push('');
+                contents.push(element.textContent.trim());
+            }
+        }
+        
+        // Analyze differences in the actual content
+        const results = analyzeStrings(contents);
+        
+        // Recombine analysis results with labels
+        for (let i = 0; i < optElements.length; i++) {
+            optElements[i].innerHTML = ' ' + (labels[i] || '') + results[i];
         }
     };
 
