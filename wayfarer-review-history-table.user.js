@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Review History Table
-// @version      0.4.0
+// @version      0.4.1
 // @description  Add local review history storage to Wayfarer
 // @namespace    https://github.com/tehstone/wayfarer-addons
 // @homepageURL  https://github.com/tehstone/wayfarer-addons
@@ -45,16 +45,16 @@
             "PHOTO_FACE": "Face or body parts",
             "PHOTO_PLATE": "License plate",
             "PHOTO_DIR": "Orientation",
-            "PHOTO_TAG": "Sumbitter identifiable",
+            "PHOTO_TAG": "Submitter identifiable",
             "PHOTO_3P": "Third party photo",
             "PHOTO_WATERMARK": "Watermark",
             "PHOTO_BAD": "Low quality or inaccurate photo",
             "EMOJI_TITLE": "Emoji or emoticon",
             "MARKUP_TITLE": "URL or markup",
             "TEXT_BAD_TITLE": "Low quality or inaccurate title",
-            "EMOJI_DESCRIPTION": "Emoji or emoticon",
-            "MARKUP_DESCRIPTION": "URL or markup",
-            "TEXT_BAD_DESCRIPTION": "Low quality or inaccurate title",
+            "EMOJI_DESCRIPTION": "Emoji or emoticon in description",
+            "MARKUP_DESCRIPTION": "URL or markup in description",
+            "TEXT_BAD_DESCRIPTION": "Low quality or inaccurate description",
             "ACCURACY_FAKE": "Fake nomination",
             "ACCURACY_EXPLICIT": "Explicit Content",
             "ACCURACY_PERSONAL": "Influencing Reviewers",
@@ -67,7 +67,7 @@
             "SENSITIVE": "Sensitive location",
             "EMERGENCY": "Obstructs emergency operations",
             "GENERIC": "Generic business",
-            "": ""
+            "": "(Blank)"
         };
     let l10n;
 
@@ -253,7 +253,7 @@
                                 review[0].rejectReasons.forEach(r => {
                                     let rejectionText = l10n[`reject.reason.${r.toLowerCase()}.short`];
                                     if (rejectionText === undefined || rejectionText === "") {
-                                        rejectionText = REJECTION_MAPPINGS[r];
+                                        rejectionText = REJECTION_MAPPINGS[r] || r;
                                     }
                                     rejections.push(rejectionText);
                                 })
