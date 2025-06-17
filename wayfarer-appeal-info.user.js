@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Appeal Info
-// @version      0.1.10
+// @version      0.1.11
 // @description  Save and display info about appeals
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-appeal-info.user.js
@@ -31,7 +31,7 @@
 
 function init() {
     const MAX_APPEALS = 2;
-    const APPEAL_COOLDOWN_DAYS = 20; // number of days appeal cooldown
+    const APPEAL_COOLDOWN_DAYS = 15; // number of days appeal cooldown
     const APPEAL_COOLDOWN = APPEAL_COOLDOWN_DAYS + 1; // exclude day appeal made
     const SECOND_MILLIS = 1000;
     const MINUTE_MILLIS = SECOND_MILLIS * 60;
