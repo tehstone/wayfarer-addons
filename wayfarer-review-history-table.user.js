@@ -185,7 +185,7 @@
         displayPhotoTable.classList.add('wayfarerns__button');
         tableSelectorContainer.appendChild(displayPhotoTable);
 
-        const ratingNarRef = document.querySelector('wf-rating-bar');
+        const ratingNarRef = document.querySelector('wf-credibility-card');
         const container = ratingNarRef.parentNode.parentNode;
         container.appendChild(tableSelectorContainer);
     }
@@ -204,16 +204,16 @@
     function renderTable(reviewData) {
       const tableContainer = document.createElement("div");
       tableContainer.id = "nomination-table";
-      tableContainer.classList.add("table");
+      tableContainer.classList.add("review-history-table");
       tableContainer.style.display = "block";
       tableContainer.insertAdjacentHTML("beforeend",
         `
         <div class="table-responsive">
-                <table class="table table-striped table-condensed" id="review-history">
+                <table class="review-history-table table-striped table-condensed" id="review-history">
                 </table>
             </div>
         `)
-      const ratingNarRef = document.querySelector('wf-rating-bar');
+      const ratingNarRef = document.querySelector('wf-credibility-card');
       const container = ratingNarRef.parentNode.parentNode;
       container.appendChild(tableContainer);
 
@@ -424,16 +424,16 @@
     function renderEditsTable(reviewData) {
       const tableContainer = document.createElement("div");
       tableContainer.id = "edit-table";
-      tableContainer.classList.add("table");
+      tableContainer.classList.add("review-history-table");
       tableContainer.style.display = "none";
       tableContainer.insertAdjacentHTML("beforeend",
         `
         <div class="table-responsive">
-                <table class="table table-striped table-condensed" id="edit-review-history">
+                <table class="review-history-table table-striped table-condensed" id="edit-review-history">
                 </table>
             </div>
         `)
-      const ratingNarRef = document.querySelector('wf-rating-bar');
+      const ratingNarRef = document.querySelector('wf-credibility-card');
       const container = ratingNarRef.parentNode.parentNode;
       container.appendChild(tableContainer);
 
@@ -603,7 +603,7 @@
             rows.push(`<tr><td class="text-center">${selected}</td><td class="text-center">${content}</td></tr>`);
         });
         return `
-        <table class="table table-condensed scores">
+        <table class="review-history-table table-condensed scores">
           <thead>
               <tr>
                   <th class="text-center">Selected</th>
@@ -621,16 +621,16 @@
         console.log("history table click here");
       const tableContainer = document.createElement("div");
       tableContainer.id = "photo-table";
-      tableContainer.classList.add("table");
+      tableContainer.classList.add("review-history-table");
       tableContainer.style.display = "none";
       tableContainer.insertAdjacentHTML("beforeend",
         `
         <div class="table-responsive">
-                <table class="table table-striped table-condensed" id="photo-review-history">
+                <table class="review-history-table table-striped table-condensed" id="photo-review-history">
                 </table>
             </div>
         `)
-      const ratingNarRef = document.querySelector('wf-rating-bar');
+      const ratingNarRef = document.querySelector('wf-credibility-card');
       const container = ratingNarRef.parentNode.parentNode;
       container.appendChild(tableContainer);
 
@@ -812,7 +812,7 @@
                 return "";
             }
             return `
-            <table class="table table-condensed scores">
+            <table class="review-history-table table-condensed scores">
               <thead>
                   <tr>
                       <th class="text-center">Score</th>
@@ -858,7 +858,7 @@
             return rejections.join("<br />");
         } else {
             return `
-                <table class="table table-condensed scores">
+                <table class="review-history-table table-condensed scores">
                   <thead>
                       <tr>
                           <th class="text-center">Appropriate</th>
