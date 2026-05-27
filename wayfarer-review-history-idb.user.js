@@ -191,7 +191,7 @@
         }))
     };
 
-    const addRHButtons = () => awaitElement(() => document.querySelector('wf-rating-bar')).then(ref => {
+    const addRHButtons = () => awaitElement(() => document.querySelector('wf-credibility-card')).then(ref => {
         const outer = document.createElement('div');
         outer.id = 'wfrh-idb-topbar';
         outer.classList.add('wfrh-idb');
@@ -391,7 +391,7 @@
         return d;
     }
 
-    const addSettings = () => awaitElement(() =>document.querySelector('wf-rating-bar')).then(ref => {
+    const addSettings = () => awaitElement(() =>document.querySelector('wf-credibility-card')).then(ref => {
         let settingsDiv = document.getElementById("profileSettings");
         if (settingsDiv === null) {
             settingsDiv = document.createElement('div');
@@ -420,7 +420,7 @@
             settingsContainer.appendChild(collapsibleLabel);
             settingsContainer.appendChild(collapsibleContent);
 
-            const ratingNarRef = document.querySelector('wf-rating-bar');
+            const ratingNarRef = document.querySelector('wf-credibility-card');
             const container = ratingNarRef.parentNode.parentNode;
             container.appendChild(settingsContainer);
         }
