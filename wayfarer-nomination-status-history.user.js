@@ -402,7 +402,7 @@
                 exportBtn.classList.add("wfnshMethodButton");
                 exportBtn.addEventListener('click', () => {
                     const { result } = getList;
-                    const blob = new Blob([JSON.stringify(result)], { type: 'application/json' });
+                    const blob = new Blob([JSON.stringify(result.filter(n => n.userHash == userHash).map(n => { delete n["userHash"]; return n; }))], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const anchor = document.createElement('a');
                     anchor.setAttribute('download', `nomination-status-history.json`);
