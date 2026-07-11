@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Wayfarer Nomination Status History
-// @version      1.3.4
+// @version      1.3.5
 // @description  Track changes to nomination status
 // @namespace    https://github.com/tehstone/wayfarer-addons/
 // @downloadURL  https://github.com/tehstone/wayfarer-addons/raw/main/wayfarer-nomination-status-history.user.js
@@ -402,7 +402,7 @@
                 exportBtn.classList.add("wfnshMethodButton");
                 exportBtn.addEventListener('click', () => {
                     const { result } = getList;
-                    const blob = new Blob([JSON.stringify(result)], { type: 'application/json' });
+                    const blob = new Blob([JSON.stringify(result.filter(n => n.userHash == userHash).map(n => { delete n["userHash"]; return n; }))], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const anchor = document.createElement('a');
                     anchor.setAttribute('download', `nomination-status-history.json`);
